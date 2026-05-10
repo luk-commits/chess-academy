@@ -9,7 +9,7 @@ use Phalcon\Config\Config;
 use Phalcon\Db\Adapter\Pdo\Postgresql;
 use Phalcon\Events\Manager as EventsManager;
 use Phalcon\Mvc\Dispatcher;
-use Phalcon\Mvc\View\Simple as SimpleView;
+use Phalcon\Mvc\View;
 
 $container->setShared('config', function (): Config {
     return new Config(require APP_PATH . '/Config/config.php');
@@ -28,8 +28,11 @@ $container->setShared('db', function () use ($container): Postgresql {
     ]);
 });
 
-$container->setShared('view', function (): SimpleView {
-    return new SimpleView();
+$container->setShared('view', function (): View {
+    $view = new View();
+    $view->disable();
+
+    return $view;
 });
 
 $container->setShared('jwtService', function () use ($container): JwtService {
