@@ -18,10 +18,10 @@ $container->setShared('router', function (): Router {
         'action' => 'login',
     ]);
 
-    $router->addPost('/api/logout', [
+    $router->add('/api/logout', [
         'controller' => 'auth',
         'action' => 'logout',
-    ]);
+    ])->via(['GET', 'POST']);
 
     $router->addPost('/api/refresh', [
         'controller' => 'auth',
