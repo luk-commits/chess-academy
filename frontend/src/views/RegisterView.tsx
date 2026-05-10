@@ -23,13 +23,14 @@ import { authService } from '../services/authService';
 import { RegisterPayload } from '../types/auth';
 
 export function RegisterView() {
-  const { loading, error } = useAuth();
+  const { loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'PLAYER' | 'COACH'>('PLAYER');
   const [showPassword, setShowPassword] = useState(false);
+  const [registerError, setRegisterError] = useState('');
   const navigate = useNavigate();
 
   const passwordsMatch = password === confirmPassword && confirmPassword !== '';
@@ -38,7 +39,8 @@ export function RegisterView() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-            const payload: RegisterPayload = {
+    setRegisterError('');
+    const payload: RegisterPayload = {
       email: email.trim(),
       password,
       fullName,
@@ -48,7 +50,7 @@ export function RegisterView() {
       await authService.register(payload);
       navigate('/login');
     } catch (err: any) {
-      console.error(err);
+      setRegisterError(err.message ?? 'Registration failed');
     }
   };
 
@@ -74,9 +76,9 @@ export function RegisterView() {
         >
           <BrandHeader />
 
-          {error && (
+          {registerError && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {registerError}
             </Alert>
           )}
 

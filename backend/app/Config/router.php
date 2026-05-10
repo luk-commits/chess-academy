@@ -8,6 +8,11 @@ $container->setShared('router', function (): Router {
     $router = new Router(false);
     $router->removeExtraSlashes(true);
 
+    $router->addPost('/api/register', [
+        'controller' => 'auth',
+        'action' => 'register',
+    ]);
+
     $router->addPost('/api/login', [
         'controller' => 'auth',
         'action' => 'login',

@@ -10,6 +10,8 @@ use Phalcon\Filter\Validation\Validator\Uniqueness;
 
 class User extends UserModel
 {
+    public const ROLE_COACH = 'COACH';
+    public const ROLE_PLAYER = 'PLAYER';
     public function validation(): bool
     {
         if (parent::validation() === false) {

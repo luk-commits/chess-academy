@@ -39,6 +39,50 @@ class AuthController extends ControllerBase
         ]);
     }
 
+    public function registerAction(): \Phalcon\Http\Response
+    {
+        $payload = $this->jsonInput();
+
+        $email = trim((string) ($payload['email'] ?? ''));
+        $password = (string) ($payload['password'] ?? '');
+        $fullName = trim((string) ($payload['fullName'] ?? ''));
+        $role = strtoupper(trim((string) ($payload['role'] ?? '')));
+
+        if ($email === '' || $password === '' || $fullName === '' || $role === '') {
+            return $this->error('All fields are required', 422);
+        }
+
+        if (!in_array($role, ['COACH', 'PLAYER'], true)) {
+            return $this->error('Role must be COACH or PLAYER', 422);
+        }
+
+        $existing = User::findFirst([
+            'conditions' => 'email = :email:',
+            'bind' => ['email' => $email],
+        ]);
+
+        if ($existing instanceof User) {
+            return $this->error('Email already exists', 409);
+        }
+
+        $user = new User();
+        $user->email = $email;
+        $user->password_hash = User::hashPassword($password);
+        $user->full_name = $fullName;
+        $user->role = $role;
+
+        if ($user->save() === false) {
+            $messages = $user->getMessages();
+            $errorMsg = '';
+            foreach ($messages as $msg) {
+                $errorMsg .= (string) $msg . ' ';
+            }
+            return $this->error(trim($errorMsg), 422);
+        }
+
+        return $this->json(['ok' => true], 201);
+    }
+
     public function logoutAction(): \Phalcon\Http\Response
     {
         $this->setSessionCookie('', -3600);
