@@ -1,33 +1,67 @@
 <?php
 
-declare(strict_types=1);
-
 namespace ChessAcademy\Models;
 
-use Phalcon\Mvc\Model;
 use Phalcon\Filter\Validation;
 use Phalcon\Filter\Validation\Validator\Email;
 use Phalcon\Filter\Validation\Validator\InclusionIn;
 use Phalcon\Filter\Validation\Validator\PresenceOf;
 use Phalcon\Filter\Validation\Validator\Uniqueness;
 
-class User extends Model
+
+class User extends \Phalcon\Mvc\Model
 {
     public const ROLE_COACH = 'COACH';
     public const ROLE_PLAYER = 'PLAYER';
 
-    public ?int $id = null;
-    public string $email = '';
-    public string $password_hash = '';
-    public string $full_name = '';
-    public string $role = self::ROLE_PLAYER;
-    public ?string $created_at = null;
-    public ?string $updated_at = null;
+    /**
+     *
+     * @var integer
+     */
+    public $id;
+
+    /**
+     *
+     * @var string
+     */
+    public $email;
+
+    /**
+     *
+     * @var string
+     */
+    public $password_hash;
+
+    /**
+     *
+     * @var string
+     */
+    public $full_name;
+
+    /**
+     *
+     * @var string
+     */
+    public $role;
+
+    /**
+     *
+     * @var string
+     */
+    public $created_at;
+
+    /**
+     *
+     * @var string
+     */
+    public $updated_at;
+
 
     public function initialize(): void
     {
         $this->setSource('users');
     }
+
 
     public function validation(): bool
     {
@@ -46,15 +80,18 @@ class User extends Model
         return $this->validate($validator);
     }
 
+
     public function verifyPassword(string $plain): bool
-    {
+    { 
         return password_verify($plain, $this->password_hash);
     }
+
 
     public static function hashPassword(string $plain): string
     {
         return password_hash($plain, PASSWORD_BCRYPT, ['cost' => 12]);
     }
+
 
     public function toPublicArray(): array
     {
@@ -65,4 +102,27 @@ class User extends Model
             'role' => $this->role,
         ];
     }
+
+    /**
+     * Allows to query a set of records that match the specified conditions
+     *
+     * @param mixed $parameters
+     * @return User[]|User|\Phalcon\Mvc\Model\ResultSetInterface
+     */
+    public static function find($parameters = null): \Phalcon\Mvc\Model\ResultsetInterface
+    {
+        return parent::find($parameters);
+    }
+
+    /**
+     * Allows to query the first record that match the specified conditions
+     *
+     * @param mixed $parameters
+     * @return User|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
+     */
+    public static function findFirst($parameters = null): ?\Phalcon\Mvc\ModelInterface
+    {
+        return parent::findFirst($parameters);
+    }
+
 }

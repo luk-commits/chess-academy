@@ -38,3 +38,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm8.3", "-F"]
+
+# Instalacja Phalcon DevTools globalnie przez Composer z uwzględnieniem stabilności
+RUN composer global config minimum-stability dev \
+    && composer global config prefer-stable true \
+    && composer global require phalcon/devtools:^5.0 --dev \
+    && ln -sf "$(composer global config bin-dir --absolute)/phalcon" /usr/local/bin/phalcon
