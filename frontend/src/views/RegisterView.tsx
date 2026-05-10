@@ -26,10 +26,15 @@ export function RegisterView() {
   const { loading, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'PLAYER' | 'COACH'>('PLAYER');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+
+  const passwordsMatch = password === confirmPassword && confirmPassword !== '';
+  const isPasswordMismatch = confirmPassword !== '' && password !== confirmPassword;
+  const isFormValid = email !== '' && password !== '' && fullName !== '' && passwordsMatch;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -123,6 +128,41 @@ export function RegisterView() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
+              error={isPasswordMismatch}
+              helperText={isPasswordMismatch ? "Hasła nie są identyczne" : ""}
+              sx={{ mb: 2 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockOutlinedIcon color="action" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((v) => !v)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+
+            <TextField
+              label="Potwierdź hasło"
+              type={showPassword ? 'text' : 'password'}
+              fullWidth
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
+              error={isPasswordMismatch}
+              helperText={isPasswordMismatch ? "Hasła nie są identyczne" : ""}
               sx={{ mb: 2 }}
               slotProps={{
                 input: {
@@ -169,7 +209,7 @@ export function RegisterView() {
               variant="contained"
               size="large"
               fullWidth
-              disabled={loading || email === '' || password === '' || fullName === ''}
+              disabled={loading || !isFormValid}
               sx={{ py: 1.4, fontSize: '1rem' }}
             >
               {loading ? 'Rejestracja...' : 'Zarejestruj się'}
