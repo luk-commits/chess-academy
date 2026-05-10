@@ -8,63 +8,14 @@ use Phalcon\Filter\Validation\Validator\InclusionIn;
 use Phalcon\Filter\Validation\Validator\PresenceOf;
 use Phalcon\Filter\Validation\Validator\Uniqueness;
 
-
-class User extends \Phalcon\Mvc\Model
+class User extends UserModel
 {
-    public const ROLE_COACH = 'COACH';
-    public const ROLE_PLAYER = 'PLAYER';
-
-    /**
-     *
-     * @var integer
-     */
-    public $id;
-
-    /**
-     *
-     * @var string
-     */
-    public $email;
-
-    /**
-     *
-     * @var string
-     */
-    public $password_hash;
-
-    /**
-     *
-     * @var string
-     */
-    public $full_name;
-
-    /**
-     *
-     * @var string
-     */
-    public $role;
-
-    /**
-     *
-     * @var string
-     */
-    public $created_at;
-
-    /**
-     *
-     * @var string
-     */
-    public $updated_at;
-
-
-    public function initialize(): void
-    {
-        $this->setSource('users');
-    }
-
-
     public function validation(): bool
     {
+        if (parent::validation() === false) {
+            return false;
+        }
+
         $validator = new Validation();
 
         $validator->add('email', new PresenceOf(['message' => 'Email is required']));
@@ -79,7 +30,6 @@ class User extends \Phalcon\Mvc\Model
 
         return $this->validate($validator);
     }
-
 
     public function verifyPassword(string $plain): bool
     { 
