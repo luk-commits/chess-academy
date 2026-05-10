@@ -4,6 +4,7 @@ build/
 vendor/
 composer.lock
 package-lock.json
+.phalcon
 .env
 .env.local
 *.log
