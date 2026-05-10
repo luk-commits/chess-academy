@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ChessAcademy\Controllers;
 
-class ErrorsController extends ControllerBase
+class ErrorsController extends AbstractController
 {
     public function notFoundAction(): \Phalcon\Http\Response
     {

@@ -11,7 +11,7 @@ use Phalcon\Mvc\Dispatcher;
 class JwtMiddleware
 {
     private const PUBLIC_ROUTES = [
-        'auth' => ['login', 'register', 'preflight'],
+        'auth' => ['login', 'register', 'refresh', 'preflight'],
     ];
 
     public function __construct(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ChessAcademy\Services;
 
+use ChessAcademy\Models\RefreshToken;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Phalcon\Config\Config;
@@ -13,6 +14,7 @@ class JwtService
     private string $secret;
     private string $algorithm;
     private int $ttl;
+    private int $refreshTtl;
     private string $issuer;
 
     public function __construct(Config $config)
@@ -20,6 +22,7 @@ class JwtService
         $this->secret = (string) $config->secret;
         $this->algorithm = (string) $config->algorithm;
         $this->ttl = (int) $config->ttl;
+        $this->refreshTtl = (int) ($config->refreshTtl ?? 2592000);
         $this->issuer = (string) $config->issuer;
     }
 
@@ -50,5 +53,37 @@ class JwtService
     public function ttl(): int
     {
         return $this->ttl;
+    }
+
+    public function refreshTtl(): int
+    {
+        return $this->refreshTtl;
+    }
+
+    public function issueRefreshToken(int $userId): string
+    {
+        $plain = bin2hex(random_bytes(32));
+        $expiresAt = gmdate('Y-m-d H:i:s', time() + $this->refreshTtl);
+
+        $record = new RefreshToken();
+        $record->user_id = $userId;
+        $record->token_hash = RefreshToken::hashToken($plain);
+        $record->expires_at = $expiresAt;
+
+        if ($record->save() === false) {
+            throw new \RuntimeException('Failed to persist refresh token');
+        }
+
+        return $plain;
+    }
+
+    public function findRefreshToken(string $plain): ?RefreshToken
+    {
+        $record = RefreshToken::findFirst([
+            'conditions' => 'token_hash = :hash:',
+            'bind' => ['hash' => RefreshToken::hashToken($plain)],
+        ]);
+
+        return $record instanceof RefreshToken ? $record : null;
     }
 }

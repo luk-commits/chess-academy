@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace ChessAcademy\Controllers;
 
+use ChessAcademy\Models\RefreshToken;
 use ChessAcademy\Models\User;
 use ChessAcademy\Services\JwtService;
 
-class AuthController extends ControllerBase
+class AuthController extends AbstractController
 {
     public function loginAction(): \Phalcon\Http\Response
     {
@@ -30,9 +31,11 @@ class AuthController extends ControllerBase
 
         /** @var JwtService $jwt */
         $jwt = $this->di->getShared('jwtService');
-        $token = $jwt->issue((int) $user->id, $user->role);
+        $accessToken = $jwt->issue((int) $user->id, $user->role);
+        $refreshToken = $jwt->issueRefreshToken((int) $user->id);
 
-        $this->setSessionCookie($token, $jwt->ttl());
+        $this->setSessionCookie($accessToken, $jwt->ttl());
+        $this->setRefreshCookie($refreshToken, $jwt->refreshTtl());
 
         return $this->json([
             'user' => $user->toPublicArray(),
@@ -83,9 +86,54 @@ class AuthController extends ControllerBase
         return $this->json(['ok' => true], 201);
     }
 
+    public function refreshAction(): \Phalcon\Http\Response
+    {
+        $refreshCookieName = (string) $this->config->jwt->refreshCookieName;
+        $plain = (string) ($_COOKIE[$refreshCookieName] ?? '');
+
+        if ($plain === '') {
+            return $this->error('Missing refresh token', 401);
+        }
+
+        /** @var JwtService $jwt */
+        $jwt = $this->di->getShared('jwtService');
+        $record = $jwt->findRefreshToken($plain);
+
+        if (!$record instanceof RefreshToken || !$record->isUsable()) {
+            return $this->error('Invalid refresh token', 401);
+        }
+
+        $user = User::findFirst((int) $record->user_id);
+        if (!$user instanceof User) {
+            return $this->error('User not found', 401);
+        }
+
+        $record->revoke();
+        $newRefresh = $jwt->issueRefreshToken((int) $user->id);
+        $newAccess = $jwt->issue((int) $user->id, $user->role);
+
+        $this->setSessionCookie($newAccess, $jwt->ttl());
+        $this->setRefreshCookie($newRefresh, $jwt->refreshTtl());
+
+        return $this->json(['user' => $user->toPublicArray()]);
+    }
+
     public function logoutAction(): \Phalcon\Http\Response
     {
+        $refreshCookieName = (string) $this->config->jwt->refreshCookieName;
+        $plain = (string) ($_COOKIE[$refreshCookieName] ?? '');
+
+        if ($plain !== '') {
+            /** @var JwtService $jwt */
+            $jwt = $this->di->getShared('jwtService');
+            $record = $jwt->findRefreshToken($plain);
+            if ($record instanceof RefreshToken && $record->revoked_at === null) {
+                $record->revoke();
+            }
+        }
+
         $this->setSessionCookie('', -3600);
+        $this->setRefreshCookie('', -3600);
 
         return $this->json(['ok' => true]);
     }
@@ -109,11 +157,20 @@ class AuthController extends ControllerBase
 
     private function setSessionCookie(string $value, int $ttl): void
     {
-        $cookieName = (string) $this->config->jwt->cookieName;
+        $this->writeCookie((string) $this->config->jwt->cookieName, $value, $ttl);
+    }
+
+    private function setRefreshCookie(string $value, int $ttl): void
+    {
+        $this->writeCookie((string) $this->config->jwt->refreshCookieName, $value, $ttl);
+    }
+
+    private function writeCookie(string $name, string $value, int $ttl): void
+    {
         $isProd = ($this->config->app->env ?? 'development') === 'production';
 
-        setcookie($cookieName, $value, [
-            'expires' => $ttl > 0 ? time() + $ttl : time() + $ttl,
+        setcookie($name, $value, [
+            'expires' => time() + $ttl,
             'path' => '/',
             'domain' => '',
             'secure' => $isProd,

@@ -21,5 +21,7 @@ return [
         'ttl' => (int) (getenv('JWT_TTL') ?: 3600),
         'issuer' => 'chess-academy',
         'cookieName' => 'chess_session',
+        'refreshTtl' => (int) (getenv('JWT_REFRESH_TTL') ?: 2592000),
+        'refreshCookieName' => 'chess_refresh',
     ],
 ];
