@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { theme } from './theme';
+import { AuthProvider } from './context/AuthContext';
 
 const container = document.getElementById('root');
 if (!container) {
@@ -15,7 +16,9 @@ createRoot(container).render(
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
   </StrictMode>,
