@@ -1,0 +1,20 @@
+{
+    "name": "chess-academy/backend",
+    "description": "ChessAcademy backend API built on Phalcon",
+    "type": "project",
+    "require": {
+        "php": "^8.2",
+        "ext-phalcon": "^5.0",
+        "ext-pdo": "*",
+        "firebase/php-jwt": "^6.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "ChessAcademy\\": "app/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    }
+}

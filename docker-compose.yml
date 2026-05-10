@@ -1,0 +1,82 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: chess_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chess_academy
+      POSTGRES_USER: chess
+      POSTGRES_PASSWORD: chess_secret
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chess -d chess_academy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - chess_net
+
+  backend:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: chess_backend
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: chess_academy
+      DB_USER: chess
+      DB_PASS: chess_secret
+      JWT_SECRET: change_me_in_production_super_secret_key
+      JWT_TTL: 3600
+      APP_ENV: development
+      CORS_ORIGIN: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - chess_net
+
+  web:
+    image: nginx:1.27-alpine
+    container_name: chess_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./backend:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - chess_net
+
+  frontend:
+    image: node:20-alpine
+    container_name: chess_frontend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    networks:
+      - chess_net
+
+volumes:
+  db_data:
+
+networks:
+  chess_net:
+    driver: bridge
