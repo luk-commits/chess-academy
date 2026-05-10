@@ -9,6 +9,13 @@ export const authService = {
     });
   },
 
+  register(payload: RegisterPayload): Promise<{ ok: boolean }> {
+    return apiRequest<{ ok: boolean }, RegisterPayload>('/api/register', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
   logout(): Promise<{ ok: boolean }> {
     return apiRequest<{ ok: boolean }>('/api/logout', { method: 'POST' });
   },
@@ -17,3 +24,5 @@ export const authService = {
     return apiRequest<LoginResponse>('/api/me');
   },
 };
+
+

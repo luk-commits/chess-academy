@@ -15,21 +15,36 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import EmailIcon from '@mui/icons-material/Email';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import { useAuth } from '../hooks/useAuth';
 import { BrandHeader } from '../components/BrandHeader';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
+import { RegisterPayload } from '../types/auth';
 
-export function LoginView() {
-  const { login, loading, error, user } = useAuth();
+export function RegisterView() {
+  const { loading, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'PLAYER' | 'COACH'>('PLAYER');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await login({ email: email.trim(), password });
+            const payload: RegisterPayload = {
+      email: email.trim(),
+      password,
+      fullName,
+      role,
+    };
+    try {
+      await authService.register(payload);
+      navigate('/login');
+    } catch (err: any) {
+      console.error(err);
+    }
   };
 
   return (
@@ -48,19 +63,13 @@ export function LoginView() {
           sx={{
             p: { xs: 3, sm: 4.5 },
             borderRadius: 4,
-            backdropFilter: 'blur(8MS)',
+            backdropFilter: 'blur(8px)',
             background: 'rgba(255, 255, 255, 0.97)',
           }}
         >
           <BrandHeader />
 
-          {user && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              Zalogowano jako {user.fullName} ({user.role})
-            </Alert>
-          )}
-
-          {error && !loading && (
+          {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
@@ -68,11 +77,29 @@ export function LoginView() {
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <TextField
+              label="Imię i Nazwisko"
+              fullWidth
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              disabled={loading}
+              sx={{ mb: 2 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonOutlinedIcon color="action" fontSize="small" />
+                      </InputAdornment>
+                  ),
+                },
+              }}
+            />
+
+            <TextField
               label="Email"
               type="email"
-              autoComplete="email"
+              fullWidth
               required
-              autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -91,12 +118,12 @@ export function LoginView() {
             <TextField
               label="Hasło"
               type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
+              fullWidth
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              sx={{ mb: 3 }}
+              sx={{ mb: 2 }}
               slotProps={{
                 input: {
                   startAdornment: (
@@ -110,7 +137,6 @@ export function LoginView() {
                         onClick={() => setShowPassword((v) => !v)}
                         edge="end"
                         size="small"
-                        aria-label="toggle password visibility"
                       >
                         {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
@@ -120,15 +146,33 @@ export function LoginView() {
               }}
             />
 
+            <Box sx={{ mb: 3 }}>
+              <Button
+                onClick={() => setRole('PLAYER')}
+                variant={role === 'PLAYER' ? 'contained' : 'outlined'}
+                size="small"
+                sx={{ mr: 1 }}
+              >
+                Gracz
+              </Button>
+              <Button
+                onClick={() => setRole('COACH')}
+                variant={role === 'COACH' ? 'contained' : 'outlined'}
+                size="small"
+              >
+                Trener
+              </Button>
+            </Box>
+
             <Button
               type="submit"
               variant="contained"
               size="large"
               fullWidth
-              disabled={loading || email === '' || password === ''}
+              disabled={loading || email === '' || password === '' || fullName === ''}
               sx={{ py: 1.4, fontSize: '1rem' }}
             >
-              {loading ? 'Logowanie...' : 'Zaloguj się'}
+              {loading ? 'Rejestracja...' : 'Zarejestruj się'}
             </Button>
           </Box>
 
@@ -136,18 +180,14 @@ export function LoginView() {
 
           <Box sx={{ textAlign: 'center' }}>
             <Button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login')}
               variant="text"
               size="small"
               sx={{ textTransform: 'none' }}
             >
-              Nie masz konta? Zarejestruj się
+              Masz już konto? Zaloguj się
             </Button>
           </Box>
-
-          <Typography variant="caption" color="text.secondary" align="center" component="p" sx={{ mt: 2 }}>
-            Konta demo: coach@chess.local / player@chess.local — hasło: password123
-          </Typography>
         </Paper>
       </Container>
     </Box>

@@ -12,6 +12,13 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  fullName: string;
+  role: UserRole;
+}
+
 export interface LoginResponse {
   user: AuthUser;
 }
