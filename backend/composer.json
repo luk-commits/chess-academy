@@ -8,10 +8,21 @@
         "ext-pdo": "*",
         "firebase/php-jwt": "^7.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
     "autoload": {
         "psr-4": {
             "ChessAcademy\\": "app/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ChessAcademy\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
     },
     "config": {
         "sort-packages": true,
