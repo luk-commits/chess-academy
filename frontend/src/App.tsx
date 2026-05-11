@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginView } from './views/LoginView';
 import { RegisterView } from './views/RegisterView';
 import { HomeView } from './views/HomeView';
+import { RequireAuth } from './components/RequireAuth';
 
 export default function App() {
   return (
@@ -9,7 +10,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/register" element={<RegisterView />} />
       <Route path="/login" element={<LoginView />} />
-      <Route path="/home" element={<HomeView />} />
+      <Route path="/home" element={<RequireAuth><HomeView /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

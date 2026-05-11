@@ -1,21 +1,10 @@
-import { Box, Container, Paper, Typography, Alert } from '@mui/material';
+import { Box, Container, Paper, Typography } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 import { BrandHeader } from '../components/BrandHeader';
 
 export function HomeView() {
   const { user } = useAuth();
-
-  if (!user) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6">Proszę zalogować się, aby zobaczyć treść.</Typography>
-      </Box>
-    );
-  }
-
-  const welcomeMessage = user.role === 'COACH' 
-    ? `Witaj, Treflerze ${user.fullName}! Przygotuj swoje lekcje i sprawdź postępy swoich uczniów.`
-    : `Witaj, Graczu ${user.fullName}! Czas na kolejną partię szachów. Sprawdź swoje rankingi!`;
+  if (!user) return null;
 
   return (
     <Box
