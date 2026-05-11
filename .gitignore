@@ -4,6 +4,7 @@ build/
 vendor/
 composer.lock
 package-lock.json
+frontend/test-results/
 frontend/playwright-report/
 .phalcon
 .env
