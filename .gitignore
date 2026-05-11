@@ -12,4 +12,4 @@ frontend/playwright-report/
 *.log
 .DS_Store
 .idea/
-.vscode/
+.vscode/\nfrontend/test-results/*.json
