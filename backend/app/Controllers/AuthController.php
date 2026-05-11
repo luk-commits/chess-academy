@@ -86,6 +86,11 @@ class AuthController extends AbstractController
         return $this->json(['ok' => true], 201);
     }
 
+    /**
+     * Refresh token rotation: revoke the old token and issue a new pair.
+     * Rotation limits the window of exposure if a refresh token is stolen:
+     * the old token becomes invalid immediately, and only the new one can be used.
+     */
     public function refreshAction(): \Phalcon\Http\Response
     {
         $refreshCookieName = (string) $this->config->jwt->refreshCookieName;
@@ -165,6 +170,13 @@ class AuthController extends AbstractController
         $this->writeCookie((string) $this->config->jwt->refreshCookieName, $value, $ttl);
     }
 
+    /**
+     * Set an HttpOnly cookie for token storage.
+     * Using HttpOnly + SameSite prevents XSS and CSRF attacks:
+     * - HttpOnly: JavaScript cannot read the token
+     * - SameSite=Strict (prod) / Lax (dev): mitigates CSRF
+     * - Secure: only sent over HTTPS in production
+     */
     private function writeCookie(string $name, string $value, int $ttl): void
     {
         $isProd = ($this->config->app->env ?? 'development') === 'production';

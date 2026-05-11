@@ -8,8 +8,17 @@ use ChessAcademy\Services\JwtService;
 use Phalcon\Events\Event;
 use Phalcon\Mvc\Dispatcher;
 
+/**
+ * Protects API routes by verifying a JWT on every request.
+ * Public routes (login, register, refresh, preflight) bypass verification.
+ * The token can be provided via HttpOnly cookie (preferred) or Authorization header.
+ */
 class JwtMiddleware
 {
+    /**
+     * Routes that do not require authentication.
+     * CORS preflight OPTIONS requests must also be public.
+     */
     private const PUBLIC_ROUTES = [
         'auth' => ['login', 'register', 'refresh', 'preflight'],
     ];
@@ -20,6 +29,14 @@ class JwtMiddleware
     ) {
     }
 
+    /**
+     * Runs before every controller action.
+     * If the route is public, execution continues immediately.
+     * Otherwise, a valid JWT must be present — either in an HttpOnly cookie
+     * (set on login) or an Authorization: Bearer header.
+     * On success, the decoded user ID and role are injected as dispatcher params
+     * so controllers do not need to parse the token again.
+     */
     public function beforeExecuteRoute(Event $event, Dispatcher $dispatcher): bool
     {
         $controller = strtolower($dispatcher->getControllerName());
@@ -45,6 +62,10 @@ class JwtMiddleware
         return true;
     }
 
+    /**
+     * Extract JWT from HttpOnly cookie first (primary method), falling back
+     * to Authorization: Bearer header (useful for testing or mobile clients).
+     */
     private function extractToken(): ?string
     {
         if (!empty($_COOKIE[$this->cookieName])) {

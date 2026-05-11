@@ -22,6 +22,13 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { RegisterPayload } from '../types/auth';
 
+/**
+ * Registration form with two-layer validation:
+ * 1. Client-side: password confirmation matching + required field check.
+ *    The submit button is disabled until all fields are valid.
+ * 2. Server-side: the API validates email uniqueness, role values, etc.
+ *    Server errors are displayed in an inline Alert.
+ */
 export function RegisterView() {
   const { loading } = useAuth();
   const [email, setEmail] = useState('');

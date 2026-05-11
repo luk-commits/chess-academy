@@ -18,6 +18,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * On mount, attempt to restore the session by calling GET /api/me.
+   * If the HttpOnly cookie still contains a valid JWT, the server returns the user.
+   * The `cancelled` flag prevents state updates after the component unmounts
+   * (avoids React warning about setState on unmounted component).
+   */
   useEffect(() => {
     let cancelled = false;
     authService
@@ -36,6 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  /**
+   * Login: call the API, set user state optimistically on success,
+   * or extract the server error message and expose it via `error` state.
+   * The actual JWT is stored as an HttpOnly cookie by the server — the frontend
+   * never reads the token directly.
+   */
   const login = useCallback(async (payload: LoginPayload): Promise<AuthUser | null> => {
     setLoading(true);
     setError(null);

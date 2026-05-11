@@ -9,6 +9,15 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Phalcon\Config\Config;
 
+/**
+ * Dual-token authentication strategy:
+ * - Short-lived JWT access token (signed, self-contained, stored in HttpOnly cookie)
+ * - Long-lived opaque refresh token (stored hashed in DB, supports rotation and revocation)
+ *
+ * The JWT carries user identity so API resources can authenticate without a DB lookup.
+ * The refresh token is opaque (random bytes), hashed with SHA-256 in the database,
+ * so a leaked DB does not expose active tokens.
+ */
 class JwtService
 {
     private string $secret;
@@ -26,6 +35,11 @@ class JwtService
         $this->issuer = (string) $config->issuer;
     }
 
+    /**
+     * Issue a signed JWT containing user ID and role.
+     * The token is short-lived (configurable TTL, default 1 hour) so no server-side
+     * session storage is needed.
+     */
     public function issue(int $userId, string $role): string
     {
         $now = time();
@@ -40,6 +54,10 @@ class JwtService
         return JWT::encode($payload, $this->secret, $this->algorithm);
     }
 
+    /**
+     * Verify and decode a JWT.
+     * Returns null instead of throwing so callers always handle failure the same way.
+     */
     public function verify(string $token): ?array
     {
         try {
@@ -60,6 +78,12 @@ class JwtService
         return $this->refreshTtl;
     }
 
+    /**
+     * Generate a new opaque refresh token.
+     * Only the SHA-256 hash is stored in the database; the plaintext value is returned
+     * to the caller and set as an HttpOnly cookie. This means a DB leak does not reveal
+     * active tokens.
+     */
     public function issueRefreshToken(int $userId): string
     {
         $plain = bin2hex(random_bytes(32));
@@ -77,6 +101,10 @@ class JwtService
         return $plain;
     }
 
+    /**
+     * Look up a refresh token by its plaintext value.
+     * The lookup is done via SHA-256 hash, so the plaintext is never stored or logged.
+     */
     public function findRefreshToken(string $plain): ?RefreshToken
     {
         $record = RefreshToken::findFirst([

@@ -39,6 +39,12 @@ $container->setShared('jwtService', function () use ($container): JwtService {
     return new JwtService($container->getShared('config')->jwt);
 });
 
+/**
+ * Wire up middleware through Phalcon's event manager.
+ * Execution order for each request:
+ * 1. CorsMiddleware (application:beforeHandleRequest) — sets CORS headers early
+ * 2. JwtMiddleware (dispatch:beforeExecuteRoute) — authenticates before controller runs
+ */
 $container->setShared('eventsManager', function () use ($container): EventsManager {
     $manager = new EventsManager();
     $config = $container->getShared('config');
