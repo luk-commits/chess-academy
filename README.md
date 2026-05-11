@@ -39,16 +39,27 @@ Po starcie:
 Aby uruchomić testy w środowisku Docker, możesz użyć następujących komend:
 
 ### Backend (Phalcon API)
-Uruchomienie testu jednostkowego dla konkretnej klasy:
-\`\`\`bash
-docker compose exec backend composer test -- tests/Unit/JwtServiceTest.php
-\`\`\`
+Uruchomienie wszystkich testów dla backend:
+```bash
+docker exec chess_backend php vendor/bin/phpunit
+# Tylko Unit
+docker exec chess_backend php vendor/bin/phpunit --testsuite="Backend Unit Tests"
+# Tylko Integration
+docker exec chess_backend php vendor/bin/phpunit --testsuite="Backend Integration Tests"
+# Tylko Feature
+docker exec chess_backend php vendor/bin/phpunit --testsuite="Backend Feature Tests"
+# Tylko E2E (wymaga działającej aplikacji)
+docker exec chess_backend php vendor/bin/phpunit --testsuite="Backend E2E Tests"
+```
 
 ### Frontend (React/Playwright)
-\`\`\`bash
-# Uruchomienie testu dla formularza rejestracji dla E2E z Playwright
+
+W celu uruchomienia testu E2E dla formularza rejestracji użyj poniższej komendy:
+
+```bash
 docker compose exec frontend npx playwright test tests/register.spec.ts
-\`\`\`
+```
+
 
 ## Struktura
 

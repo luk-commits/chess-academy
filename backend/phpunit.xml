@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php" colors="true" cacheDirectory=".phpunit.cache">
+<phpunit bootstrap="tests/bootstrap.php" colors="true" cacheDirectory=".phpunit.cache">
     <testsuites>
         <testsuite name="Backend Unit Tests">
             <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Backend Integration Tests">
+            <directory>tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Backend Feature Tests">
+            <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Backend E2E Tests">
+            <directory>tests/E2E</directory>
         </testsuite>
     </testsuites>
 </phpunit>
