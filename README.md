@@ -34,6 +34,22 @@ Po starcie:
 - `POST /api/logout` - wygaszenie sesji
 - `GET  /api/me` - aktualnie zalogowany użytkownik (wymaga ciasteczka)
 
+## Testy
+
+Aby uruchomić testy w środowisku Docker, możesz użyć następujących komend:
+
+### Backend (Phalcon API)
+Uruchomienie testu jednostkowego dla konkretnej klasy:
+\`\`\`bash
+docker compose exec backend composer test -- tests/Unit/JwtServiceTest.php
+\`\`\`
+
+### Frontend (React/Playwright)
+\`\`\`bash
+# Uruchomienie testu dla formularza rejestracji dla E2E z Playwright
+docker compose exec frontend npx playwright test tests/register.spec.ts
+\`\`\`
+
 ## Struktura
 
 ```
