@@ -80,18 +80,21 @@ test.describe('Formularz Rejestracji', () => {
     await page.goto('/register');
     await fillValidForm(page, { password: 'Ab1!', confirm: 'Ab1!' });
     await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
-  });
-
-  test('przycisk submit jest nieaktywny gdy hasło nie zawiera małej litery', async ({ page }) => {
-    await page.goto('/register');
-    await fillValidForm(page, { password: 'PASSWORD123!', confirm: 'PASSWORD123!' });
-    await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
+    await expect(page.getByText('Hasło musi mieć co najmniej 8 znaków').first()).toBeVisible();
   });
 
   test('przycisk submit jest nieaktywny gdy hasło nie zawiera dużej litery', async ({ page }) => {
     await page.goto('/register');
     await fillValidForm(page, { password: 'password123!', confirm: 'password123!' });
     await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 dużą literę').first()).toBeVisible();
+  });
+
+  test('przycisk submit jest nieaktywny gdy hasło nie zawiera małej litery', async ({ page }) => {
+    await page.goto('/register');
+    await fillValidForm(page, { password: 'PASSWORD123!', confirm: 'PASSWORD123!' });
+    await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 małą literę').first()).toBeVisible();
   });
 
   test('przycisk submit jest aktywny gdy wszystkie pola są poprawnie wypełnione', async ({ page }) =>
@@ -99,6 +102,36 @@ test.describe('Formularz Rejestracji', () => {
     await page.goto('/register');
     await fillValidForm(page);
     await expect(page.locator(SUBMIT_BTN)).toBeEnabled();
+  });
+
+  test('przycisk submit jest nieaktywny gdy email jest nieprawidlowy', async ({ page }) => {
+    await page.goto('/register');
+    await fillName(page, 'Jan Kowalski');
+    await fillEmail(page, 'invalid-email');
+    await fillPassword(page, 'Password123!');
+    await fillConfirmPassword(page, 'Password123!');
+    await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
+  });
+
+  // --- Walidacja email ---
+
+  test('wyswietla sie komunikat o nieprawidlowym adresie email', async ({ page }) => {
+    await page.goto('/register');
+    await fillEmail(page, 'invalid-email');
+    await expect(page.getByText('Nieprawidłowy adres email').first()).toBeVisible();
+  });
+
+  test('komunikat o nieprawidlowym emailu znika po podaniu poprawnego emaila', async ({ page }) => {
+    await page.goto('/register');
+    await fillEmail(page, 'invalid-email');
+    await expect(page.getByText('Nieprawidłowy adres email').first()).toBeVisible();
+    await fillEmail(page, 'valid@chess.local');
+    await expect(page.getByText('Nieprawidłowy adres email').first()).not.toBeVisible();
+  });
+
+  test('komunikat o nieprawidlowym emailu nie pojawia sie gdy pole jest puste', async ({ page }) => {
+    await page.goto('/register');
+    await expect(page.getByText('Nieprawidłowy adres email').first()).not.toBeVisible();
   });
 
   // --- Walidacja zgodności haseł ---
@@ -130,6 +163,50 @@ test.describe('Formularz Rejestracji', () => {
     await expect(page.getByText('Hasła nie są identyczne').first()).toBeVisible();
     await fillConfirmPassword(page, 'Password123!');
     await expect(page.getByText('Hasła nie są identyczne').first()).not.toBeVisible();
+  });
+
+  // --- Walidacja haseł na żywo (live) ---
+
+  test('live: za krótkie hasło wyświetla komunikat o min 8 znakach', async ({ page }) => {
+    await page.goto('/register');
+    await fillPassword(page, 'Ab1!');
+    await expect(page.getByText('Hasło musi mieć co najmniej 8 znaków').first()).toBeVisible();
+  });
+
+  test('live: hasło bez dużej litery wyświetla odpowiedni komunikat', async ({ page }) => {
+    await page.goto('/register');
+    await fillPassword(page, 'password123!');
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 dużą literę').first()).toBeVisible();
+  });
+
+  test('live: hasło bez małej litery wyświetla odpowiedni komunikat', async ({ page }) => {
+    await page.goto('/register');
+    await fillPassword(page, 'PASSWORD123!');
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 małą literę').first()).toBeVisible();
+  });
+
+  test('live: komunikat o małej literze znika po dodaniu małej litery', async ({ page }) => {
+    await page.goto('/register');
+    await fillPassword(page, 'PASSWORD123!');
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 małą literę').first()).toBeVisible();
+    await fillPassword(page, 'Password123!');
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 małą literę').first()).not.toBeVisible();
+  });
+
+  test('live: komunikat o dużej literze znika po dodaniu dużej litery', async ({ page }) => {
+    await page.goto('/register');
+    await fillPassword(page, 'password123!');
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 dużą literę').first()).toBeVisible();
+    await fillPassword(page, 'Password123!');
+    await expect(page.getByText('Hasło musi zawierać co najmniej 1 dużą literę').first()).not.toBeVisible();
+  });
+
+  test('live: komunikat o min 8 znakach znika po wydłużeniu hasła', async ({ page }) => {
+    await page.goto('/register');
+    await fillPassword(page, 'Ab1!');
+    await expect(page.getByText('Hasło musi mieć co najmniej 8 znaków').first()).toBeVisible();
+    await fillPassword(page, 'Abcdef12!');
+    await expect(page.getByText('Hasło musi mieć co najmniej 8 znaków').first()).not.toBeVisible();
   });
 
   // --- Atrybuty pól ---
@@ -256,6 +333,28 @@ test.describe('Formularz Rejestracji', () => {
     await fillConfirmPassword(page, 'Password123!');
     await page.locator(SUBMIT_BTN).click();
     await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page).not.toHaveURL(/\/login/);
+  });
+
+  test('rejestracja na istniejące konto demo (coach@chess.local) wyświetla błąd', async ({ page }) => {
+    await page.goto('/register');
+    await fillName(page, 'Coach Demo');
+    await fillEmail(page, 'coach@chess.local');
+    await fillPassword(page, 'Password123!');
+    await fillConfirmPassword(page, 'Password123!');
+    await page.locator(SUBMIT_BTN).click();
+    await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
+    await expect(page).not.toHaveURL(/\/login/);
+  });
+
+  test('rejestracja na istniejące konto demo (player@chess.local) wyświetla błąd', async ({ page }) => {
+    await page.goto('/register');
+    await fillName(page, 'Player Demo');
+    await fillEmail(page, 'player@chess.local');
+    await fillPassword(page, 'Password123!');
+    await fillConfirmPassword(page, 'Password123!');
+    await page.locator(SUBMIT_BTN).click();
+    await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
     await expect(page).not.toHaveURL(/\/login/);
   });
 
