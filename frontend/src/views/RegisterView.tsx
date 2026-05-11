@@ -45,6 +45,8 @@ export function RegisterView() {
   const hasNoUppercase = password.length > 0 && !/[A-Z]/.test(password);
   const hasNoLowercase = password.length > 0 && !/[a-z]/.test(password);
   const isPasswordInvalid = isPasswordTooShort || hasNoUppercase || hasNoLowercase;
+  const isEmailInvalid = email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const emailErrorMessage = isEmailInvalid ? 'Nieprawidłowy adres email' : '';
   const passwordValidationMessage =
     password.length === 0
       ? ''
@@ -57,7 +59,7 @@ export function RegisterView() {
             : '';
 
   const isFormValid =
-    email.trim() !== '' && password !== '' && fullName.trim() !== '' && passwordsMatch && !isPasswordInvalid;
+    email.trim() !== '' && password !== '' && fullName.trim() !== '' && passwordsMatch && !isPasswordInvalid && !isEmailInvalid;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -132,6 +134,8 @@ export function RegisterView() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
+              error={isEmailInvalid}
+              helperText={emailErrorMessage}
               sx={{ mb: 2 }}
               slotProps={{
                 input: {
