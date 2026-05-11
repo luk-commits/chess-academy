@@ -9,7 +9,6 @@ import {
   InputAdornment,
   Paper,
   TextField,
-  Typography,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -42,7 +41,23 @@ export function RegisterView() {
 
   const passwordsMatch = password === confirmPassword && confirmPassword !== '';
   const isPasswordMismatch = confirmPassword !== '' && password !== confirmPassword;
-  const isFormValid = email !== '' && password !== '' && fullName !== '' && passwordsMatch;
+  const isPasswordTooShort = password.length > 0 && password.length < 8;
+  const hasNoUppercase = password.length > 0 && !/[A-Z]/.test(password);
+  const hasNoLowercase = password.length > 0 && !/[a-z]/.test(password);
+  const isPasswordInvalid = isPasswordTooShort || hasNoUppercase || hasNoLowercase;
+  const passwordValidationMessage =
+    password.length === 0
+      ? ''
+      : isPasswordTooShort
+        ? 'Hasło musi mieć co najmniej 8 znaków'
+        : hasNoUppercase
+          ? 'Hasło musi zawierać co najmniej 1 dużą literę'
+          : hasNoLowercase
+            ? 'Hasło musi zawierać co najmniej 1 małą literę'
+            : '';
+
+  const isFormValid =
+    email.trim() !== '' && password !== '' && fullName.trim() !== '' && passwordsMatch && !isPasswordInvalid;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -137,8 +152,8 @@ export function RegisterView() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              error={isPasswordMismatch}
-              helperText={isPasswordMismatch ? "Hasła nie są identyczne" : ""}
+              error={Boolean(passwordValidationMessage)}
+              helperText={passwordValidationMessage}
               sx={{ mb: 2 }}
               slotProps={{
                 input: {
@@ -171,7 +186,7 @@ export function RegisterView() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
               error={isPasswordMismatch}
-              helperText={isPasswordMismatch ? "Hasła nie są identyczne" : ""}
+              helperText={isPasswordMismatch ? 'Hasła nie są identyczne' : ''}
               sx={{ mb: 2 }}
               slotProps={{
                 input: {
