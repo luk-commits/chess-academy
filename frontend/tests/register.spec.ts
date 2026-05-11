@@ -67,7 +67,7 @@ test.describe('Formularz Rejestracji', () => {
     await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
   });
 
-  test('przycisk submit jest nieaktywny gdy hasła się nie zgadzają', async ({ page }) => {
+    test('przycisk submit jest nieaktywny gdy hasła się nie zgadzają', async ({ page }) => {
     await page.goto('/register');
     await fillName(page, 'Jan Kowalski');
     await fillEmail(page, 'jan@chess.local');
@@ -76,7 +76,26 @@ test.describe('Formularz Rejestracji', () => {
     await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
   });
 
-  test('przycisk submit jest aktywny gdy wszystkie pola są poprawnie wypełnione', async ({ page }) => {
+  test('przycisk submit jest nieaktywny gdy hasło jest za krótkie', async ({ page }) => {
+    await page.goto('/register');
+    await fillValidForm(page, { password: 'Ab1!', confirm: 'Ab1!' });
+    await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
+  });
+
+  test('przycisk submit jest nieaktywny gdy hasło nie zawiera małej litery', async ({ page }) => {
+    await page.goto('/register');
+    await fillValidForm(page, { password: 'PASSWORD123!', confirm: 'PASSWORD123!' });
+    await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
+  });
+
+  test('przycisk submit jest nieaktywny gdy hasło nie zawiera dużej litery', async ({ page }) => {
+    await page.goto('/register');
+    await fillValidForm(page, { password: 'password123!', confirm: 'password123!' });
+    await expect(page.locator(SUBMIT_BTN)).toBeDisabled();
+  });
+
+  test('przycisk submit jest aktywny gdy wszystkie pola są poprawnie wypełnione', async ({ page }) =>
+ {
     await page.goto('/register');
     await fillValidForm(page);
     await expect(page.locator(SUBMIT_BTN)).toBeEnabled();
