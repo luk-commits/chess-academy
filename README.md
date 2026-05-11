@@ -52,12 +52,23 @@ docker exec chess_backend php vendor/bin/phpunit --testsuite="Backend Feature Te
 docker exec chess_backend php vendor/bin/phpunit --testsuite="Backend E2E Tests"
 ```
 
-### Frontend (React/Playwright)
+### Frontend (React/Playwright + Vitest)
 
-W celu uruchomienia testu E2E dla formularza rejestracji użyj poniższej komendy:
+#### E2E (Playwright)
 
 ```bash
-docker compose exec frontend npx playwright test tests/register.spec.ts
+docker compose exec frontend npx playwright test tests/E2E/register.spec.ts
+docker compose exec frontend npx playwright test tests/E2E/login.spec.ts
+docker compose exec frontend npx playwright test tests/E2E   # wszystkie E2E
+```
+
+#### Unit & Integration (Vitest + Testing Library)
+
+```bash
+docker compose exec frontend npx vitest run                     # wszystkie
+docker compose exec frontend npx vitest run tests/unit          # tylko jednostkowe
+docker compose exec frontend npx vitest run tests/integration   # tylko integracyjne
+docker compose exec frontend npx vitest                         # tryb watch
 ```
 
 
