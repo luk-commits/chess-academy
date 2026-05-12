@@ -33,6 +33,11 @@ $container->setShared('router', function (): Router {
         'action' => 'me',
     ]);
 
+    $router->addGet('/api/coach/positions', [
+        'controller' => 'positions',
+        'action' => 'index',
+    ]);
+
     $router->addOptions('/api/{path:.+}', [
         'controller' => 'auth',
         'action' => 'preflight',
