@@ -1,5 +1,6 @@
 import { apiRequest } from './api';
 import type { LoginPayload, LoginResponse } from '../types/auth';
+import type { RegisterPayload } from '../types/auth';
 
 export const authService = {
   login(payload: LoginPayload): Promise<LoginResponse> {
@@ -24,5 +25,4 @@ export const authService = {
     return apiRequest<LoginResponse>('/api/me');
   },
 };
-
 

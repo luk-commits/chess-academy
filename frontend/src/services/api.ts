@@ -24,15 +24,20 @@ export async function apiRequest<TResponse, TBody = unknown>(
   path: string,
   options: { method?: string; body?: TBody } = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const requestInit: RequestInit = {
     method: options.method ?? 'GET',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  };
+
+  if (options.body !== undefined) {
+    requestInit.body = JSON.stringify(options.body);
+  }
+
+  const response = await fetch(`${API_URL}${path}`, requestInit);
 
   const text = await response.text();
   const data = text ? (JSON.parse(text) as unknown) : null;
