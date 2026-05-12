@@ -5,7 +5,7 @@ namespace ChessAcademy\Models;
 use Phalcon\Filter\Validation;
 use Phalcon\Filter\Validation\Validator\Email as EmailValidator;
 
-class UserModel extends \Phalcon\Mvc\Model
+class UserModel extends AbstractModel
 {
 
     /**
@@ -79,6 +79,9 @@ class UserModel extends \Phalcon\Mvc\Model
     {
         $this->setSchema("public");
         $this->setSource("users");
+        $this->hasMany('id', 'ChessAcademy\Models\PgnGames', 'created_by_user_id', ['alias' => 'PgnGames']);
+        $this->hasMany('id', 'ChessAcademy\Models\Positions', 'created_by_user_id', ['alias' => 'Positions']);
+        $this->hasMany('id', 'ChessAcademy\Models\RefreshTokens', 'user_id', ['alias' => 'RefreshTokens']);
     }
 
     /**
