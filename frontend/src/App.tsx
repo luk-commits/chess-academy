@@ -18,9 +18,9 @@ export default function App() {
       <Route path="/home" element={<RequireAuth><HomeView /></RequireAuth>}>
         <Route path="player/lessons" element={<PlayerLessonsView />} />
         <Route path="coach/lessons" element={<CoachLessonsView />} />
-        <Route path="coaches" element={<CoachesView />} />
-        <Route path="players" element={<PlayersView />} />
-        <Route path="positions" element={<PositionsView />} />
+        <Route path="player/coaches" element={<CoachesView />} />
+        <Route path="coach/players" element={<PlayersView />} />
+        <Route path="coach/positions" element={<PositionsView />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

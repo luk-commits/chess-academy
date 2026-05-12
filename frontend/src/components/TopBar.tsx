@@ -43,12 +43,12 @@ export function TopBar() {
   const navItems: NavItem[] = user.role === 'PLAYER'
     ? [
         { label: 'Lekcje', path: '/home/player/lessons' },
-        { label: 'Trenerzy', path: '/home/coaches' },
+        { label: 'Trenerzy', path: '/home/player/coaches' },
       ]
     : [
         { label: 'Lekcje', path: '/home/coach/lessons' },
-        { label: 'Zawodnicy', path: '/home/players' },
-        { label: 'Pozycje', path: '/home/positions' },
+        { label: 'Zawodnicy', path: '/home/coach/players' },
+        { label: 'Pozycje', path: '/home/coach/positions' },
       ];
 
   const isActive = (path: string) => location.pathname === path;
