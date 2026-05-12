@@ -21,14 +21,14 @@ CREATE TABLE IF NOT EXISTS positions (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     fen                 VARCHAR(255) NOT NULL,
     description         TEXT,
-    opening_eco         VARCHAR(10),
+    opening             VARCHAR(255),
+    other_id            VARCHAR(50),
     pieces              JSONB,
     type                VARCHAR(50),
     difficulty          INTEGER,
     evaluation_mate     INTEGER,
     theme_tags          JSONB,
     material_balance    INTEGER,
-    source_type         VARCHAR(50),
     source_pgn_id       BIGINT REFERENCES pgn_games(id) ON DELETE SET NULL,
     is_puzzle           BOOLEAN DEFAULT FALSE,
     is_study_position   BOOLEAN DEFAULT FALSE,
@@ -45,23 +45,21 @@ CREATE TABLE IF NOT EXISTS positions (
     prev_move        VARCHAR(10),
     popularity          INTEGER DEFAULT 0,
     rating              INTEGER,
-    lichess_study_id    VARCHAR(50),
-    chesscom_game_id    VARCHAR(50),
+    other_game_id       VARCHAR(50),
     game_phase          VARCHAR(20),
     king_safety_score   INTEGER,
     space_advantage     INTEGER,
     initiative_side     VARCHAR(5),
-    engine_top_lines    JSONB
+    engine_top_lines    JSONB,
+    CONSTRAINT uq_positions_fen UNIQUE (fen)
 );
 
-CREATE INDEX idx_positions_fen ON positions(fen);
 CREATE INDEX idx_positions_source_pgn_id ON positions(source_pgn_id);
 CREATE INDEX idx_positions_created_by_user_id ON positions(created_by_user_id);
 CREATE INDEX idx_positions_is_puzzle ON positions(is_puzzle);
-CREATE INDEX idx_positions_opening_eco ON positions(opening_eco);
+CREATE INDEX idx_positions_opening ON positions(opening);
 CREATE INDEX idx_positions_type ON positions(type);
 CREATE INDEX idx_positions_difficulty ON positions(difficulty);
 CREATE INDEX idx_positions_rating ON positions(rating);
 CREATE INDEX idx_positions_game_phase ON positions(game_phase);
-CREATE INDEX idx_positions_lichess_study_id ON positions(lichess_study_id);
-CREATE INDEX idx_positions_chesscom_game_id ON positions(chesscom_game_id);
+CREATE INDEX idx_positions_other_game_id ON positions(other_game_id);

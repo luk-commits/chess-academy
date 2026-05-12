@@ -14,3 +14,4 @@ frontend/playwright-report/
 .idea/
 .vscode/\nfrontend/test-results/*.json
 backend/.phpunit.cache/
+backend/imports
