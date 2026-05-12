@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         php8.3-phalcon5 \
         git \
         unzip \
+        zstd \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/php \
     && sed -i 's|^listen = .*|listen = 9000|' /etc/php/8.3/fpm/pool.d/www.conf \
