@@ -20,6 +20,31 @@ services:
     networks:
       - chess_net
 
+  migrator:
+    image: postgres:16-alpine
+    container_name: chess_migrator
+
+    environment:
+      PGHOST: db
+      PGUSER: chess
+      PGPASSWORD: chess_secret
+      PGDATABASE: chess_academy
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        for f in /migrations/*.sql; do
+          echo \"Applying: \$f\";
+          psql -f \"\$f\" || exit 1;
+        done;
+        echo 'All migrations applied successfully';
+      "
+    networks:
+      - chess_net
+
   backend:
     build:
       context: ./docker/php
@@ -40,8 +65,8 @@ services:
       APP_ENV: development
       CORS_ORIGIN: http://localhost:5173
     depends_on:
-      db:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     networks:
       - chess_net
 
