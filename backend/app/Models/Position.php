@@ -6,4 +6,10 @@ namespace ChessAcademy\Models;
 
 class Position extends PositionModel
 {
+    public function initialize()
+    {
+        parent::initialize();
+        $this->skipAttributesOnCreate(['id']);
+        $this->skipAttributesOnUpdate(['id']);
+    }
 }

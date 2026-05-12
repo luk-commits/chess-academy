@@ -27,7 +27,13 @@ class PositionModel extends AbstractModel
      *
      * @var string
      */
-    public $opening_eco;
+    public $opening;
+
+    /**
+     *
+     * @var string
+     */
+    public $other_id;
 
     /**
      *
@@ -64,12 +70,6 @@ class PositionModel extends AbstractModel
      * @var integer
      */
     public $material_balance;
-
-    /**
-     *
-     * @var string
-     */
-    public $source_type;
 
     /**
      *
@@ -171,13 +171,7 @@ class PositionModel extends AbstractModel
      *
      * @var string
      */
-    public $lichess_study_id;
-
-    /**
-     *
-     * @var string
-     */
-    public $chesscom_game_id;
+    public $other_game_id;
 
     /**
      *
