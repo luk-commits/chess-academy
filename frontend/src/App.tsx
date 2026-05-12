@@ -2,6 +2,11 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginView } from './views/LoginView';
 import { RegisterView } from './views/RegisterView';
 import { HomeView } from './views/HomeView';
+import { PlayerLessonsView } from './views/Player/PlayerLessonsView';
+import { CoachesView } from './views/Player/CoachesView';
+import { CoachLessonsView } from './views/Coach/CoachLessonsView';
+import { PlayersView } from './views/Coach/PlayersView';
+import { PositionsView } from './views/Coach/PositionsView';
 import { RequireAuth } from './components/RequireAuth';
 
 export default function App() {
@@ -10,7 +15,13 @@ export default function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/register" element={<RegisterView />} />
       <Route path="/login" element={<LoginView />} />
-      <Route path="/home" element={<RequireAuth><HomeView /></RequireAuth>} />
+      <Route path="/home" element={<RequireAuth><HomeView /></RequireAuth>}>
+        <Route path="player/lessons" element={<PlayerLessonsView />} />
+        <Route path="coach/lessons" element={<CoachLessonsView />} />
+        <Route path="coaches" element={<CoachesView />} />
+        <Route path="players" element={<PlayersView />} />
+        <Route path="positions" element={<PositionsView />} />
+      </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
