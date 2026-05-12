@@ -153,7 +153,7 @@ class PositionModel extends AbstractModel
      *
      * @var string
      */
-    public $earlier_move;
+    public $prev_move;
 
     /**
      *

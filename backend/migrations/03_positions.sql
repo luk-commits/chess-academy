@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS positions (
     created_at          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     board_orientation   VARCHAR(5),
-    earlier_move        VARCHAR(10),
+    prev_move        VARCHAR(10),
     popularity          INTEGER DEFAULT 0,
     rating              INTEGER,
     lichess_study_id    VARCHAR(50),
