@@ -12,8 +12,10 @@ import {
   Pagination,
   Paper,
   Snackbar,
+  Switch,
   Tab,
   Tabs,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -528,7 +530,6 @@ export function PositionsView() {
               width: 260,
               display: { xs: 'none', lg: 'flex' },
               flexDirection: 'column',
-              gap: 2,
               position: 'sticky',
               top: 88,
               alignSelf: 'flex-start',
@@ -537,56 +538,8 @@ export function PositionsView() {
               flexShrink: 0,
             }}
           >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
-                  onClick={handleCreateTask}
-                >
-                  {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
-                </Button>
-                <FormControlLabel
-                  control={
-                    <SelfStatedCheckbox
-                      size="small"
-                      defaultChecked={true}
-                      onCommit={(c) => { publishDefaultRef.current = c; }}
-                    />
-                  }
-                  label="Opublikuj"
-                />
-              </Box>
-
-              {selectedPositionCount > 0 && selectedGroupCount > 0 && (
-                <Alert severity="success" sx={{ py: 0.5 }}>
-                  Gotowe ({selectedPositionCount} pozycji, {selectedGroupCount} grup)
-                </Alert>
-              )}
-
-              {selectedPositionCount === 0 && selectedGroupCount > 0 && (
-                <Alert severity="warning" sx={{ py: 0.5 }}>
-                  Wybierz przynajmniej jedną pozycję
-                </Alert>
-              )}
-
-              {selectedPositionCount > 0 && selectedGroupCount === 0 && (
-                <Alert severity="warning" sx={{ py: 0.5 }}>
-                  Wybierz przynajmniej jednego zawodnika/klasę
-                </Alert>
-              )}
-
-              {selectedPositionCount === 0 && selectedGroupCount === 0 && (
-                <Alert severity="info" sx={{ py: 0.5 }}>
-                  Wybierz pozycje oraz zawodnika/klasę
-                </Alert>
-              )}
-            </Box>
-
-            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5 }}>
+            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5, textAlign: 'center' }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Zawodnicy</Typography>
               </Box>
               <Box sx={{ p: 2, maxHeight: 200, overflowY: 'auto' }}>
@@ -614,8 +567,8 @@ export function PositionsView() {
               </Box>
             </Paper>
 
-            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5 }}>
+            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden', mt: 2 }}>
+              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5, textAlign: 'center' }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Klasy</Typography>
               </Box>
               <Box sx={{ p: 2, maxHeight: 200, overflowY: 'auto' }}>
@@ -642,7 +595,47 @@ export function PositionsView() {
                 )}
               </Box>
             </Paper>
+
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 2 }}>
+              <Button
+                variant="contained"
+                fullWidth
+                disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
+                onClick={handleCreateTask}
+              >
+                {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+              </Button>
+              <Tooltip title="Opublikuj">
+                <Switch
+                  defaultChecked
+                  onChange={(_, checked) => { publishDefaultRef.current = checked; }}
+                />
+              </Tooltip>
             </Box>
+
+            {selectedPositionCount > 0 && selectedGroupCount > 0 && (
+              <Alert severity="success" sx={{ py: 0.5 }}>
+                Gotowe ({selectedPositionCount} pozycji, {selectedGroupCount} grup)
+              </Alert>
+            )}
+
+            {selectedPositionCount === 0 && selectedGroupCount > 0 && (
+              <Alert severity="warning" sx={{ py: 0.5 }}>
+                Wybierz pozycję
+              </Alert>
+            )}
+
+            {selectedPositionCount > 0 && selectedGroupCount === 0 && (
+              <Alert severity="warning" sx={{ py: 0.5 }}>
+                Wybierz zawodnika/klasę
+              </Alert>
+            )}
+
+            {selectedPositionCount === 0 && selectedGroupCount === 0 && (
+              <Alert severity="info" sx={{ py: 0.5 }}>
+                Wybierz pozycje oraz zawodnika/klasę
+              </Alert>
+            )}
           </Box>
         </Box>
       </Container>

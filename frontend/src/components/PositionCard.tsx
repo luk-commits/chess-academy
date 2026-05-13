@@ -5,6 +5,7 @@ import {
   CardContent,
   Chip,
   Paper,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { Chessboard } from 'react-chessboard';
@@ -41,34 +42,41 @@ const PositionCard = memo(function PositionCard({
       sx={{
         height: '100%',
         borderRadius: 3,
-        border: isSelected ? 2 : 0,
-        borderColor: 'primary.main',
+        border: 2,
+        borderColor: isSelected ? 'primary.main' : '#fff',
       }}
     >
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
           <SelfStatedCheckbox
             size="small"
+            id={`position-checkbox-${position.id}`}
             defaultChecked={isSelected}
             onCommit={() => onToggle(position.id)}
           />
-          <Typography
-            noWrap
-            sx={{ fontWeight: 700 }}
-            title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
-          >
-            {position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
-          </Typography>
+          <Tooltip title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'} placement="top">
+            <Typography
+              noWrap
+              component="label"
+              htmlFor={`position-checkbox-${position.id}`}
+              sx={{ fontWeight: 700, cursor: 'pointer', flex: 1 }}
+            >
+              {position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
+            </Typography>
+          </Tooltip>
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
           {validFen ? (
             <Box
+              component="label"
+              htmlFor={`position-checkbox-${position.id}`}
               sx={{
                 width: '100%',
                 maxWidth: 290,
+                cursor: 'pointer',
                 '& *': {
-                  cursor: 'default !important',
+                  cursor: 'pointer !important',
                 },
               }}
             >
@@ -86,7 +94,12 @@ const PositionCard = memo(function PositionCard({
               />
             </Box>
           ) : (
-            <Paper variant="outlined" sx={{ p: 2, width: 290, textAlign: 'center' }}>
+            <Paper
+              component="label"
+              htmlFor={`position-checkbox-${position.id}`}
+              variant="outlined"
+              sx={{ p: 2, width: 290, textAlign: 'center', cursor: 'pointer' }}
+            >
               <Typography variant="body2" color="error.main">
                 Niepoprawny FEN
               </Typography>
