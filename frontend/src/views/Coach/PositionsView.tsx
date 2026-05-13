@@ -14,6 +14,8 @@ import {
   Paper,
   Slider,
   Snackbar,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
@@ -77,6 +79,44 @@ function applyFirstMove(fen: string, uci: string | null): string {
   } catch {
     return fen;
   }
+}
+
+function MobileTabs() {
+  const [tab, setTab] = useState(0);
+
+  return (
+    <Box sx={{ display: { lg: 'none' }, mb: 2 }}>
+      <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+        <Box sx={{ bgcolor: 'primary.main' }}>
+          <Tabs
+            value={tab}
+            onChange={(_e, v) => setTab(v)}
+            variant="fullWidth"
+            sx={{
+              minHeight: 0,
+              '& .MuiTab-root': { color: 'rgba(255,255,255,0.7)', fontWeight: 700, py: 1.5, minHeight: 0 },
+              '& .Mui-selected': { color: '#fff !important', bgcolor: 'rgba(255,255,255,0.15)' },
+              '& .MuiTabs-indicator': { bgcolor: '#4caf50', height: 3 },
+            }}
+          >
+            <Tab label="Zawodnicy" />
+            <Tab label="Klasy" />
+          </Tabs>
+        </Box>
+        <Box sx={{ p: 2 }}>
+          {tab === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              Lista zawodników będzie dostępna wkrótce.
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Lista klas będzie dostępna wkrótce.
+            </Typography>
+          )}
+        </Box>
+      </Paper>
+    </Box>
+  );
 }
 
 export function PositionsView() {
@@ -168,7 +208,9 @@ export function PositionsView() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4, px: 2 }}>
       <Container maxWidth="lg">
-        <Paper elevation={4} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 4, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 4, mb: 3 }}>
           <Box
             sx={{
               display: 'flex',
@@ -271,6 +313,7 @@ export function PositionsView() {
           </Paper>
         ) : (
           <>
+            <MobileTabs />
             <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" color="text.secondary">
                 Wszystkich pozycji: {total}
@@ -402,6 +445,43 @@ export function PositionsView() {
             />
           </>
         )}
+          </Box>
+          <Box
+            sx={{
+              width: 260,
+              display: { xs: 'none', lg: 'flex' },
+              flexDirection: 'column',
+              gap: 2,
+              position: 'sticky',
+              top: 88,
+              alignSelf: 'flex-start',
+              maxHeight: 'calc(100vh - 100px)',
+              overflowY: 'auto',
+              flexShrink: 0,
+            }}
+          >
+            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5 }}>
+                <Typography variant="subtitle1" fontWeight={700}>Zawodnicy</Typography>
+              </Box>
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Lista zawodników będzie dostępna wkrótce.
+                </Typography>
+              </Box>
+            </Paper>
+            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5 }}>
+                <Typography variant="subtitle1" fontWeight={700}>Klasy</Typography>
+              </Box>
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Lista klas będzie dostępna wkrótce.
+                </Typography>
+              </Box>
+            </Paper>
+          </Box>
+        </Box>
       </Container>
     </Box>
   );
