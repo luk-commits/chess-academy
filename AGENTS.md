@@ -76,7 +76,7 @@ docker compose exec backend php vendor/bin/phpunit
 
 ## Known gotchas
 
-- **DO NOT edit `frontend/src/**/*.js` files** — they are `tsc -b` emitted JavaScript and will be overwritten. Edit the `.tsx`/`.ts` source instead. Run `tsc -b` (or `npm run build`) to regenerate them.
+**No `.js` files belong in `frontend/src/`** — source is `.tsx`/`.ts` only. Vite resolves `.js` before `.tsx`, so any stray emitted `.js` will shadow the real source and silently serve stale code. `tsconfig.json` has `"noEmit": true` to prevent `tsc -b` from regenerating them; if you spot any in `src/`, delete them.
 - Auth uses **HttpOnly cookies** (`chess_session` + `chess_refresh`). The frontend **never reads tokens from JS**. API calls use `credentials: 'include'`. Do not switch to localStorage bearer tokens.
 - Backend `JWT_SECRET` defaults to a dev value set in `docker-compose.yml`. E2E tests that issue tokens internally (PHPUnit tests) use their own hardcoded secret — changing one without the other will break those tests.
 - `migrator` service runs raw `.sql` files from `backend/migrations/` on every `docker compose up`. The init insert (`01_init.sql`) has no `ON CONFLICT` clause; restarting with a populated DB volume will fail on duplicate keys. Drop the `db_data` volume or drop the seed rows before re-running.
