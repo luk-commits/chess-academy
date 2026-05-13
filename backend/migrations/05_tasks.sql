@@ -4,14 +4,12 @@ CREATE TABLE IF NOT EXISTS tasks (
     id          SERIAL PRIMARY KEY,
     title       VARCHAR(255) NOT NULL,
     description TEXT,
-    player_id   INTEGER     NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     coach_id    INTEGER     NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     status      VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_tasks_player_id ON tasks(player_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_coach_id ON tasks(coach_id);
 
 CREATE TABLE IF NOT EXISTS task_stages (
