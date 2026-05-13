@@ -114,6 +114,11 @@ Each DB table has two model files. The inheritance chain is:
                     └── *.php  (e.g. Group.php)
 ```
 
+| File | Purpose |
+|---|---|
+| `*Model.php` (e.g. `GroupModel.php`) | **Auto-generated** by `model.sh` — column properties, `setSource()`. **Will be overwritten.** Do not put custom code here. |
+| `*.php` (e.g. `Group.php`) | **Hand-written** — extends `*Model`, contains relationships, business logic, validation. **Permanent.** Put all custom code here. |
+
 ## Migration helper
 
 ```bash
