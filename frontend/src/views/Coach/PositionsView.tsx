@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -88,14 +88,14 @@ function applyFirstMove(fen: string, uci: string | null): string {
 function MobileTabs({
   individuals,
   classes,
-  selectedGroupIds,
-  onToggleGroup,
+  onCommitGroup,
+  resetKey,
   loading,
 }: {
   individuals: IndividualGroup[];
   classes: ClassGroup[];
-  selectedGroupIds: number[];
-  onToggleGroup: (id: number) => void;
+  onCommitGroup: (groupId: number, checked: boolean) => void;
+  resetKey: number;
   loading: boolean;
 }) {
   const [tab, setTab] = useState(0);
@@ -130,12 +130,12 @@ function MobileTabs({
             ) : (
               individuals.map(ind => (
                 <FormControlLabel
-                  key={ind.groupId}
+                  key={`${ind.groupId}-${resetKey}`}
                   control={
                     <SelfStatedCheckbox
                       size="small"
-                      checked={selectedGroupIds.includes(ind.groupId)}
-                      onChange={() => onToggleGroup(ind.groupId)}
+                      defaultChecked={false}
+                      onCommit={(checked) => onCommitGroup(ind.groupId, checked)}
                     />
                   }
                   label={ind.playerName}
@@ -148,12 +148,12 @@ function MobileTabs({
             ) : (
               classes.map(cls => (
                 <FormControlLabel
-                  key={cls.groupId}
+                  key={`${cls.groupId}-${resetKey}`}
                   control={
                     <SelfStatedCheckbox
                       size="small"
-                      checked={selectedGroupIds.includes(cls.groupId)}
-                      onChange={() => onToggleGroup(cls.groupId)}
+                      defaultChecked={false}
+                      onCommit={(checked) => onCommitGroup(cls.groupId, checked)}
                     />
                   }
                   label={cls.name}
@@ -166,6 +166,159 @@ function MobileTabs({
     </Box>
   );
 }
+
+const PositionCards = memo(function PositionCards({
+  positions,
+  selectedPositionIds,
+  togglePosition,
+  cardTagsExpanded,
+  setCardTagsExpanded,
+  copiedId,
+  setCopiedId,
+}: {
+  positions: PositionItem[];
+  selectedPositionIds: number[];
+  togglePosition: (id: number) => void;
+  cardTagsExpanded: Record<number, boolean>;
+  setCardTagsExpanded: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
+  copiedId: number | null;
+  setCopiedId: React.Dispatch<React.SetStateAction<number | null>>;
+}) {
+  return (
+    <>
+      <Grid container spacing={2}>
+        {positions.map((position) => {
+          const fen = applyFirstMove(position.fen, position.firstMove);
+          const validFen = isValidFen(fen);
+
+          return (
+            <Grid key={position.id} size={{ xs: 12, md: 6, lg: 4 }}>
+              <Card
+                elevation={3}
+                sx={{
+                  height: '100%',
+                  borderRadius: 3,
+                  border: selectedPositionIds.includes(position.id) ? 2 : 0,
+                  borderColor: 'primary.main',
+                }}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
+                    <SelfStatedCheckbox
+                      size="small"
+                      checked={selectedPositionIds.includes(position.id)}
+                      onChange={() => togglePosition(position.id)}
+                    />
+                    <Typography
+                      noWrap
+                      sx={{ fontWeight: 700 }}
+                      title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
+                    >
+                      {position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
+                    {validFen ? (
+                      <Box
+                        sx={{
+                          width: '100%',
+                          maxWidth: 290,
+                          '& *': {
+                            cursor: 'default !important',
+                          },
+                        }}
+                      >
+                        <Chessboard
+                          options={{
+                            id: `position-${position.id}`,
+                            position: fen,
+                            boardOrientation: boardOrientation(fen),
+                            allowDragging: false,
+                            boardStyle: {
+                              width: '100%',
+                              borderRadius: '8px',
+                            },
+                          }}
+                        />
+                      </Box>
+                    ) : (
+                      <Paper variant="outlined" sx={{ p: 2, width: 290, textAlign: 'center' }}>
+                        <Typography variant="body2" color="error.main">
+                          Niepoprawny FEN
+                        </Typography>
+                      </Paper>
+                    )}
+                  </Box>
+
+                  <SelfStatedText
+                    key={`fen-${position.id}-${fen}`}
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    defaultValue={fen}
+                    slotProps={{ htmlInput: { readOnly: true } }}
+                    sx={{
+                      mb: 1,
+                      '& .MuiInputBase-input': {
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontFamily: 'monospace',
+                      },
+                    }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(fen).catch(() => {});
+                      setCopiedId(position.id);
+                    }}
+                  />
+
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                    {position.themeTags.length > 0 ? (
+                      <>
+                        {(cardTagsExpanded[position.id] ? position.themeTags : position.themeTags.slice(0, 2)).map((tag) => (
+                          <Chip key={tag} size="small" label={tag} />
+                        ))}
+                        {position.themeTags.length > 2 && (
+                          <Chip
+                            size="small"
+                            label={cardTagsExpanded[position.id] ? '▲ mniej' : `+${position.themeTags.length - 2}`}
+                            variant="outlined"
+                            onClick={() => setCardTagsExpanded(prev => ({
+                              ...prev,
+                              [position.id]: !prev[position.id],
+                            }))}
+                            sx={{ cursor: 'pointer' }}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <Chip size="small" label="Brak tagow" variant="outlined" />
+                    )}
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {position.rating !== null && <Chip size="small" label={`Rating: ${position.rating}`} variant="outlined" />}
+                    {position.difficulty !== null && (
+                      <Chip size="small" label={`Difficulty: ${position.difficulty}`} variant="outlined" />
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
+      </Grid>
+
+      <Snackbar
+        open={copiedId !== null}
+        autoHideDuration={1500}
+        onClose={() => setCopiedId(null)}
+        message="Skopiowano do schowka"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+    </>
+  );
+});
 
 export function PositionsView() {
   const [positions, setPositions] = useState<PositionItem[]>([]);
@@ -183,12 +336,14 @@ export function PositionsView() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [selectedPositionIds, setSelectedPositionIds] = useState<number[]>([]);
-  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
+  const selectedGroupsRef = useRef(new Set<number>());
+  const [selectedGroupCount, setSelectedGroupCount] = useState(0);
+  const [sidebarResetKey, setSidebarResetKey] = useState(0);
   const [individuals, setIndividuals] = useState<IndividualGroup[]>([]);
   const [classes, setClasses] = useState<ClassGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [taskCreating, setTaskCreating] = useState(false);
-  const [publishDefault, setPublishDefault] = useState(true);
+  const publishDefaultRef = useRef(true);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -200,11 +355,17 @@ export function PositionsView() {
         if (!cancelled) {
           setIndividuals(data.individuals);
           setClasses(data.classes);
+          selectedGroupsRef.current.clear();
+          setSelectedGroupCount(0);
+          setSidebarResetKey(k => k + 1);
         }
       } catch {
         if (!cancelled) {
           setIndividuals([]);
           setClasses([]);
+          selectedGroupsRef.current.clear();
+          setSelectedGroupCount(0);
+          setSidebarResetKey(k => k + 1);
         }
       } finally {
         if (!cancelled) setLoadingGroups(false);
@@ -214,30 +375,32 @@ export function PositionsView() {
     return () => { cancelled = true; };
   }, []);
 
-  const togglePosition = (id: number) => {
+  const togglePosition = useCallback((id: number) => {
     setSelectedPositionIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
-  };
+  }, []);
 
-  const toggleGroup = (id: number) => {
-    setSelectedGroupIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  };
+  const handleGroupCommit = useCallback((groupId: number, checked: boolean) => {
+    if (checked) selectedGroupsRef.current.add(groupId);
+    else selectedGroupsRef.current.delete(groupId);
+    setSelectedGroupCount(selectedGroupsRef.current.size);
+  }, []);
 
   const handleCreateTask = async () => {
-    if (selectedPositionIds.length === 0 || selectedGroupIds.length === 0) return;
+    if (selectedPositionIds.length === 0 || selectedGroupCount === 0) return;
     setTaskCreating(true);
     try {
       await tasksService.createTask({
         positionIds: selectedPositionIds,
-        groupIds: selectedGroupIds,
-        publishDefault,
+        groupIds: Array.from(selectedGroupsRef.current),
+        publishDefault: publishDefaultRef.current,
       });
       setTaskSnackbar({ message: 'Zadanie zostało utworzone!', severity: 'success' });
       setSelectedPositionIds([]);
-      setSelectedGroupIds([]);
+      selectedGroupsRef.current.clear();
+      setSelectedGroupCount(0);
+      setSidebarResetKey(k => k + 1);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Nie udało się utworzyć zadania.';
       setTaskSnackbar({ message: msg, severity: 'error' });
@@ -425,15 +588,15 @@ export function PositionsView() {
                 <MobileTabs
                   individuals={individuals}
                   classes={classes}
-                  selectedGroupIds={selectedGroupIds}
-                  onToggleGroup={toggleGroup}
+                  onCommitGroup={handleGroupCommit}
+                  resetKey={sidebarResetKey}
                   loading={loadingGroups}
                 />
                 <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'row', gap: 1, alignItems: 'center' }}>
                     <Button
                       variant="contained"
-                      disabled={selectedPositionIds.length === 0 || selectedGroupIds.length === 0 || taskCreating}
+                      disabled={selectedPositionIds.length === 0 || selectedGroupCount === 0 || taskCreating}
                       onClick={handleCreateTask}
                     >
                       {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
@@ -442,8 +605,8 @@ export function PositionsView() {
                       control={
                         <SelfStatedCheckbox
                           size="small"
-                          checked={publishDefault}
-                          onChange={(e) => setPublishDefault(e.target.checked)}
+                          defaultChecked={true}
+                          onCommit={(c) => { publishDefaultRef.current = c; }}
                         />
                       }
                       label="Opublikuj"
@@ -464,135 +627,14 @@ export function PositionsView() {
                   />
                 </Box>
 
-                <Grid container spacing={2}>
-                  {positions.map((position) => {
-                    const fen = applyFirstMove(position.fen, position.firstMove);
-                    const validFen = isValidFen(fen);
-
-                    return (
-                      <Grid key={position.id} size={{ xs: 12, md: 6, lg: 4 }}>
-                        <Card
-                          elevation={3}
-                          sx={{
-                            height: '100%',
-                            borderRadius: 3,
-                            border: selectedPositionIds.includes(position.id) ? 2 : 0,
-                            borderColor: 'primary.main',
-                          }}
-                        >
-                          <CardContent>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
-                              <SelfStatedCheckbox
-                                size="small"
-                                checked={selectedPositionIds.includes(position.id)}
-                                onChange={() => togglePosition(position.id)}
-                              />
-                              <Typography
-                                noWrap
-                                sx={{ fontWeight: 700 }}
-                                title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
-                              >
-                                {position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
-                              </Typography>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-                              {validFen ? (
-                                <Box
-                                  sx={{
-                                    width: '100%',
-                                    maxWidth: 290,
-                                    '& *': {
-                                      cursor: 'default !important',
-                                    },
-                                  }}
-                                >
-                                  <Chessboard
-                                    options={{
-                                      id: `position-${position.id}`,
-                                      position: fen,
-                                      boardOrientation: boardOrientation(fen),
-                                      allowDragging: false,
-                                      boardStyle: {
-                                        width: '100%',
-                                        borderRadius: '8px',
-                                      },
-                                    }}
-                                  />
-                                </Box>
-                              ) : (
-                                <Paper variant="outlined" sx={{ p: 2, width: 290, textAlign: 'center' }}>
-                                  <Typography variant="body2" color="error.main">
-                                    Niepoprawny FEN
-                                  </Typography>
-                                </Paper>
-                              )}
-                            </Box>
-
-                            <SelfStatedText
-                              key={`fen-${position.id}-${fen}`}
-                              fullWidth
-                              size="small"
-                              variant="outlined"
-                              defaultValue={fen}
-                              slotProps={{ htmlInput: { readOnly: true } }}
-                              sx={{
-                                mb: 1,
-                                '& .MuiInputBase-input': {
-                                  cursor: 'pointer',
-                                  fontSize: '0.75rem',
-                                  fontFamily: 'monospace',
-                                },
-                              }}
-                              onClick={() => {
-                                navigator.clipboard.writeText(fen).catch(() => {});
-                                setCopiedId(position.id);
-                              }}
-                            />
-
-                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-                              {position.themeTags.length > 0 ? (
-                                <>
-                                  {(cardTagsExpanded[position.id] ? position.themeTags : position.themeTags.slice(0, 2)).map((tag) => (
-                                    <Chip key={tag} size="small" label={tag} />
-                                  ))}
-                                  {position.themeTags.length > 2 && (
-                                    <Chip
-                                      size="small"
-                                      label={cardTagsExpanded[position.id] ? '▲ mniej' : `+${position.themeTags.length - 2}`}
-                                      variant="outlined"
-                                      onClick={() => setCardTagsExpanded(prev => ({
-                                        ...prev,
-                                        [position.id]: !prev[position.id],
-                                      }))}
-                                      sx={{ cursor: 'pointer' }}
-                                    />
-                                  )}
-                                </>
-                              ) : (
-                                <Chip size="small" label="Brak tagow" variant="outlined" />
-                              )}
-                            </Box>
-
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                              {position.rating !== null && <Chip size="small" label={`Rating: ${position.rating}`} variant="outlined" />}
-                              {position.difficulty !== null && (
-                                <Chip size="small" label={`Difficulty: ${position.difficulty}`} variant="outlined" />
-                              )}
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-
-                <Snackbar
-                  open={copiedId !== null}
-                  autoHideDuration={1500}
-                  onClose={() => setCopiedId(null)}
-                  message="Skopiowano do schowka"
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                <PositionCards
+                  positions={positions}
+                  selectedPositionIds={selectedPositionIds}
+                  togglePosition={togglePosition}
+                  cardTagsExpanded={cardTagsExpanded}
+                  setCardTagsExpanded={setCardTagsExpanded}
+                  copiedId={copiedId}
+                  setCopiedId={setCopiedId}
                 />
               </>
             )}
@@ -617,7 +659,7 @@ export function PositionsView() {
                 <Button
                   variant="contained"
                   fullWidth
-                  disabled={selectedPositionIds.length === 0 || selectedGroupIds.length === 0 || taskCreating}
+                  disabled={selectedPositionIds.length === 0 || selectedGroupCount === 0 || taskCreating}
                   onClick={handleCreateTask}
                 >
                   {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
@@ -626,33 +668,33 @@ export function PositionsView() {
                   control={
                     <SelfStatedCheckbox
                       size="small"
-                      checked={publishDefault}
-                      onChange={(e) => setPublishDefault(e.target.checked)}
+                      defaultChecked={true}
+                      onCommit={(c) => { publishDefaultRef.current = c; }}
                     />
                   }
                   label="Opublikuj"
                 />
               </Box>
 
-              {selectedPositionIds.length > 0 && selectedGroupIds.length > 0 && (
+              {selectedPositionIds.length > 0 && selectedGroupCount > 0 && (
                 <Alert severity="success" sx={{ py: 0.5 }}>
-                  Gotowe ({selectedPositionIds.length} pozycji, {selectedGroupIds.length} grup)
+                  Gotowe ({selectedPositionIds.length} pozycji, {selectedGroupCount} grup)
                 </Alert>
               )}
 
-              {selectedPositionIds.length === 0 && selectedGroupIds.length > 0 && (
+              {selectedPositionIds.length === 0 && selectedGroupCount > 0 && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   Wybierz przynajmniej jedną pozycję
                 </Alert>
               )}
 
-              {selectedPositionIds.length > 0 && selectedGroupIds.length === 0 && (
+              {selectedPositionIds.length > 0 && selectedGroupCount === 0 && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   Wybierz przynajmniej jednego zawodnika/klasę
                 </Alert>
               )}
 
-              {selectedPositionIds.length === 0 && selectedGroupIds.length === 0 && (
+              {selectedPositionIds.length === 0 && selectedGroupCount === 0 && (
                 <Alert severity="info" sx={{ py: 0.5 }}>
                   Wybierz pozycje oraz zawodnika/klasę
                 </Alert>
@@ -674,12 +716,12 @@ export function PositionsView() {
                 ) : (
                   individuals.map(ind => (
                     <FormControlLabel
-                      key={ind.groupId}
+                      key={`${ind.groupId}-${sidebarResetKey}`}
                       control={
                         <SelfStatedCheckbox
                           size="small"
-                          checked={selectedGroupIds.includes(ind.groupId)}
-                          onChange={() => toggleGroup(ind.groupId)}
+                          defaultChecked={false}
+                          onCommit={(checked) => handleGroupCommit(ind.groupId, checked)}
                         />
                       }
                       label={ind.playerName}
@@ -703,12 +745,12 @@ export function PositionsView() {
                 ) : (
                   classes.map(cls => (
                     <FormControlLabel
-                      key={cls.groupId}
+                      key={`${cls.groupId}-${sidebarResetKey}`}
                       control={
                         <SelfStatedCheckbox
                           size="small"
-                          checked={selectedGroupIds.includes(cls.groupId)}
-                          onChange={() => toggleGroup(cls.groupId)}
+                          defaultChecked={false}
+                          onCommit={(checked) => handleGroupCommit(cls.groupId, checked)}
                         />
                       }
                       label={cls.name}
