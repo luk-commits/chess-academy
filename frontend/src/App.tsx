@@ -4,6 +4,7 @@ import { RegisterView } from './views/RegisterView';
 import { HomeView } from './views/HomeView';
 import { PlayerLessonsView } from './views/Player/PlayerLessonsView';
 import { CoachesView } from './views/Player/CoachesView';
+import { PlayerTasksView } from './views/Player/PlayerTasksView';
 import { CoachLessonsView } from './views/Coach/CoachLessonsView';
 import { PlayersView } from './views/Coach/PlayersView';
 import { PositionsView } from './views/Coach/PositionsView';
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="player/lessons" element={<PlayerLessonsView />} />
         <Route path="coach/lessons" element={<CoachLessonsView />} />
         <Route path="player/coaches" element={<CoachesView />} />
+        <Route path="player/tasks" element={<PlayerTasksView />} />
         <Route path="coach/players" element={<PlayersView />} />
         <Route path="coach/positions" element={<PositionsView />} />
       </Route>

@@ -43,6 +43,7 @@ export function TopBar() {
   const navItems: NavItem[] = user.role === 'PLAYER'
     ? [
         { label: 'Lekcje', path: '/home/player/lessons' },
+        { label: 'Zadania', path: '/home/player/tasks' },
         { label: 'Trenerzy', path: '/home/player/coaches' },
       ]
     : [

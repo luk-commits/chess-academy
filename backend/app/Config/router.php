@@ -48,6 +48,11 @@ $container->setShared('router', function (): Router {
         'action' => 'create',
     ]);
 
+    $router->addGet('/api/player/tasks', [
+        'controller' => 'player_tasks',
+        'action' => 'index',
+    ]);
+
     $router->addOptions('/api/{path:.+}', [
         'controller' => 'auth',
         'action' => 'preflight',

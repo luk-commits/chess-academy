@@ -23,6 +23,7 @@ interface PositionCardProps {
   onToggle: (id: number) => void;
   onCopy: (id: number, fen: string) => void;
   onToggleTags: (id: number) => void;
+  hideCheckbox?: boolean;
 }
 
 const PositionCard = memo(function PositionCard({
@@ -35,6 +36,7 @@ const PositionCard = memo(function PositionCard({
   onToggle,
   onCopy,
   onToggleTags,
+  hideCheckbox = false,
 }: PositionCardProps) {
   return (
     <Card
@@ -52,17 +54,17 @@ const PositionCard = memo(function PositionCard({
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}
           onClick={e => e.stopPropagation()}
         >
-          <SelfStatedCheckbox
-            size="small"
-            id={`position-checkbox-${position.id}`}
-            checked={isSelected}
-            onCommit={() => onToggle(position.id)}
-          />
+          {!hideCheckbox && (
+            <SelfStatedCheckbox
+              size="small"
+              id={`position-checkbox-${position.id}`}
+              checked={isSelected}
+              onCommit={() => onToggle(position.id)}
+            />
+          )}
           <Tooltip title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'} placement="top">
             <Typography
               noWrap
-              component="label"
-              htmlFor={`position-checkbox-${position.id}`}
               sx={{ fontWeight: 700, cursor: 'pointer', flex: 1 }}
             >
               {position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}

@@ -58,3 +58,21 @@ export interface TaskResponse {
     groupIds: number[];
   };
 }
+
+export interface PlayerTaskStage {
+  id: number;
+  title: string;
+  sortOrder: number;
+  position: PositionItem;
+}
+
+export interface PlayerTask {
+  id: number;
+  title: string;
+  description: string;
+  stages: PlayerTaskStage[];
+}
+
+export interface PlayerTasksResponse {
+  tasks: PlayerTask[];
+}

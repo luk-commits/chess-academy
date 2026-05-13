@@ -3,6 +3,7 @@ import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GroupIcon from '@mui/icons-material/Group';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import PeopleIcon from '@mui/icons-material/People';
 import GridViewIcon from '@mui/icons-material/GridView';
 import { useAuth } from '../hooks/useAuth';
@@ -18,6 +19,7 @@ export function BottomNav() {
     ? [
         { label: 'Home', icon: <HomeIcon />, path: '/home' },
         { label: 'Lekcje', icon: <MenuBookIcon />, path: '/home/player/lessons' },
+        { label: 'Zadania', icon: <AssignmentIcon />, path: '/home/player/tasks' },
         { label: 'Trenerzy', icon: <GroupIcon />, path: '/home/player/coaches' },
       ]
     : [
