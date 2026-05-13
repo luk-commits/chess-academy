@@ -10,11 +10,6 @@ class Task extends TaskModel
     {
         parent::initialize();
 
-        $this->belongsTo('player_id', User::class, 'id', [
-            'alias' => 'Player',
-            'reusable' => true,
-        ]);
-
         $this->belongsTo('coach_id', User::class, 'id', [
             'alias' => 'Coach',
             'reusable' => true,
@@ -24,5 +19,15 @@ class Task extends TaskModel
             'alias' => 'Stages',
             'reusable' => true,
         ]);
+
+        $this->hasManyToMany(
+            'id',
+            TaskGroup::class,
+            'task_id',
+            'group_id',
+            Group::class,
+            'id',
+            ['alias' => 'Groups']
+        );
     }
 }

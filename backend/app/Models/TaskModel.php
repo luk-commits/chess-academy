@@ -27,12 +27,6 @@ class TaskModel extends AbstractModel
      *
      * @var integer
      */
-    public $player_id;
-
-    /**
-     *
-     * @var integer
-     */
     public $coach_id;
 
     /**

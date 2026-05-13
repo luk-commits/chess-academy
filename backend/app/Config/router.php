@@ -38,6 +38,16 @@ $container->setShared('router', function (): Router {
         'action' => 'index',
     ]);
 
+    $router->addGet('/api/coach/groups', [
+        'controller' => 'groups',
+        'action' => 'index',
+    ]);
+
+    $router->addPost('/api/coach/tasks', [
+        'controller' => 'tasks',
+        'action' => 'create',
+    ]);
+
     $router->addOptions('/api/{path:.+}', [
         'controller' => 'auth',
         'action' => 'preflight',

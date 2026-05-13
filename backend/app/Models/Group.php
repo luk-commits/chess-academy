@@ -24,5 +24,15 @@ class Group extends GroupModel
             'id',
             ['alias' => 'Players']
         );
+
+        $this->hasManyToMany(
+            'id',
+            TaskGroup::class,
+            'group_id',
+            'task_id',
+            Task::class,
+            'id',
+            ['alias' => 'Tasks']
+        );
     }
 }
