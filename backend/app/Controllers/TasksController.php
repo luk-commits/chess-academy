@@ -24,6 +24,7 @@ class TasksController extends AbstractController
         $task->description = $description;
         $task->coach_id = $coachId;
         $task->status = 'active';
+        $task->group_id = (int) $groupIds[0];
 
         if ($task->save() === false) {
             return $this->error(implode(' ', $task->getMessages()), 422);
@@ -92,6 +93,7 @@ class TasksController extends AbstractController
             $task->description = $description;
             $task->coach_id = $coachId;
             $task->status = 'active';
+            $task->group_id = (int) $groupIds[0];
 
             if ($task->save() === false) {
                 return $this->error(implode(' ', $task->getMessages()), 422);

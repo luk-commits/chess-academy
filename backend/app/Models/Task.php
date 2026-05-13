@@ -15,6 +15,11 @@ class Task extends TaskModel
             'reusable' => true,
         ]);
 
+        $this->belongsTo('group_id', Group::class, 'id', [
+            'alias' => 'Group',
+            'reusable' => true,
+        ]);
+
         $this->hasMany('id', TaskStage::class, 'task_id', [
             'alias' => 'Stages',
             'reusable' => true,

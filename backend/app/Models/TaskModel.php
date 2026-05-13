@@ -31,6 +31,12 @@ class TaskModel extends AbstractModel
 
     /**
      *
+     * @var integer
+     */
+    public $group_id;
+
+    /**
+     *
      * @var string
      */
     public $status;
