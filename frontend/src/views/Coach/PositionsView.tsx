@@ -14,7 +14,6 @@ import {
   IconButton,
   Pagination,
   Paper,
-  Slider,
   Snackbar,
   Tab,
   Tabs,
@@ -30,6 +29,7 @@ import { Chess } from 'chess.js';
 import { positionsService } from '../../services/positionsService';
 import { groupsService } from '../../services/groupsService';
 import { tasksService } from '../../services/tasksService';
+import SelfStatedSlider from '../../components/SelfStated/Slider';
 import type { PositionItem, IndividualGroup, ClassGroup } from '../../types/position';
 
 const PER_PAGE = 12;
@@ -175,7 +175,7 @@ export function PositionsView() {
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagsExpanded, setTagsExpanded] = useState(false);
-  const [difficultyRange, setDifficultyRange] = useState<number[]>([0, 3500]);
+  const [committedDifficultyRange, setCommittedDifficultyRange] = useState<number[]>([0, 3500]);
   const [cardTagsExpanded, setCardTagsExpanded] = useState<Record<number, boolean>>({});
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -260,11 +260,6 @@ export function PositionsView() {
 
   const tagsParam = useMemo(() => selectedTags.join(','), [selectedTags]);
 
-  const handleDifficultyChange = useCallback((_event: Event, value: number | number[]) => {
-    setDifficultyRange(value as number[]);
-    setPage(1);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -278,8 +273,8 @@ export function PositionsView() {
           perPage: PER_PAGE,
           search,
           tags: tagsParam,
-          difficultyMin: difficultyRange[0],
-          difficultyMax: difficultyRange[1],
+          difficultyMin: committedDifficultyRange[0],
+          difficultyMax: committedDifficultyRange[1],
         });
 
         if (cancelled) {
@@ -307,7 +302,7 @@ export function PositionsView() {
     return () => {
       cancelled = true;
     };
-  }, [page, search, tagsParam, difficultyRange]);
+  }, [page, search, tagsParam, committedDifficultyRange]);
 
   const emptyMessage = useMemo(() => {
     if (loading) return '';
@@ -352,29 +347,27 @@ export function PositionsView() {
                 </Box>
               </Box>
 
-              <Box sx={{ mt: 2, px: 1 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Poziom trudności: {difficultyRange[0]} – {difficultyRange[1]}
-                </Typography>
-                <Slider
-                  value={difficultyRange}
-                  onChange={handleDifficultyChange}
-                  min={0}
-                  max={3500}
-                  step={100}
-                  marks={[
-                    { value: 0, label: '0' },
-                    { value: 500, label: '500' },
-                    { value: 1000, label: '1000' },
-                    { value: 1500, label: '1500' },
-                    { value: 2000, label: '2000' },
-                    { value: 2500, label: '2500' },
-                    { value: 3000, label: '3000' },
-                    { value: 3500, label: '3500' },
-                  ]}
-                  valueLabelDisplay="auto"
-                />
-              </Box>
+              <SelfStatedSlider
+                label="Poziom trudności"
+                defaultVal={[0, 3500]}
+                min={0}
+                max={3500}
+                step={100}
+                marks={[
+                  { value: 0, label: '0' },
+                  { value: 500, label: '500' },
+                  { value: 1000, label: '1000' },
+                  { value: 1500, label: '1500' },
+                  { value: 2000, label: '2000' },
+                  { value: 2500, label: '2500' },
+                  { value: 3000, label: '3000' },
+                  { value: 3500, label: '3500' },
+                ]}
+                onCommit={(val) => {
+                  setCommittedDifficultyRange(val);
+                  setPage(1);
+                }}
+              />
 
               <Box sx={{ mt: 2 }}>
                 <Box
