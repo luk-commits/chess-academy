@@ -1,7 +1,8 @@
 # AGENTS.md
 
-> **IMPORTANT: Ten plik jest automatycznie ładowany do kontekstu modelu na początku każdego zadania.**
-> **Zawsze przeczytaj go w całości przed wykonaniem jakichkolwiek poleceń — zawiera source-of-truth dla komend, architektury i zasad projektu.**
+> **IMPORTANT: This file is automatically loaded into the model's context at the beginning of every task.**
+> **Always read it in its entirety before executing any commands — it contains the source-of-truth for commands, architecture, and project rules.**
+> **All project commands and tasks must be executed within a Docker container; do not run commands directly on the local host machine.**
 
 ## Quick start
 
