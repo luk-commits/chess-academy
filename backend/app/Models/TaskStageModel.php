@@ -2,7 +2,7 @@
 
 namespace ChessAcademy\Models;
 
-class GroupModel extends AbstractModel
+class TaskStageModel extends AbstractModel
 {
 
     /**
@@ -13,21 +13,27 @@ class GroupModel extends AbstractModel
 
     /**
      *
+     * @var integer
+     */
+    public $task_id;
+
+    /**
+     *
      * @var string
      */
-    public $name;
+    public $title;
+
+    /**
+     *
+     * @var string
+     */
+    public $description;
 
     /**
      *
      * @var integer
      */
-    public $coach_id;
-
-    /**
-     *
-     * @var boolean
-     */
-    public $is_individual;
+    public $sort_order;
 
     /**
      *
@@ -47,14 +53,14 @@ class GroupModel extends AbstractModel
     public function initialize()
     {
         $this->setSchema("public");
-        $this->setSource("groups");
+        $this->setSource("task_stages");
     }
 
     /**
      * Allows to query a set of records that match the specified conditions
      *
      * @param mixed $parameters
-     * @return GroupModel[]|GroupModel|\Phalcon\Mvc\Model\ResultSetInterface
+     * @return TaskStageModel[]|TaskStageModel|\Phalcon\Mvc\Model\ResultSetInterface
      */
     public static function find($parameters = null): \Phalcon\Mvc\Model\ResultsetInterface
     {
@@ -65,7 +71,7 @@ class GroupModel extends AbstractModel
      * Allows to query the first record that match the specified conditions
      *
      * @param mixed $parameters
-     * @return GroupModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
+     * @return TaskStageModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
      */
     public static function findFirst($parameters = null): ?\Phalcon\Mvc\ModelInterface
     {

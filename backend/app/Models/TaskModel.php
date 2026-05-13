@@ -2,7 +2,7 @@
 
 namespace ChessAcademy\Models;
 
-class GroupModel extends AbstractModel
+class TaskModel extends AbstractModel
 {
 
     /**
@@ -15,7 +15,19 @@ class GroupModel extends AbstractModel
      *
      * @var string
      */
-    public $name;
+    public $title;
+
+    /**
+     *
+     * @var string
+     */
+    public $description;
+
+    /**
+     *
+     * @var integer
+     */
+    public $player_id;
 
     /**
      *
@@ -25,9 +37,9 @@ class GroupModel extends AbstractModel
 
     /**
      *
-     * @var boolean
+     * @var string
      */
-    public $is_individual;
+    public $status;
 
     /**
      *
@@ -47,14 +59,14 @@ class GroupModel extends AbstractModel
     public function initialize()
     {
         $this->setSchema("public");
-        $this->setSource("groups");
+        $this->setSource("tasks");
     }
 
     /**
      * Allows to query a set of records that match the specified conditions
      *
      * @param mixed $parameters
-     * @return GroupModel[]|GroupModel|\Phalcon\Mvc\Model\ResultSetInterface
+     * @return TaskModel[]|TaskModel|\Phalcon\Mvc\Model\ResultSetInterface
      */
     public static function find($parameters = null): \Phalcon\Mvc\Model\ResultsetInterface
     {
@@ -65,7 +77,7 @@ class GroupModel extends AbstractModel
      * Allows to query the first record that match the specified conditions
      *
      * @param mixed $parameters
-     * @return GroupModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
+     * @return TaskModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
      */
     public static function findFirst($parameters = null): ?\Phalcon\Mvc\ModelInterface
     {

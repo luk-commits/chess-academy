@@ -31,6 +31,16 @@ class User extends UserModel
             'id',
             ['alias' => 'EnrolledGroups']
         );
+
+        $this->hasMany('id', Task::class, 'player_id', [
+            'alias' => 'Tasks',
+            'reusable' => true,
+        ]);
+
+        $this->hasMany('id', Task::class, 'coach_id', [
+            'alias' => 'CoachedTasks',
+            'reusable' => true,
+        ]);
     }
 
     public function validation(): bool
