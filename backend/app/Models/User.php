@@ -12,6 +12,27 @@ class User extends UserModel
 {
     public const ROLE_COACH = 'COACH';
     public const ROLE_PLAYER = 'PLAYER';
+
+    public function initialize()
+    {
+        parent::initialize();
+
+        $this->hasMany('id', Group::class, 'coach_id', [
+            'alias' => 'CoachedGroups',
+            'reusable' => true,
+        ]);
+
+        $this->hasManyToMany(
+            'id',
+            GroupPlayers::class,
+            'player_id',
+            'class_id',
+            Group::class,
+            'id',
+            ['alias' => 'EnrolledGroups']
+        );
+    }
+
     public function validation(): bool
     {
         if (parent::validation() === false) {
