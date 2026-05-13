@@ -83,6 +83,26 @@ docker compose exec backend php vendor/bin/phpunit
 - Frontend `VITE_PROXY_API_TARGET` (default `http://web`) is the container-to-container API URL. When running Playwright from the host (not in Docker), set `VITE_API_URL` or ensure the proxy is reachable at `http://localhost:8080`.
 - Backend CORS allows only `CORS_ORIGIN` (default `http://localhost:5173`). Direct API calls from other origins or Postman will fail; use `http://localhost:8080` through the Nginx proxy (which adds no CORS header, so browser calls must go through the Vite proxy).
 
+## Git conventions
+
+All commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<scope>): <description>
+```
+
+| Type | Usage |
+|---|---|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `refactor` | Code change that neither fixes nor adds |
+| `chore` | Tooling, deps, CI, repo maintenance |
+| `docs` | Documentation only |
+| `test` | Adding/improving tests |
+| `style` | Formatting, linting (no logic change) |
+
+Scope is optional but encouraged (e.g. `backend`, `frontend`, `migration`).
+
 ## Migration helper
 
 ```bash
