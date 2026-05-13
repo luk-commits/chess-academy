@@ -464,7 +464,9 @@ export function PositionsView() {
                       disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
                       onClick={handleCreateTask}
                     >
-                      {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+                <Box component="span" sx={{ flex: 1, textAlign: 'right', pr: 1 }}>
+                  {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+                </Box>
                     </Button>
                     <FormControlLabel
                       control={
@@ -596,21 +598,26 @@ export function PositionsView() {
               </Box>
             </Paper>
 
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 2 }}>
+            <Box sx={{ mt: 2, mb: 2 }}>
               <Button
                 variant="contained"
                 fullWidth
                 disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
                 onClick={handleCreateTask}
+                sx={{ justifyContent: 'flex-start', gap: 1, px: 2 }}
               >
-                {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+                <Box sx={{ flex: 1, textAlign: 'right' }}>
+                  {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+                </Box>
+                <Tooltip title="Opublikuj">
+                  <Switch
+                    defaultChecked
+                    color="secondary"
+                    onChange={(_, checked) => { publishDefaultRef.current = checked; }}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  />
+                </Tooltip>
               </Button>
-              <Tooltip title="Opublikuj">
-                <Switch
-                  defaultChecked
-                  onChange={(_, checked) => { publishDefaultRef.current = checked; }}
-                />
-              </Tooltip>
             </Box>
 
             {selectedPositionCount > 0 && selectedGroupCount > 0 && (
