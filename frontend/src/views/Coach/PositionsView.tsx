@@ -1,10 +1,8 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   CircularProgress,
   Container,
@@ -22,7 +20,6 @@ import Grid from '@mui/material/Grid';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import BiotechIcon from '@mui/icons-material/Biotech';
-import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { positionsService } from '../../services/positionsService';
 import { groupsService } from '../../services/groupsService';
@@ -30,6 +27,7 @@ import { tasksService } from '../../services/tasksService';
 import SelfStatedSlider from '../../components/SelfStated/Slider';
 import SelfStatedCheckbox from '../../components/SelfStated/Checkbox';
 import SelfStatedText from '../../components/SelfStated/Text';
+import PositionCard from '../../components/PositionCard';
 import type { PositionItem, IndividualGroup, ClassGroup } from '../../types/position';
 
 const PER_PAGE = 12;
@@ -167,159 +165,6 @@ function MobileTabs({
   );
 }
 
-const PositionCards = memo(function PositionCards({
-  positions,
-  selectedPositionIds,
-  togglePosition,
-  cardTagsExpanded,
-  setCardTagsExpanded,
-  copiedId,
-  setCopiedId,
-}: {
-  positions: PositionItem[];
-  selectedPositionIds: number[];
-  togglePosition: (id: number) => void;
-  cardTagsExpanded: Record<number, boolean>;
-  setCardTagsExpanded: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
-  copiedId: number | null;
-  setCopiedId: React.Dispatch<React.SetStateAction<number | null>>;
-}) {
-  return (
-    <>
-      <Grid container spacing={2}>
-        {positions.map((position) => {
-          const fen = applyFirstMove(position.fen, position.firstMove);
-          const validFen = isValidFen(fen);
-
-          return (
-            <Grid key={position.id} size={{ xs: 12, md: 6, lg: 4 }}>
-              <Card
-                elevation={3}
-                sx={{
-                  height: '100%',
-                  borderRadius: 3,
-                  border: selectedPositionIds.includes(position.id) ? 2 : 0,
-                  borderColor: 'primary.main',
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
-                    <SelfStatedCheckbox
-                      size="small"
-                      checked={selectedPositionIds.includes(position.id)}
-                      onChange={() => togglePosition(position.id)}
-                    />
-                    <Typography
-                      noWrap
-                      sx={{ fontWeight: 700 }}
-                      title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
-                    >
-                      {position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-                    {validFen ? (
-                      <Box
-                        sx={{
-                          width: '100%',
-                          maxWidth: 290,
-                          '& *': {
-                            cursor: 'default !important',
-                          },
-                        }}
-                      >
-                        <Chessboard
-                          options={{
-                            id: `position-${position.id}`,
-                            position: fen,
-                            boardOrientation: boardOrientation(fen),
-                            allowDragging: false,
-                            boardStyle: {
-                              width: '100%',
-                              borderRadius: '8px',
-                            },
-                          }}
-                        />
-                      </Box>
-                    ) : (
-                      <Paper variant="outlined" sx={{ p: 2, width: 290, textAlign: 'center' }}>
-                        <Typography variant="body2" color="error.main">
-                          Niepoprawny FEN
-                        </Typography>
-                      </Paper>
-                    )}
-                  </Box>
-
-                  <SelfStatedText
-                    key={`fen-${position.id}-${fen}`}
-                    fullWidth
-                    size="small"
-                    variant="outlined"
-                    defaultValue={fen}
-                    slotProps={{ htmlInput: { readOnly: true } }}
-                    sx={{
-                      mb: 1,
-                      '& .MuiInputBase-input': {
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                        fontFamily: 'monospace',
-                      },
-                    }}
-                    onClick={() => {
-                      navigator.clipboard.writeText(fen).catch(() => {});
-                      setCopiedId(position.id);
-                    }}
-                  />
-
-                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-                    {position.themeTags.length > 0 ? (
-                      <>
-                        {(cardTagsExpanded[position.id] ? position.themeTags : position.themeTags.slice(0, 2)).map((tag) => (
-                          <Chip key={tag} size="small" label={tag} />
-                        ))}
-                        {position.themeTags.length > 2 && (
-                          <Chip
-                            size="small"
-                            label={cardTagsExpanded[position.id] ? '▲ mniej' : `+${position.themeTags.length - 2}`}
-                            variant="outlined"
-                            onClick={() => setCardTagsExpanded(prev => ({
-                              ...prev,
-                              [position.id]: !prev[position.id],
-                            }))}
-                            sx={{ cursor: 'pointer' }}
-                          />
-                        )}
-                      </>
-                    ) : (
-                      <Chip size="small" label="Brak tagow" variant="outlined" />
-                    )}
-                  </Box>
-
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {position.rating !== null && <Chip size="small" label={`Rating: ${position.rating}`} variant="outlined" />}
-                    {position.difficulty !== null && (
-                      <Chip size="small" label={`Difficulty: ${position.difficulty}`} variant="outlined" />
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
-
-      <Snackbar
-        open={copiedId !== null}
-        autoHideDuration={1500}
-        onClose={() => setCopiedId(null)}
-        message="Skopiowano do schowka"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
-    </>
-  );
-});
-
 export function PositionsView() {
   const [positions, setPositions] = useState<PositionItem[]>([]);
   const [page, setPage] = useState(1);
@@ -335,7 +180,9 @@ export function PositionsView() {
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [selectedPositionIds, setSelectedPositionIds] = useState<number[]>([]);
+  const selectedPositionsRef = useRef(new Set<number>());
+  const [selectedPositionCount, setSelectedPositionCount] = useState(0);
+  const [selectionResetKey, setSelectionResetKey] = useState(0);
   const selectedGroupsRef = useRef(new Set<number>());
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
   const [sidebarResetKey, setSidebarResetKey] = useState(0);
@@ -375,10 +222,24 @@ export function PositionsView() {
     return () => { cancelled = true; };
   }, []);
 
-  const togglePosition = useCallback((id: number) => {
-    setSelectedPositionIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+  const handlePositionToggle = useCallback((id: number) => {
+    if (selectedPositionsRef.current.has(id))
+      selectedPositionsRef.current.delete(id);
+    else
+      selectedPositionsRef.current.add(id);
+    setSelectedPositionCount(selectedPositionsRef.current.size);
+  }, []);
+
+  const handleCopyFen = useCallback((id: number, fen: string) => {
+    navigator.clipboard.writeText(fen).catch(() => {});
+    setCopiedId(id);
+  }, []);
+
+  const handleToggleTags = useCallback((id: number) => {
+    setCardTagsExpanded(prev => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   }, []);
 
   const handleGroupCommit = useCallback((groupId: number, checked: boolean) => {
@@ -388,16 +249,18 @@ export function PositionsView() {
   }, []);
 
   const handleCreateTask = async () => {
-    if (selectedPositionIds.length === 0 || selectedGroupCount === 0) return;
+    if (selectedPositionCount === 0 || selectedGroupCount === 0) return;
     setTaskCreating(true);
     try {
       await tasksService.createTask({
-        positionIds: selectedPositionIds,
+        positionIds: Array.from(selectedPositionsRef.current),
         groupIds: Array.from(selectedGroupsRef.current),
         publishDefault: publishDefaultRef.current,
       });
       setTaskSnackbar({ message: 'Zadanie zostało utworzone!', severity: 'success' });
-      setSelectedPositionIds([]);
+      selectedPositionsRef.current.clear();
+      setSelectedPositionCount(0);
+      setSelectionResetKey(k => k + 1);
       selectedGroupsRef.current.clear();
       setSelectedGroupCount(0);
       setSidebarResetKey(k => k + 1);
@@ -596,7 +459,7 @@ export function PositionsView() {
                   <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'row', gap: 1, alignItems: 'center' }}>
                     <Button
                       variant="contained"
-                      disabled={selectedPositionIds.length === 0 || selectedGroupCount === 0 || taskCreating}
+                      disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
                       onClick={handleCreateTask}
                     >
                       {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
@@ -614,8 +477,8 @@ export function PositionsView() {
                   </Box>
                   <Typography variant="body2" color="text.secondary">
                     Wszystkich pozycji: {total}
-                    {selectedPositionIds.length > 0 && (
-                      <> &middot; Wybrano: {selectedPositionIds.length}</>
+                    {selectedPositionCount > 0 && (
+                      <> &middot; Wybrano: {selectedPositionCount}</>
                     )}
                   </Typography>
                   <Pagination
@@ -627,14 +490,34 @@ export function PositionsView() {
                   />
                 </Box>
 
-                <PositionCards
-                  positions={positions}
-                  selectedPositionIds={selectedPositionIds}
-                  togglePosition={togglePosition}
-                  cardTagsExpanded={cardTagsExpanded}
-                  setCardTagsExpanded={setCardTagsExpanded}
-                  copiedId={copiedId}
-                  setCopiedId={setCopiedId}
+                <Grid container spacing={2}>
+                  {positions.map((position) => {
+                    const fen = applyFirstMove(position.fen, position.firstMove);
+                    const validFen = isValidFen(fen);
+                    return (
+                      <Grid key={`${selectionResetKey}-${position.id}`} size={{ xs: 12, md: 6, lg: 4 }}>
+                        <PositionCard
+                          position={position}
+                          fen={fen}
+                          validFen={validFen}
+                          boardOrientation={boardOrientation(fen)}
+                          isSelected={selectedPositionsRef.current.has(position.id)}
+                          tagsExpanded={!!cardTagsExpanded[position.id]}
+                          onToggle={handlePositionToggle}
+                          onCopy={handleCopyFen}
+                          onToggleTags={handleToggleTags}
+                        />
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+
+                <Snackbar
+                  open={copiedId !== null}
+                  autoHideDuration={1500}
+                  onClose={() => setCopiedId(null)}
+                  message="Skopiowano do schowka"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                 />
               </>
             )}
@@ -659,7 +542,7 @@ export function PositionsView() {
                 <Button
                   variant="contained"
                   fullWidth
-                  disabled={selectedPositionIds.length === 0 || selectedGroupCount === 0 || taskCreating}
+                  disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
                   onClick={handleCreateTask}
                 >
                   {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
@@ -676,25 +559,25 @@ export function PositionsView() {
                 />
               </Box>
 
-              {selectedPositionIds.length > 0 && selectedGroupCount > 0 && (
+              {selectedPositionCount > 0 && selectedGroupCount > 0 && (
                 <Alert severity="success" sx={{ py: 0.5 }}>
-                  Gotowe ({selectedPositionIds.length} pozycji, {selectedGroupCount} grup)
+                  Gotowe ({selectedPositionCount} pozycji, {selectedGroupCount} grup)
                 </Alert>
               )}
 
-              {selectedPositionIds.length === 0 && selectedGroupCount > 0 && (
+              {selectedPositionCount === 0 && selectedGroupCount > 0 && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   Wybierz przynajmniej jedną pozycję
                 </Alert>
               )}
 
-              {selectedPositionIds.length > 0 && selectedGroupCount === 0 && (
+              {selectedPositionCount > 0 && selectedGroupCount === 0 && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   Wybierz przynajmniej jednego zawodnika/klasę
                 </Alert>
               )}
 
-              {selectedPositionIds.length === 0 && selectedGroupCount === 0 && (
+              {selectedPositionCount === 0 && selectedGroupCount === 0 && (
                 <Alert severity="info" sx={{ py: 0.5 }}>
                   Wybierz pozycje oraz zawodnika/klasę
                 </Alert>
