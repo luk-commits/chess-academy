@@ -458,26 +458,26 @@ export function PositionsView() {
                   loading={loadingGroups}
                 />
                 <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'row', gap: 1, alignItems: 'center' }}>
+                  <Box sx={{ display: { xs: 'flex', lg: 'none' }, width: '100%' }}>
                     <Button
                       variant="contained"
+                      fullWidth
                       disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
                       onClick={handleCreateTask}
+                      sx={{ justifyContent: 'flex-start', gap: 1, px: 2 }}
                     >
-                <Box component="span" sx={{ flex: 1, textAlign: 'right', pr: 1 }}>
-                  {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
-                </Box>
-                    </Button>
-                    <FormControlLabel
-                      control={
-                        <SelfStatedCheckbox
-                          size="small"
-                          defaultChecked={true}
-                          onCommit={(c) => { publishDefaultRef.current = c; }}
+                      <Box sx={{ flex: 1, textAlign: 'center' }}>
+                        {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+                      </Box>
+                      <Tooltip title="Opublikuj">
+                        <Switch
+                          defaultChecked
+                          color="secondary"
+                          onChange={(_, checked) => { publishDefaultRef.current = checked; }}
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         />
-                      }
-                      label="Opublikuj"
-                    />
+                      </Tooltip>
+                    </Button>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
                     Wszystkich pozycji: {total}
