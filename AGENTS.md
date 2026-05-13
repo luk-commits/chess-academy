@@ -103,6 +103,17 @@ All commits MUST follow [Conventional Commits](https://www.conventionalcommits.o
 
 Scope is optional but encouraged (e.g. `backend`, `frontend`, `migration`).
 
+## Backend model convention
+
+Each DB table has two model files. The inheritance chain is:
+
+```
+\Phalcon\Mvc\Model
+    └── AbstractModel          (backend/app/Models/AbstractModel.php)
+            └── *Model.php     (e.g. GroupModel.php)
+                    └── *.php  (e.g. Group.php)
+```
+
 ## Migration helper
 
 ```bash
