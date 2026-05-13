@@ -3,13 +3,13 @@ import {
   Box,
   Card,
   CardContent,
+  Checkbox,
   Chip,
   Paper,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { Chessboard } from 'react-chessboard';
-import SelfStatedCheckbox from './SelfStated/Checkbox';
 import SelfStatedText from './SelfStated/Text';
 import type { PositionItem } from '../types/position';
 
@@ -48,11 +48,11 @@ const PositionCard = memo(function PositionCard({
     >
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
-          <SelfStatedCheckbox
+          <Checkbox
             size="small"
             id={`position-checkbox-${position.id}`}
-            defaultChecked={isSelected}
-            onCommit={() => onToggle(position.id)}
+            checked={isSelected}
+            onChange={() => onToggle(position.id)}
           />
           <Tooltip title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'} placement="top">
             <Typography
@@ -69,14 +69,14 @@ const PositionCard = memo(function PositionCard({
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
           {validFen ? (
             <Box
-              component="label"
-              htmlFor={`position-checkbox-${position.id}`}
+              onClick={() => onToggle(position.id)}
               sx={{
                 width: '100%',
                 maxWidth: 290,
                 cursor: 'pointer',
                 '& *': {
                   cursor: 'pointer !important',
+                  pointerEvents: 'none',
                 },
               }}
             >
