@@ -19,15 +19,5 @@ class TaskStage extends TaskStageModel
             'alias' => 'Position',
             'reusable' => true,
         ]);
-
-        $this->hasManyToMany(
-            'id',
-            TaskStagePosition::class,
-            'task_stage_id',
-            'position_id',
-            Position::class,
-            'id',
-            ['alias' => 'Positions']
-        );
     }
 }

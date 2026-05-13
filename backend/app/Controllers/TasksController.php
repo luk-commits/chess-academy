@@ -8,7 +8,6 @@ use ChessAcademy\Models\Group;
 use ChessAcademy\Models\Task;
 use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
-use ChessAcademy\Models\TaskStagePosition;
 
 class TasksController extends AbstractController
 {
@@ -46,17 +45,12 @@ class TasksController extends AbstractController
             $stage->task_id = $task->id;
             $stage->title = 'Pozycja ' . ($i + 1);
             $stage->sort_order = $i;
+            $stage->position_id = (int) $positionId;
 
             if ($stage->save() === false) {
                 $task->delete();
                 return $this->error(implode(' ', $stage->getMessages()), 422);
             }
-
-            $tsp = new TaskStagePosition();
-            $tsp->task_stage_id = $stage->id;
-            $tsp->position_id = (int) $positionId;
-            $tsp->sort_order = $i;
-            $tsp->save();
 
             $stageData[] = [
                 'id' => (int) $stage->id,
