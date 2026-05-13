@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  Checkbox,
   Chip,
   CircularProgress,
   Container,
@@ -17,7 +16,6 @@ import {
   Snackbar,
   Tab,
   Tabs,
-  TextField,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -30,6 +28,8 @@ import { positionsService } from '../../services/positionsService';
 import { groupsService } from '../../services/groupsService';
 import { tasksService } from '../../services/tasksService';
 import SelfStatedSlider from '../../components/SelfStated/Slider';
+import SelfStatedCheckbox from '../../components/SelfStated/Checkbox';
+import SelfStatedText from '../../components/SelfStated/Text';
 import type { PositionItem, IndividualGroup, ClassGroup } from '../../types/position';
 
 const PER_PAGE = 12;
@@ -132,7 +132,7 @@ function MobileTabs({
                 <FormControlLabel
                   key={ind.groupId}
                   control={
-                    <Checkbox
+                    <SelfStatedCheckbox
                       size="small"
                       checked={selectedGroupIds.includes(ind.groupId)}
                       onChange={() => onToggleGroup(ind.groupId)}
@@ -150,7 +150,7 @@ function MobileTabs({
                 <FormControlLabel
                   key={cls.groupId}
                   control={
-                    <Checkbox
+                    <SelfStatedCheckbox
                       size="small"
                       checked={selectedGroupIds.includes(cls.groupId)}
                       onChange={() => onToggleGroup(cls.groupId)}
@@ -335,11 +335,15 @@ export function PositionsView() {
                   onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleSearch(); }}
                   sx={{ display: 'flex', gap: 1, width: '100%' }}
                 >
-                  <TextField
+                  <SelfStatedText
                     inputRef={inputRef}
                     defaultValue=""
                     label="Nazwa debiutu"
                     fullWidth
+                    onCommit={(val) => {
+                      setSearch(val.trim());
+                      setPage(1);
+                    }}
                   />
                   <Button type="submit" variant="contained" sx={{ whiteSpace: 'nowrap' }}>
                     Szukaj
@@ -436,7 +440,7 @@ export function PositionsView() {
                     </Button>
                     <FormControlLabel
                       control={
-                        <Checkbox
+                        <SelfStatedCheckbox
                           size="small"
                           checked={publishDefault}
                           onChange={(e) => setPublishDefault(e.target.checked)}
@@ -478,7 +482,7 @@ export function PositionsView() {
                         >
                           <CardContent>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
-                              <Checkbox
+                              <SelfStatedCheckbox
                                 size="small"
                                 checked={selectedPositionIds.includes(position.id)}
                                 onChange={() => togglePosition(position.id)}
@@ -525,11 +529,12 @@ export function PositionsView() {
                               )}
                             </Box>
 
-                            <TextField
+                            <SelfStatedText
+                              key={`fen-${position.id}-${fen}`}
                               fullWidth
                               size="small"
                               variant="outlined"
-                              value={fen}
+                              defaultValue={fen}
                               slotProps={{ htmlInput: { readOnly: true } }}
                               sx={{
                                 mb: 1,
@@ -619,7 +624,7 @@ export function PositionsView() {
                 </Button>
                 <FormControlLabel
                   control={
-                    <Checkbox
+                    <SelfStatedCheckbox
                       size="small"
                       checked={publishDefault}
                       onChange={(e) => setPublishDefault(e.target.checked)}
@@ -671,7 +676,7 @@ export function PositionsView() {
                     <FormControlLabel
                       key={ind.groupId}
                       control={
-                        <Checkbox
+                        <SelfStatedCheckbox
                           size="small"
                           checked={selectedGroupIds.includes(ind.groupId)}
                           onChange={() => toggleGroup(ind.groupId)}
@@ -700,7 +705,7 @@ export function PositionsView() {
                     <FormControlLabel
                       key={cls.groupId}
                       control={
-                        <Checkbox
+                        <SelfStatedCheckbox
                           size="small"
                           checked={selectedGroupIds.includes(cls.groupId)}
                           onChange={() => toggleGroup(cls.groupId)}
