@@ -23,7 +23,9 @@ try {
     $application->setEventsManager($eventsManager);
 
     $response = $application->handle($_SERVER['REQUEST_URI'] ?? '/');
-    $response->send();
+    if (!$response->isSent()) {
+        $response->send();
+    }
 } catch (\Throwable $e) {
     http_response_code(500);
     header('Content-Type: application/json');

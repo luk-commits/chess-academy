@@ -28,6 +28,7 @@ INSERT INTO users (id, email, password_hash, full_name, role) VALUES
     (1, 'lichess@chess.local', '$2y$12$import.system.lichess.placeholder', 'Lichess Import', 'COACH'),
     (2, 'chess.com@chess.local', '$2y$12$import.system.chesscom.placeholder', 'Chesscom Import', 'COACH'),
     (3, 'coach@chess.local', '$2y$12$6gUcyuHt02xpzgINZu/wHu0vjrbOB.f1f2uLSfl6MtUzEOBnlP5VS', 'Demo Coach', 'COACH'),
-    (4, 'player@chess.local', '$2y$12$6gUcyuHt02xpzgINZu/wHu0vjrbOB.f1f2uLSfl6MtUzEOBnlP5VS', 'Demo Player', 'PLAYER');
+    (4, 'player@chess.local', '$2y$12$6gUcyuHt02xpzgINZu/wHu0vjrbOB.f1f2uLSfl6MtUzEOBnlP5VS', 'Demo Player', 'PLAYER')
+ON CONFLICT (id) DO NOTHING;
 
-SELECT setval(pg_get_serial_sequence('users', 'id'), 4);
+SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 0));

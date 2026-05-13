@@ -85,7 +85,8 @@ class JwtMiddleware
         $response = $dispatcher->getDI()->getShared('response');
         $response->setStatusCode(401, 'Unauthorized');
         $response->setJsonContent(['error' => $message]);
-        $response->send();
+
+        $dispatcher->setReturnedValue($response);
 
         return false;
     }
