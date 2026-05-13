@@ -37,6 +37,12 @@ class TaskStageModel extends AbstractModel
 
     /**
      *
+     * @var integer
+     */
+    public $position_id;
+
+    /**
+     *
      * @var string
      */
     public $created_at;
