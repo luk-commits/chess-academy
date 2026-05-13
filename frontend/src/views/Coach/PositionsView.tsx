@@ -188,6 +188,7 @@ export function PositionsView() {
   const [classes, setClasses] = useState<ClassGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [taskCreating, setTaskCreating] = useState(false);
+  const [publishDefault, setPublishDefault] = useState(true);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -232,6 +233,7 @@ export function PositionsView() {
       await tasksService.createTask({
         positionIds: selectedPositionIds,
         groupIds: selectedGroupIds,
+        publishDefault,
       });
       setTaskSnackbar({ message: 'Zadanie zostało utworzone!', severity: 'success' });
       setSelectedPositionIds([]);
@@ -431,6 +433,25 @@ export function PositionsView() {
                   loading={loadingGroups}
                 />
                 <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'row', gap: 1, alignItems: 'center' }}>
+                    <Button
+                      variant="contained"
+                      disabled={selectedPositionIds.length === 0 || selectedGroupIds.length === 0 || taskCreating}
+                      onClick={handleCreateTask}
+                    >
+                      {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+                    </Button>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={publishDefault}
+                          onChange={(e) => setPublishDefault(e.target.checked)}
+                        />
+                      }
+                      label="Opublikuj"
+                    />
+                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     Wszystkich pozycji: {total}
                     {selectedPositionIds.length > 0 && (
@@ -593,42 +614,55 @@ export function PositionsView() {
               flexShrink: 0,
             }}
           >
-            <Paper elevation={8} sx={{ borderRadius: 3, p: 2 }}>
-              <Button
-                variant="contained"
-                fullWidth
-                disabled={selectedPositionIds.length === 0 || selectedGroupIds.length === 0 || taskCreating}
-                onClick={handleCreateTask}
-              >
-                {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
-              </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  disabled={selectedPositionIds.length === 0 || selectedGroupIds.length === 0 || taskCreating}
+                  onClick={handleCreateTask}
+                >
+                  {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+                </Button>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={publishDefault}
+                      onChange={(e) => setPublishDefault(e.target.checked)}
+                    />
+                  }
+                  label="Opublikuj"
+                />
+              </Box>
 
               {selectedPositionIds.length > 0 && selectedGroupIds.length > 0 && (
-                <Alert severity="success" sx={{ mt: 1.5, py: 0.5 }}>
+                <Alert severity="success" sx={{ py: 0.5 }}>
                   Gotowe ({selectedPositionIds.length} pozycji, {selectedGroupIds.length} grup)
                 </Alert>
               )}
 
               {selectedPositionIds.length === 0 && selectedGroupIds.length > 0 && (
-                <Alert severity="warning" sx={{ mt: 1.5, py: 0.5 }}>
+                <Alert severity="warning" sx={{ py: 0.5 }}>
                   Wybierz przynajmniej jedną pozycję
                 </Alert>
               )}
 
               {selectedPositionIds.length > 0 && selectedGroupIds.length === 0 && (
-                <Alert severity="warning" sx={{ mt: 1.5, py: 0.5 }}>
+                <Alert severity="warning" sx={{ py: 0.5 }}>
                   Wybierz przynajmniej jednego zawodnika/klasę
                 </Alert>
               )}
 
               {selectedPositionIds.length === 0 && selectedGroupIds.length === 0 && (
-                <Alert severity="info" sx={{ mt: 1.5, py: 0.5 }}>
+                <Alert severity="info" sx={{ py: 0.5 }}>
                   Wybierz pozycje oraz zawodnika/klasę
                 </Alert>
               )}
-            </Paper>
+            </Box>
 
-            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+              <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
               <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Zawodnicy</Typography>
               </Box>
@@ -685,6 +719,7 @@ export function PositionsView() {
                 )}
               </Box>
             </Paper>
+            </Box>
           </Box>
         </Box>
       </Container>
