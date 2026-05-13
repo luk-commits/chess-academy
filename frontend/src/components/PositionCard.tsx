@@ -3,13 +3,13 @@ import {
   Box,
   Card,
   CardContent,
-  Checkbox,
   Chip,
   Paper,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { Chessboard } from 'react-chessboard';
+import SelfStatedCheckbox from './SelfStated/Checkbox';
 import SelfStatedText from './SelfStated/Text';
 import type { PositionItem } from '../types/position';
 
@@ -39,20 +39,24 @@ const PositionCard = memo(function PositionCard({
   return (
     <Card
       elevation={3}
+      onClick={() => onToggle(position.id)}
       sx={{
         height: '100%',
         borderRadius: 3,
         border: 2,
+        cursor: 'pointer',
         borderColor: isSelected ? 'primary.main' : '#fff',
       }}
     >
       <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
-          <Checkbox
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}
+          onClick={e => e.stopPropagation()}
+        >
+          <SelfStatedCheckbox
             size="small"
             id={`position-checkbox-${position.id}`}
             checked={isSelected}
-            onChange={() => onToggle(position.id)}
+            onCommit={() => onToggle(position.id)}
           />
           <Tooltip title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'} placement="top">
             <Typography
@@ -69,7 +73,6 @@ const PositionCard = memo(function PositionCard({
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
           {validFen ? (
             <Box
-              onClick={() => onToggle(position.id)}
               sx={{
                 width: '100%',
                 maxWidth: 290,
@@ -95,8 +98,6 @@ const PositionCard = memo(function PositionCard({
             </Box>
           ) : (
             <Paper
-              component="label"
-              htmlFor={`position-checkbox-${position.id}`}
               variant="outlined"
               sx={{ p: 2, width: 290, textAlign: 'center', cursor: 'pointer' }}
             >
@@ -122,7 +123,7 @@ const PositionCard = memo(function PositionCard({
               fontFamily: 'monospace',
             },
           }}
-          onClick={() => onCopy(position.id, fen)}
+          onClick={(e: React.MouseEvent) => { e.stopPropagation(); onCopy(position.id, fen); }}
         />
 
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
@@ -136,7 +137,7 @@ const PositionCard = memo(function PositionCard({
                   size="small"
                   label={tagsExpanded ? '▲ mniej' : `+${position.themeTags.length - 2}`}
                   variant="outlined"
-                  onClick={() => onToggleTags(position.id)}
+                  onClick={(e: React.MouseEvent) => { e.stopPropagation(); onToggleTags(position.id); }}
                   sx={{ cursor: 'pointer' }}
                 />
               )}

@@ -36,7 +36,7 @@ const SelfStatedSlider = memo(function SelfStatedSlider({
   return (
     <Box sx={{ px: 1 }}>
       {label && (
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
           {label}: {value[0]} – {value[1]}
         </Typography>
       )}
