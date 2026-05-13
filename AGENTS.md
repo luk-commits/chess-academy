@@ -1,5 +1,8 @@
 # AGENTS.md
 
+> **IMPORTANT: Ten plik jest automatycznie ładowany do kontekstu modelu na początku każdego zadania.**
+> **Zawsze przeczytaj go w całości przed wykonaniem jakichkolwiek poleceń — zawiera source-of-truth dla komend, architektury i zasad projektu.**
+
 ## Quick start
 
 ```bash
