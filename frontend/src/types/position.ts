@@ -16,3 +16,44 @@ export interface PositionsResponse {
   totalPages: number;
   search: string;
 }
+
+export interface IndividualGroup {
+  groupId: number;
+  playerId: number;
+  playerName: string;
+}
+
+export interface ClassGroup {
+  groupId: number;
+  name: string;
+}
+
+export interface GroupsResponse {
+  individuals: IndividualGroup[];
+  classes: ClassGroup[];
+}
+
+export interface CreateTaskPayload {
+  title?: string;
+  description?: string;
+  positionIds: number[];
+  groupIds: number[];
+}
+
+export interface TaskStageData {
+  id: number;
+  title: string;
+  sortOrder: number;
+  positionId: number;
+}
+
+export interface TaskResponse {
+  task: {
+    id: number;
+    title: string;
+    description: string;
+    status: string;
+    stages: TaskStageData[];
+    groupIds: number[];
+  };
+}
