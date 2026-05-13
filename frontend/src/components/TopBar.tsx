@@ -9,15 +9,9 @@ import {
   MenuItem,
   Box,
   IconButton,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemText,
-  Divider,
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import MenuIcon from '@mui/icons-material/Menu';
 import { useAuth } from '../hooks/useAuth';
 
 interface NavItem {
@@ -30,8 +24,6 @@ export function TopBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-
   if (!user) return null;
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
@@ -42,25 +34,7 @@ export function TopBar() {
     setAnchorEl(null);
   };
 
-  const openMobileDrawer = () => {
-    setMobileDrawerOpen(true);
-  };
-
-  const closeMobileDrawer = () => {
-    setMobileDrawerOpen(false);
-  };
-
-  const toggleMobileDrawer = () => {
-    if (mobileDrawerOpen) {
-      closeMobileDrawer();
-      return;
-    }
-
-    openMobileDrawer();
-  };
-
   const handleLogout = async () => {
-    closeMobileDrawer();
     handleMenuClose();
     await logout();
     navigate('/login', { replace: true });
@@ -78,11 +52,6 @@ export function TopBar() {
       ];
 
   const isActive = (path: string) => location.pathname === path;
-
-  const handleNavClick = (path: string) => {
-    navigate(path);
-    closeMobileDrawer();
-  };
 
   return (
     <AppBar position="static" sx={{ bgcolor: 'primary.dark' }}>
@@ -107,7 +76,7 @@ export function TopBar() {
           </Typography>
         </Box>
 
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+        <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
           {navItems.map((item) => (
             <Button
               key={item.path}
@@ -135,15 +104,6 @@ export function TopBar() {
 
         <IconButton
           color="inherit"
-          onClick={toggleMobileDrawer}
-          aria-label="otworz menu"
-          sx={{ display: { xs: 'inline-flex', md: 'none' } }}
-        >
-          <MenuIcon />
-        </IconButton>
-
-        <IconButton
-          color="inherit"
           onClick={handleMenuOpen}
           aria-label="konto"
           sx={{ display: { xs: 'inline-flex', md: 'none' } }}
@@ -156,8 +116,10 @@ export function TopBar() {
           onClick={handleMenuOpen}
           sx={{ textTransform: 'none', display: { xs: 'none', md: 'inline-flex' } }}
         >
-          <AccountCircleIcon sx={{ mr: 0.5 }} />
-          {user.email}
+          <AccountCircleIcon sx={{ mr: { xs: 0, sm: 0.5 } }} />
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            {user.email}
+          </Box>
         </Button>
 
         <Menu
@@ -170,34 +132,6 @@ export function TopBar() {
           <MenuItem onClick={handleLogout}>Wyloguj</MenuItem>
         </Menu>
 
-        <Drawer
-          anchor="right"
-          open={mobileDrawerOpen}
-          onClose={closeMobileDrawer}
-        >
-          <Box
-            sx={{ width: 280, height: '100%', display: 'flex', flexDirection: 'column' }}
-          >
-            <List sx={{ pt: 2 }}>
-              {navItems.map((item) => (
-                <ListItemButton
-                  key={item.path}
-                  selected={isActive(item.path)}
-                  onClick={() => handleNavClick(item.path)}
-                >
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              ))}
-            </List>
-            <Box sx={{ flexGrow: 1 }} />
-            <Divider />
-            <List>
-              <ListItemButton onClick={handleLogout}>
-                <ListItemText primary="Wyloguj" />
-              </ListItemButton>
-            </List>
-          </Box>
-        </Drawer>
       </Toolbar>
     </AppBar>
   );

@@ -1,6 +1,8 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { Box } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 import { TopBar } from '../components/TopBar';
+import { BottomNav } from '../components/BottomNav';
 import { PlayerHomeView } from './Player/PlayerHomeView';
 import { CoachHomeView } from './Coach/CoachHomeView';
 
@@ -10,19 +12,16 @@ export function HomeView() {
 
   if (!user) return null;
 
-  if (location.pathname === '/home') {
-    return (
-      <>
-        <TopBar />
-        {user.role === 'PLAYER' ? <PlayerHomeView /> : <CoachHomeView />}
-      </>
-    );
-  }
-
   return (
-    <>
+    <Box sx={{ pb: { xs: 7, sm: 0 }, minHeight: '100vh' }}>
       <TopBar />
-      <Outlet />
-    </>
+
+      {location.pathname === '/home'
+        ? user.role === 'PLAYER' ? <PlayerHomeView /> : <CoachHomeView />
+        : <Outlet />
+      }
+
+      <BottomNav />
+    </Box>
   );
 }
