@@ -119,6 +119,8 @@ Each DB table has two model files. The inheritance chain is:
 | `*Model.php` (e.g. `GroupModel.php`) | **Auto-generated** by `model.sh` — column properties, `setSource()`. **Will be overwritten.** Do not put custom code here. |
 | `*.php` (e.g. `Group.php`) | **Hand-written** — extends `*Model`, contains relationships, business logic, validation. **Permanent.** Put all custom code here. |
 
+Relationships (belongsTo, hasMany, hasManyToMany) must go in the consumer class (`Group.php`, `User.php`, `Task.php`), never in `*Model.php`. The `model.sh` script strips auto-generated relationships from `*Model.php` to prevent duplicates.
+
 ## Migration helper
 
 ```bash
