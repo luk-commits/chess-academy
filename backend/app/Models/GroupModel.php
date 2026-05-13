@@ -41,7 +41,7 @@ class GroupModel extends AbstractModel
     public function initialize()
     {
         $this->setSchema("public");
-        $this->setSource("classes");
+        $this->setSource("groups");
     }
 
     /**

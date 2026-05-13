@@ -26,7 +26,7 @@ class User extends UserModel
             'id',
             GroupPlayers::class,
             'player_id',
-            'class_id',
+            'group_id',
             Group::class,
             'id',
             ['alias' => 'EnrolledGroups']

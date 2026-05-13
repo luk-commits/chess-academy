@@ -18,7 +18,7 @@ class Group extends GroupModel
         $this->hasManyToMany(
             'id',
             GroupPlayers::class,
-            'class_id',
+            'group_id',
             'player_id',
             User::class,
             'id',

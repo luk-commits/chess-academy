@@ -21,7 +21,7 @@ generate_model() {
     sed -i '0,/\\Phalcon\\Mvc\\Model/s//AbstractModel/' "backend/${OUTPUT}/${CLASS}Model.php"
 
     # Remove auto-generated relationships referencing renamed models
-    sed -i "/ClassPlayers\|'Classes'\|coach_id.*'Users'/d" "backend/${OUTPUT}/${CLASS}Model.php"
+    sed -i "/GroupPlayers\|'Groups'\|coach_id.*'Users'/d" "backend/${OUTPUT}/${CLASS}Model.php"
 
     if [ ! -f "backend/${OUTPUT}/${CLASS}.php" ]; then
         echo "Creating ${CLASS}.php..."
@@ -45,4 +45,4 @@ generate_model "users" "User"
 generate_model "positions" "Position"
 generate_model "pgn_games" "PgnGame"
 generate_model "refresh_tokens" "RefreshToken"
-generate_model "classes" "Group"
+generate_model "groups" "Group"
