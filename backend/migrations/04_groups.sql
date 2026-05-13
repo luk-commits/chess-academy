@@ -2,8 +2,13 @@
 ALTER TABLE IF EXISTS classes RENAME TO groups;
 ALTER TABLE IF EXISTS class_players RENAME TO group_players;
 
--- Rename columns (idempotent)
-ALTER TABLE IF EXISTS group_players RENAME COLUMN IF EXISTS class_id TO group_id;
+-- Rename columns (idempotent — pg16 doesn't support RENAME COLUMN IF EXISTS)
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_name='group_players' AND column_name='class_id') THEN
+        ALTER TABLE group_players RENAME COLUMN class_id TO group_id;
+    END IF;
+END $$;
 
 -- Rename indexes (idempotent)
 ALTER INDEX IF EXISTS idx_classes_coach_id RENAME TO idx_groups_coach_id;
