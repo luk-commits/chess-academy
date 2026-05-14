@@ -29,8 +29,7 @@ frontend/  React 19 + Vite + TypeScript + MUI 6 — entrypoint: index.html → s
 ## Source-of-truth commands
 
 ### Frontend
-
-> **Uwaga:** Host ma Node 18, ale Vitest 3.x wymaga Node 20+ (`styleText` w `node:util`).  
+ 
 > **Wszystkie komendy poniżej muszą być odpalane przez `docker compose exec frontend`.**
 
 | What | Command |
