@@ -279,6 +279,7 @@ export function PlayerTaskDetailsView() {
   const [completed, setCompleted] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [animateBoard, setAnimateBoard] = useState(true);
   const deltaSeq = useRef(0);
 
   useEffect(() => {
@@ -325,16 +326,22 @@ export function PlayerTaskDetailsView() {
 
   useEffect(() => {
     if (!currentStage) return;
+    setAnimateBoard(false);
     const rt = buildStageRuntime(currentStage);
     setRuntime(rt);
     setHeaderMinimized(false);
     setSelectedSquare(null);
     if (rt?.introFen) {
       const tid = window.setTimeout(() => {
-        setRuntime(prev => prev ? { ...prev, currentFen: prev.introFen!, introFen: null } : prev);
-      }, 600);
+        setAnimateBoard(true);
+        requestAnimationFrame(() => {
+          setRuntime(prev => prev ? { ...prev, currentFen: prev.introFen!, introFen: null } : prev);
+        });
+      }, 250);
       return () => clearTimeout(tid);
     }
+    const enableTid = window.setTimeout(() => setAnimateBoard(true), 100);
+    return () => clearTimeout(enableTid);
   }, [currentStage]);
 
   useEffect(() => {
@@ -598,7 +605,7 @@ export function PlayerTaskDetailsView() {
                 onPieceDrop: handlePieceDrop,
                 onSquareClick: handleSquareClick,
                 squareStyles,
-                showAnimations: true,
+                showAnimations: animateBoard,
                 animationDurationInMs: 180,
                 boardStyle: {
                   width: '100%',
