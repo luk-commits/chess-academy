@@ -63,7 +63,7 @@ export async function apiRequest<TResponse, TBody = unknown>(
 
   const response = await fetch(`${API_URL}${path}`, requestInit);
 
-  if (response.status === 401 && retryCount === 0) {
+  if (response.status === 401 && retryCount === 0 && path !== '/api/login') {
     const refreshed = await attemptRefresh();
     if (refreshed) {
       return apiRequest(path, options, 1);
