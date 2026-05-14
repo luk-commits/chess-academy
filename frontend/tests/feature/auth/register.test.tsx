@@ -2,13 +2,13 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material';
-import { theme } from '../../src/theme';
-import { RegisterView } from '../../src/views/RegisterView';
-import { AuthContext } from '../../src/context/AuthContext';
-import type { AuthContextValue } from '../../src/context/AuthContext';
+import { theme } from '../../../src/theme';
+import { RegisterView } from '../../../src/views/RegisterView';
+import { AuthContext } from '../../../src/context/AuthContext';
+import type { AuthContextValue } from '../../../src/context/AuthContext';
 import userEvent from '@testing-library/user-event';
 
-vi.mock('../../src/services/authService', () => ({
+vi.mock('../../../src/services/authService', () => ({
   authService: {
     register: vi.fn(),
   },

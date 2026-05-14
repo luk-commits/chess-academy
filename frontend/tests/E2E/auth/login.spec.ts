@@ -132,4 +132,25 @@ test.describe('Formularz Logowania', () => {
     await expect(page).toHaveURL(/\/home/);
   });
 
+  // --- Pełen cykl: logowanie → wylogowanie → ponowne logowanie ---
+
+  test('pełen cykl: logowanie → wylogowanie → ponowne logowanie', async ({ page }) => {
+    // Krok 1: Zaloguj
+    await page.goto('/login');
+    await page.fill('input[autocomplete="email"]', 'coach@chess.local');
+    await page.fill('input[autocomplete="current-password"]', 'password123');
+    await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/\/home/);
+
+    // Krok 2: Wyloguj się z /home
+    await page.goto('/logout');
+    await expect(page).toHaveURL(/\/login/);
+
+    // Krok 3: Ponowne logowanie z innym kontem
+    await page.fill('input[autocomplete="email"]', 'player@chess.local');
+    await page.fill('input[autocomplete="current-password"]', 'password123');
+    await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/\/home/);
+  });
+
 });

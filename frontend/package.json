@@ -10,7 +10,8 @@
     "lint": "tsc -b --noEmit",
     "test": "playwright test",
     "test:unit": "vitest run tests/unit",
-    "test:integration": "vitest run tests/integration",
+    "test:component": "vitest run tests/component",
+    "test:feature": "vitest run tests/feature",
     "test:all": "vitest run"
   },
   "dependencies": {

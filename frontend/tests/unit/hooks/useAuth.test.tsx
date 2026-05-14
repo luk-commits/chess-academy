@@ -1,9 +1,9 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { useAuth } from '../../src/hooks/useAuth';
-import { AuthContext } from '../../src/context/AuthContext';
-import type { AuthContextValue } from '../../src/context/AuthContext';
+import { useAuth } from '../../../src/hooks/useAuth';
+import { AuthContext } from '../../../src/context/AuthContext';
+import type { AuthContextValue } from '../../../src/context/AuthContext';
 
 describe('useAuth', () => {
   it('throws when used outside AuthProvider', () => {

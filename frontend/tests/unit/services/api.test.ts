@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ApiError, apiRequest } from '../../src/services/api';
+import { ApiError, apiRequest } from '../../../src/services/api';
 
 describe('ApiError', () => {
   it('creates an error with status and message', () => {

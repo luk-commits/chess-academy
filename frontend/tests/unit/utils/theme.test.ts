@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { theme } from '../../src/theme';
+import { theme } from '../../../src/theme';
 
 describe('theme', () => {
   it('should have correct primary color', () => {

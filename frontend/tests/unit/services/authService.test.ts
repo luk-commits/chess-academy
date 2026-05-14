@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { authService } from '../../src/services/authService';
+import { authService } from '../../../src/services/authService';
 
-vi.mock('../../src/services/api', () => ({
+vi.mock('../../../src/services/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-import { apiRequest } from '../../src/services/api';
+import { apiRequest } from '../../../src/services/api';
 const mockedApiRequest = vi.mocked(apiRequest);
 
 describe('authService', () => {
