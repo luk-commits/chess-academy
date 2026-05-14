@@ -7,33 +7,24 @@ import {
   CircularProgress,
   Container,
   Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControlLabel,
   IconButton,
   Pagination,
   Paper,
   Snackbar,
-  Switch,
-  Tab,
-  Tabs,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import BiotechIcon from '@mui/icons-material/Biotech';
-import { Chess } from 'chess.js';
 import { positionsService } from '../../services/positionsService';
 import { groupsService } from '../../services/groupsService';
 import { tasksService } from '../../services/tasksService';
 import SelfStatedSlider from '../../components/SelfStated/Slider';
-import SelfStatedCheckbox from '../../components/SelfStated/Checkbox';
 import SelfStatedText from '../../components/SelfStated/Text';
+import { isValidFen, boardOrientationFromFen, applyFirstMoveToFen } from '../../utils/chessPosition';
 import PositionCard from '../../components/PositionCard';
+import { TaskAssignmentSection } from '../../components/tasks/TaskAssignmentSection';
 import type { PositionItem, IndividualGroup, ClassGroup } from '../../types/position';
 
 const PER_PAGE = 12;
@@ -55,121 +46,6 @@ const THEME_TAGS = [
   'trappedPiece', 'triangleMate', 'underPromotion', 'veryLong', 'vukovicMate',
   'xRayAttack', 'zugzwang',
 ];
-
-function isValidFen(fen: string): boolean {
-  try {
-    const chess = new Chess();
-    chess.load(fen);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function boardOrientation(fen: string): 'white' | 'black' {
-  const turn = fen.split(' ')[1];
-  return turn === 'b' ? 'black' : 'white';
-}
-
-function applyFirstMove(fen: string, uci: string | null): string {
-  if (!uci) return fen;
-  try {
-    const chess = new Chess(fen);
-    const from = uci.slice(0, 2);
-    const to = uci.slice(2, 4);
-    const move: { from: string; to: string; promotion?: string } = { from, to };
-    if (uci.length > 4) {
-      move.promotion = uci.slice(4);
-    }
-    const result = chess.move(move);
-    if (!result) return fen;
-    return chess.fen();
-  } catch {
-    return fen;
-  }
-}
-
-function MobileTabs({
-  individuals,
-  classes,
-  onCommitGroup,
-  resetKey,
-  loading,
-}: {
-  individuals: IndividualGroup[];
-  classes: ClassGroup[];
-  onCommitGroup: (groupId: number, checked: boolean) => void;
-  resetKey: number;
-  loading: boolean;
-}) {
-  const [tab, setTab] = useState(0);
-
-  return (
-    <Box sx={{ display: { lg: 'none' }, mb: 2 }}>
-      <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-        <Box sx={{ bgcolor: 'primary.main' }}>
-          <Tabs
-            value={tab}
-            onChange={(_e, v) => setTab(v)}
-            variant="fullWidth"
-            sx={{
-              minHeight: 0,
-              '& .MuiTab-root': { color: 'rgba(255,255,255,0.7)', fontWeight: 700, py: 1.5, minHeight: 0 },
-              '& .Mui-selected': { color: '#fff !important', bgcolor: 'rgba(255,255,255,0.15)' },
-              '& .MuiTabs-indicator': { bgcolor: '#4caf50', height: 3 },
-            }}
-          >
-            <Tab label={`Zawodnicy (${individuals.length})`} />
-            <Tab label={`Klasy (${classes.length})`} />
-          </Tabs>
-        </Box>
-        <Box sx={{ p: 2, maxHeight: 220, overflowY: 'auto' }}>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : tab === 0 ? (
-            individuals.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">Brak zawodników.</Typography>
-            ) : (
-              individuals.map(ind => (
-                <FormControlLabel
-                  key={`${ind.groupId}-${resetKey}`}
-                  control={
-                    <SelfStatedCheckbox
-                      size="small"
-                      defaultChecked={false}
-                      onCommit={(checked) => onCommitGroup(ind.groupId, checked)}
-                    />
-                  }
-                  label={ind.playerName}
-                />
-              ))
-            )
-          ) : (
-            classes.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">Brak klas.</Typography>
-            ) : (
-              classes.map(cls => (
-                <FormControlLabel
-                  key={`${cls.groupId}-${resetKey}`}
-                  control={
-                    <SelfStatedCheckbox
-                      size="small"
-                      defaultChecked={false}
-                      onCommit={(checked) => onCommitGroup(cls.groupId, checked)}
-                    />
-                  }
-                  label={cls.name}
-                />
-              ))
-            )
-          )}
-        </Box>
-      </Paper>
-    </Box>
-  );
-}
 
 export function PositionsView() {
   const [positions, setPositions] = useState<PositionItem[]>([]);
@@ -255,7 +131,7 @@ export function PositionsView() {
     setSelectedGroupCount(selectedGroupsRef.current.size);
   }, []);
 
-  const handleCreateTask = async () => {
+  const handleCreateTask = async (opts?: { closeModal?: boolean }) => {
     if (selectedPositionCount === 0 || selectedGroupCount === 0) return;
     setTaskCreating(true);
     try {
@@ -271,31 +147,7 @@ export function PositionsView() {
       selectedGroupsRef.current.clear();
       setSelectedGroupCount(0);
       setSidebarResetKey(k => k + 1);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Nie udało się utworzyć zadania.';
-      setTaskSnackbar({ message: msg, severity: 'error' });
-    } finally {
-      setTaskCreating(false);
-    }
-  };
-
-  const handleCreateTaskAndCloseModal = async () => {
-    if (selectedPositionCount === 0 || selectedGroupCount === 0) return;
-    setTaskCreating(true);
-    try {
-      await tasksService.createTask({
-        positionIds: Array.from(selectedPositionsRef.current),
-        groupIds: Array.from(selectedGroupsRef.current),
-        publishDefault: publishDefaultRef.current,
-      });
-      setTaskSnackbar({ message: 'Zadania zostały utworzone!', severity: 'success' });
-      selectedPositionsRef.current.clear();
-      setSelectedPositionCount(0);
-      setSelectionResetKey(k => k + 1);
-      selectedGroupsRef.current.clear();
-      setSelectedGroupCount(0);
-      setSidebarResetKey(k => k + 1);
-      setAssignModalOpen(false);
+      if (opts?.closeModal) setAssignModalOpen(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Nie udało się utworzyć zadania.';
       setTaskSnackbar({ message: msg, severity: 'error' });
@@ -498,7 +350,7 @@ export function PositionsView() {
 
                 <Grid container spacing={2}>
                   {positions.map((position) => {
-                    const fen = applyFirstMove(position.fen, position.firstMove);
+                    const fen = applyFirstMoveToFen(position.fen, position.firstMove);
                     const validFen = isValidFen(fen);
                     return (
                       <Grid key={`${selectionResetKey}-${position.id}`} size={{ xs: 12, md: 6, lg: 4 }}>
@@ -506,7 +358,7 @@ export function PositionsView() {
                           position={position}
                           fen={fen}
                           validFen={validFen}
-                          boardOrientation={boardOrientation(fen)}
+                          boardOrientation={boardOrientationFromFen(fen)}
                           isSelected={selectedPositionsRef.current.has(position.id)}
                           tagsExpanded={!!cardTagsExpanded[position.id]}
                           onToggle={handlePositionToggle}
@@ -529,176 +381,24 @@ export function PositionsView() {
             )}
           </Box>
 
-          <Box
-            sx={{
-              width: 260,
-              display: { xs: 'none', lg: 'flex' },
-              flexDirection: 'column',
-              position: 'sticky',
-              top: 88,
-              alignSelf: 'flex-start',
-              maxHeight: 'calc(100vh - 100px)',
-              overflowY: 'auto',
-              flexShrink: 0,
-            }}
-          >
-            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5, textAlign: 'center' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Zawodnicy</Typography>
-              </Box>
-              <Box sx={{ p: 2, maxHeight: 200, overflowY: 'auto' }}>
-                {loadingGroups ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                    <CircularProgress size={24} />
-                  </Box>
-                ) : individuals.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">Brak zawodników.</Typography>
-                ) : (
-                  individuals.map(ind => (
-                    <FormControlLabel
-                      key={`${ind.groupId}-${sidebarResetKey}`}
-                      control={
-                        <SelfStatedCheckbox
-                          size="small"
-                          defaultChecked={false}
-                          onCommit={(checked) => handleGroupCommit(ind.groupId, checked)}
-                        />
-                      }
-                      label={ind.playerName}
-                    />
-                  ))
-                )}
-              </Box>
-            </Paper>
-
-            <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden', mt: 2 }}>
-              <Box sx={{ bgcolor: 'primary.main', color: '#fff', px: 2.5, py: 1.5, textAlign: 'center' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Klasy</Typography>
-              </Box>
-              <Box sx={{ p: 2, maxHeight: 200, overflowY: 'auto' }}>
-                {loadingGroups ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                    <CircularProgress size={24} />
-                  </Box>
-                ) : classes.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">Brak klas.</Typography>
-                ) : (
-                  classes.map(cls => (
-                    <FormControlLabel
-                      key={`${cls.groupId}-${sidebarResetKey}`}
-                      control={
-                        <SelfStatedCheckbox
-                          size="small"
-                          defaultChecked={false}
-                          onCommit={(checked) => handleGroupCommit(cls.groupId, checked)}
-                        />
-                      }
-                      label={cls.name}
-                    />
-                  ))
-                )}
-              </Box>
-            </Paper>
-
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Button
-                variant="contained"
-                fullWidth
-                disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
-                onClick={handleCreateTask}
-                sx={{ justifyContent: 'flex-start', gap: 1, px: 2 }}
-              >
-                <Box sx={{ flex: 1, textAlign: 'right' }}>
-            {taskCreating && <CircularProgress size={16} sx={{ mr: 1 }} />}
-            Dodaj zadania
-                </Box>
-                <Tooltip title="Opublikuj">
-                  <Switch
-                    defaultChecked
-                    color="secondary"
-                    onChange={(_, checked) => { publishDefaultRef.current = checked; }}
-                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  />
-                </Tooltip>
-              </Button>
-            </Box>
-
-            {selectedPositionCount > 0 && selectedGroupCount > 0 && (
-              <Alert severity="success" sx={{ py: 0.5 }}>
-                Gotowe ({selectedPositionCount} pozycji, {selectedGroupCount} grup)
-              </Alert>
-            )}
-
-            {selectedPositionCount === 0 && selectedGroupCount > 0 && (
-              <Alert severity="warning" sx={{ py: 0.5 }}>
-                Wybierz pozycję
-              </Alert>
-            )}
-
-            {selectedPositionCount > 0 && selectedGroupCount === 0 && (
-              <Alert severity="warning" sx={{ py: 0.5 }}>
-                Wybierz zawodnika/klasę
-              </Alert>
-            )}
-
-            {selectedPositionCount === 0 && selectedGroupCount === 0 && (
-              <Alert severity="info" sx={{ py: 0.5 }}>
-                Wybierz pozycje oraz zawodnika/klasę
-              </Alert>
-            )}
-          </Box>
+          <TaskAssignmentSection
+            individuals={individuals.map(ind => ({ id: ind.groupId, label: ind.playerName }))}
+            classes={classes.map(cls => ({ id: cls.groupId, label: cls.name }))}
+            loadingGroups={loadingGroups}
+            selectedPositionCount={selectedPositionCount}
+            selectedGroupCount={selectedGroupCount}
+            taskCreating={taskCreating}
+            assignModalOpen={assignModalOpen}
+            onOpenModal={() => setAssignModalOpen(true)}
+            onCloseModal={() => setAssignModalOpen(false)}
+            sidebarResetKey={sidebarResetKey}
+            onCommitGroup={handleGroupCommit}
+            publishDefaultRef={publishDefaultRef}
+            onCreateTaskDesktop={() => handleCreateTask()}
+            onCreateTaskFromModal={() => handleCreateTask({ closeModal: true })}
+          />
         </Box>
       </Container>
-
-      <Dialog
-        open={assignModalOpen}
-        onClose={() => setAssignModalOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle sx={{ fontWeight: 700 }}>Przypisz zadania</DialogTitle>
-        <DialogContent>
-          <MobileTabs
-            individuals={individuals}
-            classes={classes}
-            onCommitGroup={handleGroupCommit}
-            resetKey={sidebarResetKey}
-            loading={loadingGroups}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                defaultChecked
-                onChange={(_, checked) => { publishDefaultRef.current = checked; }}
-              />
-            }
-            label="Opublikuj"
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setAssignModalOpen(false)}>Anuluj</Button>
-          <Button
-            variant="contained"
-            disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
-            onClick={handleCreateTaskAndCloseModal}
-          >
-            Dodaj zadania
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Box sx={{ display: { xs: 'block', lg: 'none' }, position: 'fixed', bottom: 10, left: 0, right: 0, px: 2, zIndex: 1100 }}>
-        <Button
-          variant="contained"
-          fullWidth
-          disabled={selectedPositionCount === 0 || taskCreating}
-          onClick={() => setAssignModalOpen(true)}
-          sx={{ borderRadius: 3, py: 1.5 }}
-        >
-          Przypisz zadania
-        </Button>
-      </Box>
 
       <Snackbar
         open={taskSnackbar !== null}

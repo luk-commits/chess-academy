@@ -9,43 +9,10 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import { Chess } from 'chess.js';
 import { playerTasksService } from '../../services/playerTasksService';
 import type { PlayerTask } from '../../types/position';
+import { isValidFen, boardOrientationFromFen, applyFirstMoveToFen } from '../../utils/chessPosition';
 import PositionCard from '../../components/PositionCard';
-
-function isValidFen(fen: string): boolean {
-  try {
-    const chess = new Chess();
-    chess.load(fen);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function boardOrientation(fen: string): 'white' | 'black' {
-  const turn = fen.split(' ')[1];
-  return turn === 'b' ? 'black' : 'white';
-}
-
-function applyFirstMove(fen: string, uci: string | null): string {
-  if (!uci) return fen;
-  try {
-    const chess = new Chess(fen);
-    const from = uci.slice(0, 2);
-    const to = uci.slice(2, 4);
-    const move: { from: string; to: string; promotion?: string } = { from, to };
-    if (uci.length > 4) {
-      move.promotion = uci.slice(4);
-    }
-    const result = chess.move(move);
-    if (!result) return fen;
-    return chess.fen();
-  } catch {
-    return fen;
-  }
-}
 
 export function PlayerTasksView() {
   const [tasks, setTasks] = useState<PlayerTask[]>([]);
@@ -124,7 +91,7 @@ export function PlayerTasksView() {
         ) : (
           <Grid container spacing={2}>
             {allPositions.map(({ key, position }) => {
-              const fen = applyFirstMove(position.fen, position.firstMove);
+              const fen = applyFirstMoveToFen(position.fen, position.firstMove);
               const validFen = isValidFen(fen);
               return (
                 <Grid key={key} size={{ xs: 12, md: 6, lg: 4 }}>
@@ -132,7 +99,7 @@ export function PlayerTasksView() {
                     position={position}
                     fen={fen}
                     validFen={validFen}
-                    boardOrientation={boardOrientation(fen)}
+                    boardOrientation={boardOrientationFromFen(fen)}
                     isSelected={false}
                     tagsExpanded={!!cardTagsExpanded[position.id]}
                     onToggle={() => {}}
