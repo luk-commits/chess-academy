@@ -11,7 +11,7 @@ test.describe('Coach Positions E2E', () => {
   });
 
   test('positions page loads and shows at least one card', async ({ page }) => {
-    await expect(page.locator('[data-testid="Chessboard"]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[id$="-board"]').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('search filters results', async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe('Coach Positions E2E', () => {
     await page.waitForTimeout(300);
     await expect(page.getByText(/wybrano: 1/i)).toBeVisible();
 
-    const checkbox = page.getByText('Alice').locator('..').locator('input[type="checkbox"]');
+    const checkbox = page.getByText('Demo Group', { exact: false }).locator('..').locator('input[type="checkbox"]');
     await checkbox.check();
     await page.waitForTimeout(300);
     await page.getByText('Dodaj zadania').click();
@@ -63,7 +63,7 @@ test.describe('Coach Positions E2E', () => {
     await page.waitForTimeout(300);
     await expect(page.getByRole('dialog')).toBeVisible();
 
-    const checkbox = page.getByText('Alice').locator('..').locator('input[type="checkbox"]');
+    const checkbox = page.getByText('Demo Group', { exact: false }).locator('..').locator('input[type="checkbox"]');
     await checkbox.check();
     await page.waitForTimeout(300);
     await page.getByRole('button', { name: /dodaj zadania/i }).click();
