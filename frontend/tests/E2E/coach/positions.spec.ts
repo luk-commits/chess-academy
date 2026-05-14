@@ -44,8 +44,7 @@ test.describe('Coach Positions E2E', () => {
     await page.waitForTimeout(300);
     await expect(page.getByText(/wybrano: 1/i)).toBeVisible();
 
-    const checkbox = page.getByText('Demo Group', { exact: false }).locator('..').locator('input[type="checkbox"]');
-    await checkbox.check();
+    await page.getByText('Demo Group', { exact: false }).click();
     await page.waitForTimeout(300);
     await page.getByText('Dodaj zadania').click();
     await expect(page.getByText('Zadania zostały utworzone!')).toBeVisible({ timeout: 5000 });
@@ -63,8 +62,10 @@ test.describe('Coach Positions E2E', () => {
     await page.waitForTimeout(300);
     await expect(page.getByRole('dialog')).toBeVisible();
 
-    const checkbox = page.getByText('Demo Group', { exact: false }).locator('..').locator('input[type="checkbox"]');
-    await checkbox.check();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('tab', { name: /klasy/i }).click();
+    await page.waitForTimeout(300);
+    await dialog.getByText('Demo Group', { exact: false }).click();
     await page.waitForTimeout(300);
     await page.getByRole('button', { name: /dodaj zadania/i }).click();
     await expect(page.getByText('Zadania zostały utworzone!')).toBeVisible({ timeout: 5000 });
