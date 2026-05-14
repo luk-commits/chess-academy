@@ -20,7 +20,7 @@ class JwtMiddleware
      * CORS preflight OPTIONS requests must also be public.
      */
     private const PUBLIC_ROUTES = [
-        'auth' => ['login', 'register', 'refresh', 'preflight'],
+        'auth' => ['login', 'register', 'refresh', 'preflight', 'logout'],
     ];
 
     public function __construct(

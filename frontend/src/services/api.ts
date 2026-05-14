@@ -1,10 +1,5 @@
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 
-/**
- * Custom error class that preserves the HTTP status code.
- * This lets the UI distinguish between server validation errors (e.g. 422)
- * and network failures (caught as plain Error), enabling appropriate UX per status.
- */
 export class ApiError extends Error {
   public readonly status: number;
 
@@ -14,15 +9,44 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Thin wrapper around fetch with:
- * - Automatic JSON serialization/deserialization
- * - `credentials: 'include'` to send HttpOnly cookies cross-origin
- * - Structured error extraction from the server's `{ error: string }` response shape
- */
+export class ExpiredSessionError extends Error {
+  constructor() {
+    super('Session expired');
+  }
+}
+
+let refreshPromise: Promise<boolean> | null = null;
+
+async function attemptRefresh(): Promise<boolean> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 export async function apiRequest<TResponse, TBody = unknown>(
   path: string,
   options: { method?: string; body?: TBody } = {},
+  retryCount = 0,
 ): Promise<TResponse> {
   const requestInit: RequestInit = {
     method: options.method ?? 'GET',
@@ -38,6 +62,14 @@ export async function apiRequest<TResponse, TBody = unknown>(
   }
 
   const response = await fetch(`${API_URL}${path}`, requestInit);
+
+  if (response.status === 401 && retryCount === 0) {
+    const refreshed = await attemptRefresh();
+    if (refreshed) {
+      return apiRequest(path, options, 1);
+    }
+    throw new ExpiredSessionError();
+  }
 
   const text = await response.text();
   const data = text ? (JSON.parse(text) as unknown) : null;

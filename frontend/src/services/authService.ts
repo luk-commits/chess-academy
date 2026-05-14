@@ -24,5 +24,9 @@ export const authService = {
   me(): Promise<LoginResponse> {
     return apiRequest<LoginResponse>('/api/me');
   },
+
+  refresh(): Promise<LoginResponse> {
+    return apiRequest<LoginResponse>('/api/refresh', { method: 'POST' });
+  },
 };
 

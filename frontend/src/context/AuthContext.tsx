@@ -66,7 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await authService.logout();
+    try {
+      await authService.logout();
+    } catch {
+      // Even if the API call fails (e.g. expired token), clear local state
+      // so the user gets redirected to login.
+    }
     setUser(null);
     setError(null);
   }, []);
