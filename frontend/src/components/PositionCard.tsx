@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import {
   Box,
   Card,
@@ -9,6 +9,60 @@ import {
   Typography,
 } from '@mui/material';
 import { Chessboard } from 'react-chessboard';
+
+function LazyChessboard({ id, fen, boardOrientation }: { id: number; fen: string; boardOrientation: 'white' | 'black' }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) return;
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: '300px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  return (
+    <Box
+      ref={ref}
+      sx={{
+        width: '100%',
+        maxWidth: 290,
+        aspectRatio: '1 / 1',
+        cursor: 'pointer',
+        '& *': {
+          cursor: 'pointer !important',
+          pointerEvents: 'none',
+        },
+      }}
+    >
+      {visible && (
+        <Chessboard
+          options={{
+            id: `position-${id}`,
+            position: fen,
+            boardOrientation,
+            allowDragging: false,
+            boardStyle: {
+              width: '100%',
+              borderRadius: '8px',
+            },
+          }}
+        />
+      )}
+    </Box>
+  );
+}
 import SelfStatedCheckbox from './SelfStated/Checkbox';
 import SelfStatedText from './SelfStated/Text';
 import type { PositionItem } from '../types/position';
@@ -74,30 +128,7 @@ const PositionCard = memo(function PositionCard({
 
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
           {validFen ? (
-            <Box
-              sx={{
-                width: '100%',
-                maxWidth: 290,
-                cursor: 'pointer',
-                '& *': {
-                  cursor: 'pointer !important',
-                  pointerEvents: 'none',
-                },
-              }}
-            >
-              <Chessboard
-                options={{
-                  id: `position-${position.id}`,
-                  position: fen,
-                  boardOrientation,
-                  allowDragging: false,
-                  boardStyle: {
-                    width: '100%',
-                    borderRadius: '8px',
-                  },
-                }}
-              />
-            </Box>
+            <LazyChessboard id={position.id} fen={fen} boardOrientation={boardOrientation} />
           ) : (
             <Paper
               variant="outlined"
