@@ -2,6 +2,7 @@ export interface PositionItem {
   id: number;
   fen: string;
   firstMove: string | null;
+  moves?: string[];
   opening: string;
   themeTags: string[];
   rating: number | null;
@@ -70,6 +71,8 @@ export interface PlayerTask {
   id: number;
   title: string;
   description: string;
+  coachName: string;
+  isIndividual: boolean;
   stages: PlayerTaskStage[];
 }
 
