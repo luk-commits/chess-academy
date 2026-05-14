@@ -1,5 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ApiError, apiRequest } from '../../../src/services/api';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { ApiError, ExpiredSessionError, apiRequest } from '../../../src/services/api';
+
+const mockFetch = vi.fn();
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', mockFetch);
+  mockFetch.mockClear();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('ApiError', () => {
   it('creates an error with status and message', () => {
@@ -10,16 +21,15 @@ describe('ApiError', () => {
   });
 });
 
+describe('ExpiredSessionError', () => {
+  it('creates an error with Session expired message', () => {
+    const err = new ExpiredSessionError();
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe('Session expired');
+  });
+});
+
 describe('apiRequest', () => {
-  const mockFetch = vi.fn();
-  beforeEach(() => {
-    vi.stubGlobal('fetch', mockFetch);
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('makes a GET request and returns parsed JSON', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -52,12 +62,11 @@ describe('apiRequest', () => {
   });
 
   it('throws ApiError when response is not ok', async () => {
-    const errorResponse = {
+    mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 422,
       text: () => Promise.resolve(JSON.stringify({ error: 'Email already taken' })),
-    };
-    mockFetch.mockResolvedValue(errorResponse);
+    });
 
     await expect(apiRequest('/api/register', { method: 'POST' })).rejects.toMatchObject({
       status: 422,
@@ -82,5 +91,67 @@ describe('apiRequest', () => {
     mockFetch.mockRejectedValueOnce(new TypeError('Network error'));
 
     await expect(apiRequest('/api/test')).rejects.toThrow(TypeError);
+  });
+
+  it('on 401, refreshes token and retries the original request on success', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false, status: 401, text: () => Promise.resolve('{}'),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true, status: 200, text: () => Promise.resolve('{}'),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true, status: 200, text: () => Promise.resolve(JSON.stringify({ user: { id: 1 } })),
+    });
+
+    const result = await apiRequest('/api/me');
+
+    expect(result).toEqual({ user: { id: 1 } });
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      '/api/refresh',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+    );
+  });
+
+  it('throws ExpiredSessionError when refresh endpoint fails', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false, status: 401, text: () => Promise.resolve('{}'),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: false, status: 401, text: () => Promise.resolve(JSON.stringify({ error: 'Invalid refresh token' })),
+    });
+
+    await expect(apiRequest('/api/me')).rejects.toThrow(ExpiredSessionError);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws ExpiredSessionError when network fails during refresh', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false, status: 401, text: () => Promise.resolve('{}'),
+    });
+    mockFetch.mockRejectedValueOnce(new TypeError('Network error'));
+
+    await expect(apiRequest('/api/me')).rejects.toThrow(ExpiredSessionError);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry refresh more than once per request', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false, status: 401, text: () => Promise.resolve('{}'),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true, status: 200, text: () => Promise.resolve('{}'),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: false, status: 401, text: () => Promise.resolve('{}'),
+    });
+
+    const err = await apiRequest('/api/me').catch(e => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(401);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
   });
 });

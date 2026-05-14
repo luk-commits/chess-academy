@@ -40,4 +40,9 @@ describe('authService', () => {
     authService.me();
     expect(mockedApiRequest).toHaveBeenCalledWith('/api/me');
   });
+
+  it('refresh calls apiRequest POST /api/refresh', () => {
+    authService.refresh();
+    expect(mockedApiRequest).toHaveBeenCalledWith('/api/refresh', { method: 'POST' });
+  });
 });
