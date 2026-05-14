@@ -481,17 +481,6 @@ export function PositionsView() {
             ) : (
               <>
                 <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ display: { xs: 'flex', lg: 'none' }, width: '100%' }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      disabled={selectedPositionCount === 0 || taskCreating}
-                      onClick={() => setAssignModalOpen(true)}
-                      sx={{ justifyContent: 'center', gap: 1, px: 2 }}
-                    >
-                      Przypisz zadania
-                    </Button>
-                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     Wszystkich pozycji: {total}
                     {selectedPositionCount > 0 && (
@@ -698,6 +687,18 @@ export function PositionsView() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Box sx={{ display: { xs: 'block', lg: 'none' }, position: 'fixed', bottom: 10, left: 0, right: 0, px: 2, zIndex: 1100 }}>
+        <Button
+          variant="contained"
+          fullWidth
+          disabled={selectedPositionCount === 0 || taskCreating}
+          onClick={() => setAssignModalOpen(true)}
+          sx={{ borderRadius: 3, py: 1.5 }}
+        >
+          Przypisz zadania
+        </Button>
+      </Box>
 
       <Snackbar
         open={taskSnackbar !== null}
