@@ -16,7 +16,7 @@ test.describe('Coach Positions E2E', () => {
 
   test('search filters results', async ({ page }) => {
     const input = page.getByLabel(/nazwa debiutu/i);
-    await input.fill('Italian');
+    await input.fill('Sicilian');
     await input.press('Enter');
     await page.waitForTimeout(1000);
   });
