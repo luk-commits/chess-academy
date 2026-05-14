@@ -102,4 +102,27 @@ describe('Login', () => {
     await user.keyboard('{Enter}');
     expect(loginMock).toHaveBeenCalledWith({ email: 'test@chess.local', password: 'secret123' });
   });
+
+  it('shows email validation error for invalid email format and blocks submit', async () => {
+    const user = userEvent.setup();
+    renderWithAuth(<LoginView />);
+    const emailInput = screen.getByLabelText(/email/i);
+    await user.type(emailInput, 'notanemail');
+    await user.type(screen.getByLabelText(/hasło/i), 'secret123');
+    expect(screen.getByText(/nieprawidłowy adres email/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /zaloguj się/i })).toBeDisabled();
+  });
+
+  it('clears email validation error when email becomes valid', async () => {
+    const user = userEvent.setup();
+    renderWithAuth(<LoginView />);
+    const emailInput = screen.getByLabelText(/email/i);
+    await user.type(emailInput, 'notanemail');
+    await user.type(screen.getByLabelText(/hasło/i), 'secret123');
+    expect(screen.getByText(/nieprawidłowy adres email/i)).toBeInTheDocument();
+    await user.clear(emailInput);
+    await user.type(emailInput, 'test@chess.local');
+    expect(screen.queryByText(/nieprawidłowy adres email/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /zaloguj się/i })).toBeEnabled();
+  });
 });

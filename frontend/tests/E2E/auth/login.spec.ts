@@ -114,6 +114,26 @@ test.describe('Formularz Logowania', () => {
     await expect(page).toHaveURL(/\/home/);
   });
 
+  // --- Walidacja formatu emaila ---
+
+  test('nieprawidłowy format emaila wyświetla błąd i blokuje submit', async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('input[autocomplete="email"]', 'nieprawidlowy');
+    await page.fill('input[autocomplete="current-password"]', 'password123');
+    await expect(page.locator('button[type="submit"]')).toBeDisabled();
+    await expect(page.getByText(/nieprawidłowy adres email/i)).toBeVisible();
+  });
+
+  test('poprawienie formatu emaila usuwa błąd walidacji', async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('input[autocomplete="email"]', 'nieprawidlowy');
+    await expect(page.getByText(/nieprawidłowy adres email/i)).toBeVisible();
+    await page.fill('input[autocomplete="email"]', 'coach@chess.local');
+    await expect(page.getByText(/nieprawidłowy adres email/i)).not.toBeVisible();
+    await page.fill('input[autocomplete="current-password"]', 'password123');
+    await expect(page.locator('button[type="submit"]')).toBeEnabled();
+  });
+
   // --- Ochrona tras ---
 
   test('niezalogowany użytkownik próbujący wejść na /home jest przekierowany na /login', async ({ page }) => {

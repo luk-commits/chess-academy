@@ -20,11 +20,12 @@ import { BrandHeader } from '../components/BrandHeader';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Login form with client-side validation strategy:
- * - The submit button is disabled while fields are empty or a request is in flight
- *   (prevents double submission and empty payloads at the network level).
- * - Server-side validation errors are displayed via the shared `error` state
- *   from AuthContext, which shows them in an Alert above the form.
+ * Login form with two-layer validation:
+ * 1. Client-side: email format is validated (same regex as RegisterView).
+ *    The submit button is disabled until all fields are valid.
+ * 2. Server-side: the API verifies credentials.
+ *    Server errors are displayed via the shared `error` state from AuthContext
+ *    in an Alert above the form.
  * - Password visibility toggle is implemented client-side only (no effect on the value).
  */
 export function LoginView() {
@@ -40,11 +41,13 @@ export function LoginView() {
     }
   }, [user, navigate]);
 
+  const isEmailInvalid = email.trim().length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const emailErrorMessage = isEmailInvalid ? 'Nieprawidłowy adres email' : '';
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await login({ email: email.trim(), password });
   };
-
 
   return (
     <Box
@@ -90,6 +93,8 @@ export function LoginView() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
+              error={isEmailInvalid}
+              helperText={emailErrorMessage}
               sx={{ mb: 2 }}
               slotProps={{
                 input: {
@@ -139,7 +144,7 @@ export function LoginView() {
               variant="contained"
               size="large"
               fullWidth
-              disabled={loading || email === '' || password === ''}
+              disabled={loading || email === '' || password === '' || isEmailInvalid}
               sx={{ py: 1.4, fontSize: '1rem' }}
             >
               {loading ? 'Logowanie...' : 'Zaloguj się'}
