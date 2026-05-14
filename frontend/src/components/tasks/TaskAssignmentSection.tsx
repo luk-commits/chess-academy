@@ -212,7 +212,7 @@ export function TaskAssignmentSection({
         </DialogActions>
       </Dialog>
 
-      <Box sx={{ display: { xs: 'block', lg: 'none' }, position: 'fixed', bottom: 10, left: 0, right: 0, px: 2, zIndex: 1100 }}>
+      <Box sx={{ display: { xs: 'block', lg: 'none' }, position: 'fixed', bottom: { xs: 61, sm: 8 }, left: 0, right: 0, px: 2, zIndex: 1100 }}>
         <Button
           variant="contained"
           fullWidth
