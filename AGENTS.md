@@ -30,18 +30,24 @@ frontend/  React 19 + Vite + TypeScript + MUI 6 — entrypoint: index.html → s
 
 ### Frontend
 
-| What | Command (inside `frontend/` or via docker compose exec) |
-|---|---|
-| Dev server | `npm run dev` |
-| Typecheck (lint) | `tsc -b --noEmit` (aliased: `npm run lint`) |
-| Vitest (all unit+integration) | `npx vitest run` |
-| Vitest watch | `npx vitest` |
-| Vitest single file | `npx vitest run tests/unit/authService.test.ts` |
-| Playwright E2E (all) | `npx playwright test` |
-| Playwright single spec | `npx playwright test tests/E2E/login.spec.ts` |
-| Build | `tsc -b && vite build` |
+> **Uwaga:** Host ma Node 18, ale Vitest 3.x wymaga Node 20+ (`styleText` w `node:util`).  
+> **Wszystkie komendy poniżej muszą być odpalane przez `docker compose exec frontend`.**
 
-**Playwright** browsers are provided by the Docker image; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser` and `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`. Tests require the dev server running (baseURL `http://localhost:5173`).
+| What | Command |
+|---|---|
+| Dev server | `docker compose exec frontend npm run dev` |
+| Typecheck (lint) | `docker compose exec frontend npx tsc -b --noEmit` (alias: `npm run lint`) |
+| Vitest – wszystkie | `docker compose exec frontend npx vitest run` (albo `npm run test:all`) |
+| Vitest – same unit | `docker compose exec frontend npm run test:unit` |
+| Vitest – same component | `docker compose exec frontend npm run test:component` |
+| Vitest – same feature | `docker compose exec frontend npm run test:feature` |
+| Vitest – pojedynczy plik | `docker compose exec frontend npx vitest run tests/feature/positions/coach-positions.test.tsx` |
+| Vitest – pojedynczy test (filtr nazwy) | `docker compose exec frontend npx vitest run -t "search commit" tests/feature/positions/coach-positions.test.tsx` |
+| Playwright E2E (all) | `docker compose exec frontend npx playwright test` |
+| Playwright pojedynczy | `docker compose exec frontend npx playwright test tests/E2E/coach/positions.spec.ts` |
+| Build | `docker compose exec frontend sh -c 'tsc -b && vite build'` |
+
+**Playwright** browsers są w obrazie Docker; zmienne `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser` i `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` są ustawione w `docker-compose.yml`. Testy wymagają działającego dev servera (baseURL `http://localhost:5173`).
 
 ### Backend
 
@@ -69,9 +75,10 @@ docker compose exec backend php vendor/bin/phpunit
 
 - **Backend** test suites defined in `backend/phpunit.xml`: Unit, Integration, Feature, E2E.
   - Integration/E2E tests hit the real DB (PostgreSQL `db` host); must run inside the `chess_backend` container or on a network that can resolve `db`.
-- **Frontend** unit/integration tests use Vitest + jsdom (`frontend/vitest.config.ts`). Globals enabled, setup file is `tests/setup.ts`.
-  - Vitest `include` pattern: `tests/**/*.test.{ts,tsx}`
-  - Playwright picks up `tests/**/*.spec.*` (configured via `testDir: ./tests`).
+- **Frontend** tests use Vitest + jsdom (`frontend/vitest.config.ts`). Globals enabled, setup file is `tests/setup.ts`.
+  - Podział: `tests/unit/`, `tests/component/`, `tests/feature/`, `tests/E2E/`.
+  - Vitest `include` pattern: `tests/**/*.test.{ts,tsx}` (unit/component/feature).
+  - Playwright picks up `tests/**/*.spec.*` (configured via `testDir: ./tests`, katalog `tests/E2E/`).
 - Demo seed data is in `backend/migrations/01_init.sql` (users id 3/4). Tests that rely on these accounts assume the DB has been migrated.
 
 ## Known gotchas
