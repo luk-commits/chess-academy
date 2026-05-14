@@ -4,7 +4,7 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 export default defineConfig({
   testDir: './tests/E2E',
-  outputDir: 'playwright-output',
+  outputDir: 'test-results/playwright-output',
   fullyParallel: true,
   // Zapobiega zatrzymaniu testów przy jednym błędzie (przydatne w CI)
   forbidOnly: !!process.env.CI,
