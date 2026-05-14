@@ -4,215 +4,33 @@ import {
   Alert,
   Box,
   Button,
-  Fade,
   FormControlLabel,
-  IconButton,
-  Paper,
   Switch,
-  Tooltip,
   Typography,
-  keyframes,
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
-import InfoOutlined from '@mui/icons-material/InfoOutlined';
-import EmojiEventsOutlined from '@mui/icons-material/EmojiEventsOutlined';
 import { Chess } from 'chess.js';
 import type { Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import type { SquareHandlerArgs } from 'react-chessboard';
-import { playerTasksService } from '../../services/playerTasksService';
-import type { PlayerTask, PlayerTaskStage } from '../../types/position';
+import type { PlayerTaskStage } from '../../types/position';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
-import { applyFirstMoveToFen, boardOrientationFromFen, isValidFen } from '../../utils/chessPosition';
-
-const ACCENT = '#2196f3';
-const MUTED = 'rgba(148, 163, 184, 0.35)';
-const REWARD = '#16a34a';
-const PENALTY = '#fb7185';
-const SELECTED_SQ = 'rgba(33, 150, 243, 0.35)';
-
-const floatUp = keyframes`
-  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.85); }
-  20%  { opacity: 1; transform: translate(-50%, -10px) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -55px) scale(1); }
-`;
-
-const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
-`;
-
-interface FloatDelta { id: number; value: number; }
-
-function RollingScore({ value }: { value: number }) {
-  const [display, setDisplay] = useState(value);
-  const fromRef = useRef(value);
-
-  useEffect(() => {
-    const from = fromRef.current;
-    if (from === value) return;
-    const duration = 450;
-    let raf = 0;
-    let start: number | null = null;
-    const step = (ts: number) => {
-      if (start === null) start = ts;
-      const t = Math.min(1, (ts - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(from + (value - from) * eased));
-      if (t < 1) {
-        raf = requestAnimationFrame(step);
-      } else {
-        fromRef.current = value;
-      }
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [value]);
-
-  return <>{display}</>;
-}
-
-function ProgressBar({ total, currentIndex }: { total: number; currentIndex: number }) {
-  return (
-    <Box sx={{ width: '100%', maxWidth: 560, mx: 'auto', display: 'flex', gap: 0.75, mb: 2 }}>
-      {Array.from({ length: total }).map((_, i) => {
-        const active = i <= currentIndex;
-        return (
-          <Box
-            key={i}
-            sx={{
-              flex: 1,
-              height: 6,
-              borderRadius: 999,
-              bgcolor: active ? ACCENT : MUTED,
-              transition: 'background-color 0.4s ease',
-              boxShadow: active ? `0 0 8px ${ACCENT}55` : 'none',
-            }}
-          />
-        );
-      })}
-    </Box>
-  );
-}
-
-function ScoreBadge({ score, deltas }: { score: number; deltas: FloatDelta[] }) {
-  return (
-    <Box
-      sx={{
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 0.75,
-        px: 1.5,
-        py: 0.5,
-        borderRadius: 999,
-        bgcolor: 'rgba(15, 23, 42, 0.85)',
-        color: '#f1f5f9',
-        backdropFilter: 'blur(8px)',
-        boxShadow: '0 4px 16px rgba(15, 23, 42, 0.25)',
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-        fontVariantNumeric: 'tabular-nums',
-        fontWeight: 600,
-        fontSize: 14,
-        zIndex: 4,
-        pointerEvents: 'none',
-      }}
-    >
-      <EmojiEventsOutlined sx={{ fontSize: 16, color: '#facc15' }} />
-      <Box component="span" sx={{ minWidth: 32, textAlign: 'right' }}>
-        <RollingScore value={score} />
-      </Box>
-      {deltas.map((d) => (
-        <Box
-          key={d.id}
-          sx={{
-            position: 'absolute',
-            left: '50%',
-            bottom: '100%',
-            color: d.value > 0 ? REWARD : PENALTY,
-            fontWeight: 700,
-            fontSize: 14,
-            animation: `${floatUp} 900ms ease-out forwards`,
-            pointerEvents: 'none',
-          }}
-        >
-          {d.value > 0 ? `+${d.value}` : d.value}
-        </Box>
-      ))}
-    </Box>
-  );
-}
-
-function GlassHeader({
-  title, description, stageTitle, minimized, onExpand,
-}: {
-  title: string;
-  description: string;
-  stageTitle: string;
-  minimized: boolean;
-  onExpand: () => void;
-}) {
-  if (minimized) {
-    return (
-      <Tooltip title={`${title}${description ? ' — ' + description : ''}`} placement="bottom">
-        <IconButton
-          onClick={onExpand}
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            bgcolor: 'rgba(255,255,255,0.6)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.5)',
-            zIndex: 4,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.85)' },
-          }}
-        >
-          <InfoOutlined fontSize="small" />
-        </IconButton>
-      </Tooltip>
-    );
-  }
-
-  return (
-    <Fade in timeout={400}>
-      <Paper
-        elevation={0}
-        sx={{
-          mx: 'auto',
-          maxWidth: 560,
-          mb: 2,
-          px: 3,
-          py: 2,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.65), rgba(241,245,249,0.45))',
-          border: '1px solid rgba(255,255,255,0.55)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          boxShadow: '0 8px 32px rgba(15, 23, 42, 0.08)',
-        }}
-      >
-        <Typography variant="overline" sx={{ color: ACCENT, fontWeight: 700, letterSpacing: 1 }}>
-          {stageTitle}
-        </Typography>
-        <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.25, mt: 0.25 }}>
-          {title}
-        </Typography>
-        {description && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {description}
-          </Typography>
-        )}
-      </Paper>
-    </Fade>
-  );
-}
+import { GlassHeader } from '../../components/zen/GlassHeader';
+import { StageProgressBar } from '../../components/zen/StageProgressBar';
+import { ScoreBadge, type ScoreDelta } from '../../components/zen/ScoreBadge';
+import { CompletionCard } from '../../components/zen/CompletionCard';
+import { ZEN_SELECTED_SQUARE, shake } from '../../components/zen/theme';
+import {
+  applyFirstMoveToFen,
+  boardOrientationFromFen,
+  fenTurn,
+  isValidFen,
+  pieceColor,
+  uciToMove,
+} from '../../utils/chessPosition';
+import { usePlayerTasks } from '../../hooks/usePlayerTasks';
 
 interface StageRuntime {
   introFen: string | null;
@@ -248,32 +66,15 @@ function buildStageRuntime(stage: PlayerTaskStage): StageRuntime | null {
   };
 }
 
-function uciToMove(uci: string): { from: string; to: string; promotion?: string } {
-  const move: { from: string; to: string; promotion?: string } = { from: uci.slice(0, 2), to: uci.slice(2, 4) };
-  if (uci.length > 4) move.promotion = uci.slice(4);
-  return move;
-}
-
-function pieceColor(piece: string): 'w' | 'b' {
-  return piece[0] === 'w' ? 'w' : 'b';
-}
-
-function fenTurn(fen: string): 'w' | 'b' {
-  return fen.split(' ')[1] === 'b' ? 'b' : 'w';
-}
-
 export function PlayerTaskDetailsView() {
-  const { taskId } = useParams<{ taskId: string }>();
+  const { taskId, stageId } = useParams<{ taskId: string; stageId?: string }>();
   const navigate = useNavigate();
-
-  const [tasks, setTasks] = useState<PlayerTask[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tasks, loading, error } = usePlayerTasks();
 
   const [stageIdx, setStageIdx] = useState(0);
   const [runtime, setRuntime] = useState<StageRuntime | null>(null);
   const [score, setScore] = useState(0);
-  const [deltas, setDeltas] = useState<FloatDelta[]>([]);
+  const [deltas, setDeltas] = useState<ScoreDelta[]>([]);
   const [headerMinimized, setHeaderMinimized] = useState(false);
   const [shakeKey, setShakeKey] = useState(0);
   const [completed, setCompleted] = useState(false);
@@ -281,23 +82,6 @@ export function PlayerTaskDetailsView() {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [animateBoard, setAnimateBoard] = useState(true);
   const deltaSeq = useRef(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await playerTasksService.fetchTasks();
-        if (!cancelled) setTasks(data.tasks);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Nie udało się pobrać zadania.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   const task = useMemo(() => {
     const id = Number(taskId);
@@ -310,16 +94,29 @@ export function PlayerTaskDetailsView() {
     return idx !== -1 && idx + 1 < tasks.length ? tasks[idx + 1].id : null;
   }, [tasks, task]);
 
+  // Reset session state when switching tasks (not stages)
   useEffect(() => {
-    setStageIdx(0);
     setRuntime(null);
     setScore(0);
     setDeltas([]);
-    setHeaderMinimized(false);
     setShakeKey(0);
     setCompleted(false);
     setSelectedSquare(null);
   }, [taskId]);
+
+  // Redirect /tasks/:taskId → first stage; sync stageIdx from URL stageId
+  useEffect(() => {
+    if (!task) return;
+    if (!stageId) {
+      const firstStageId = task.stages[0]?.id;
+      if (firstStageId != null) {
+        navigate(`/home/player/tasks/${taskId}/stages/${firstStageId}`, { replace: true });
+      }
+      return;
+    }
+    const idx = task.stages.findIndex(s => s.id === Number(stageId));
+    setStageIdx(idx !== -1 ? idx : 0);
+  }, [task, taskId, stageId, navigate]);
 
   const stages = task?.stages ?? [];
   const currentStage = stages[stageIdx] ?? null;
@@ -364,12 +161,14 @@ export function PlayerTaskDetailsView() {
 
   const advanceStage = useCallback(() => {
     if (!task) return;
-    if (stageIdx + 1 >= task.stages.length) {
+    const nextIdx = stageIdx + 1;
+    if (nextIdx >= task.stages.length) {
       setCompleted(true);
       return;
     }
-    setStageIdx(i => i + 1);
-  }, [task, stageIdx]);
+    const nextStageId = task.stages[nextIdx].id;
+    navigate(`/home/player/tasks/${taskId}/stages/${nextStageId}`, { replace: true });
+  }, [task, stageIdx, taskId, navigate]);
 
   const playEngineReply = useCallback((rt: StageRuntime) => {
     const engineUci = rt.expected[rt.expectedIndex];
@@ -473,7 +272,7 @@ export function PlayerTaskDetailsView() {
   const squareStyles = useMemo((): Record<string, React.CSSProperties> => {
     const styles: Record<string, React.CSSProperties> = {};
     if (!selectedSquare || !runtime) return styles;
-    styles[selectedSquare] = { backgroundColor: SELECTED_SQ };
+    styles[selectedSquare] = { backgroundColor: ZEN_SELECTED_SQUARE };
     const chess = new Chess(runtime.currentFen);
     const moves = chess.moves({ square: selectedSquare as Square, verbose: true });
     for (const m of moves) {
@@ -484,6 +283,11 @@ export function PlayerTaskDetailsView() {
     }
     return styles;
   }, [selectedSquare, runtime]);
+
+  const handleContinue = useCallback(() => {
+    if (nextTaskId !== null) navigate(`/home/player/tasks/${nextTaskId}`);
+    else navigate('/home/player/tasks');
+  }, [nextTaskId, navigate]);
 
   if (loading) return <PageLayout maxWidth="md"><LoadingState /></PageLayout>;
   if (error) {
@@ -530,7 +334,7 @@ export function PlayerTaskDetailsView() {
         />
       </Box>
 
-      <ProgressBar total={stages.length} currentIndex={stageIdx} />
+      <StageProgressBar total={stages.length} currentIndex={stageIdx} />
 
       <GlassHeader
         title={task.title}
@@ -552,41 +356,12 @@ export function PlayerTaskDetailsView() {
         <ScoreBadge score={score} deltas={deltas} />
 
         {completed ? (
-          <Paper
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 4,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              p: 4,
-              textAlign: 'center',
-              gap: 1.5,
-              background: 'linear-gradient(135deg, #ffffff, #f0f9ff)',
-            }}
-          >
-            <EmojiEventsOutlined sx={{ fontSize: 56, color: '#facc15' }} />
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              Zadanie ukończone
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Wynik końcowy: <strong>{score}</strong>
-            </Typography>
-            {autoAdvance && (
-              <Typography variant="caption" color="text.secondary">
-                {nextTaskId !== null ? 'Przechodzę do następnego...' : 'Brak kolejnego zadania.'}
-              </Typography>
-            )}
-            <Button
-              variant="contained"
-              onClick={() => nextTaskId !== null ? navigate(`/home/player/tasks/${nextTaskId}`) : navigate('/home/player/tasks')}
-              sx={{ mt: 1 }}
-            >
-              {nextTaskId !== null ? 'Następne zadanie' : 'Wróć do listy zadań'}
-            </Button>
-          </Paper>
+          <CompletionCard
+            score={score}
+            hasNext={nextTaskId !== null}
+            autoAdvance={autoAdvance}
+            onContinue={handleContinue}
+          />
         ) : runtime ? (
           <Box
             key={shakeKey}

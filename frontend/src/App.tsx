@@ -23,6 +23,7 @@ export default function App() {
         <Route path="player/coaches" element={<CoachesView />} />
         <Route path="player/tasks" element={<PlayerTasksView />} />
         <Route path="player/tasks/:taskId" element={<PlayerTaskDetailsView />} />
+        <Route path="player/tasks/:taskId/stages/:stageId" element={<PlayerTaskDetailsView />} />
         <Route path="coach/players" element={<PlayersView />} />
         <Route path="coach/positions" element={<PositionsView />} />
       </Route>
