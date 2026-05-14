@@ -165,7 +165,7 @@ export function TaskAssignmentSection({
         maxWidth="sm"
       >
         <DialogTitle sx={{ fontWeight: 700 }}>Przypisz zadania</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ position: 'relative' }}>
           <MobileTabs
             individuals={individuals}
             classes={classes}
@@ -183,6 +183,22 @@ export function TaskAssignmentSection({
             label="Opublikuj"
             sx={{ mt: 1 }}
           />
+          {taskCreating && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'rgba(255,255,255,0.7)',
+                zIndex: 1,
+                borderRadius: 1,
+              }}
+            >
+              <CircularProgress size={40} thickness={4} />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={onCloseModal}>Anuluj</Button>
@@ -191,7 +207,6 @@ export function TaskAssignmentSection({
             disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
             onClick={onCreateTaskFromModal}
           >
-            {taskCreating ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
             Dodaj zadania
           </Button>
         </DialogActions>
