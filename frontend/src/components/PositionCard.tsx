@@ -51,17 +51,17 @@ const PositionCard = memo(function PositionCard({
       }}
     >
       <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}
-          onClick={e => e.stopPropagation()}
-        >
-          {!hideCheckbox && (
-            <SelfStatedCheckbox
-              size="small"
-              id={`position-checkbox-${position.id}`}
-              checked={isSelected}
-              onCommit={() => onToggle(position.id)}
-            />
-          )}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
+          <Box onClick={e => e.stopPropagation()}>
+            {!hideCheckbox && (
+              <SelfStatedCheckbox
+                size="small"
+                id={`position-checkbox-${position.id}`}
+                checked={isSelected}
+                onCommit={() => onToggle(position.id)}
+              />
+            )}
+          </Box>
           <Tooltip title={position.opening?.replace(/_/g, ' ') || 'Nieznane otwarcie'} placement="top">
             <Typography
               noWrap

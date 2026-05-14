@@ -7,6 +7,10 @@ import {
   CircularProgress,
   Container,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   IconButton,
   Pagination,
@@ -194,6 +198,7 @@ export function PositionsView() {
   const [taskCreating, setTaskCreating] = useState(false);
   const publishDefaultRef = useRef(true);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -259,13 +264,38 @@ export function PositionsView() {
         groupIds: Array.from(selectedGroupsRef.current),
         publishDefault: publishDefaultRef.current,
       });
-      setTaskSnackbar({ message: 'Zadanie zostało utworzone!', severity: 'success' });
+      setTaskSnackbar({ message: 'Zadania zostały utworzone!', severity: 'success' });
       selectedPositionsRef.current.clear();
       setSelectedPositionCount(0);
       setSelectionResetKey(k => k + 1);
       selectedGroupsRef.current.clear();
       setSelectedGroupCount(0);
       setSidebarResetKey(k => k + 1);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Nie udało się utworzyć zadania.';
+      setTaskSnackbar({ message: msg, severity: 'error' });
+    } finally {
+      setTaskCreating(false);
+    }
+  };
+
+  const handleCreateTaskAndCloseModal = async () => {
+    if (selectedPositionCount === 0 || selectedGroupCount === 0) return;
+    setTaskCreating(true);
+    try {
+      await tasksService.createTask({
+        positionIds: Array.from(selectedPositionsRef.current),
+        groupIds: Array.from(selectedGroupsRef.current),
+        publishDefault: publishDefaultRef.current,
+      });
+      setTaskSnackbar({ message: 'Zadania zostały utworzone!', severity: 'success' });
+      selectedPositionsRef.current.clear();
+      setSelectedPositionCount(0);
+      setSelectionResetKey(k => k + 1);
+      selectedGroupsRef.current.clear();
+      setSelectedGroupCount(0);
+      setSidebarResetKey(k => k + 1);
+      setAssignModalOpen(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Nie udało się utworzyć zadania.';
       setTaskSnackbar({ message: msg, severity: 'error' });
@@ -450,33 +480,16 @@ export function PositionsView() {
               </Paper>
             ) : (
               <>
-                <MobileTabs
-                  individuals={individuals}
-                  classes={classes}
-                  onCommitGroup={handleGroupCommit}
-                  resetKey={sidebarResetKey}
-                  loading={loadingGroups}
-                />
                 <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ display: { xs: 'flex', lg: 'none' }, width: '100%' }}>
                     <Button
                       variant="contained"
                       fullWidth
-                      disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
-                      onClick={handleCreateTask}
-                      sx={{ justifyContent: 'flex-start', gap: 1, px: 2 }}
+                      disabled={selectedPositionCount === 0 || taskCreating}
+                      onClick={() => setAssignModalOpen(true)}
+                      sx={{ justifyContent: 'center', gap: 1, px: 2 }}
                     >
-                      <Box sx={{ flex: 1, textAlign: 'center' }}>
-                        {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
-                      </Box>
-                      <Tooltip title="Opublikuj">
-                        <Switch
-                          defaultChecked
-                          color="secondary"
-                          onChange={(_, checked) => { publishDefaultRef.current = checked; }}
-                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        />
-                      </Tooltip>
+                      Przypisz zadania
                     </Button>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
@@ -607,7 +620,8 @@ export function PositionsView() {
                 sx={{ justifyContent: 'flex-start', gap: 1, px: 2 }}
               >
                 <Box sx={{ flex: 1, textAlign: 'right' }}>
-                  {taskCreating ? <CircularProgress size={20} color="inherit" /> : 'Dodaj zadania'}
+            {taskCreating && <CircularProgress size={16} sx={{ mr: 1 }} />}
+            Dodaj zadania
                 </Box>
                 <Tooltip title="Opublikuj">
                   <Switch
@@ -646,6 +660,44 @@ export function PositionsView() {
           </Box>
         </Box>
       </Container>
+
+      <Dialog
+        open={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Przypisz zadania</DialogTitle>
+        <DialogContent>
+          <MobileTabs
+            individuals={individuals}
+            classes={classes}
+            onCommitGroup={handleGroupCommit}
+            resetKey={sidebarResetKey}
+            loading={loadingGroups}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                defaultChecked
+                onChange={(_, checked) => { publishDefaultRef.current = checked; }}
+              />
+            }
+            label="Opublikuj"
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setAssignModalOpen(false)}>Anuluj</Button>
+          <Button
+            variant="contained"
+            disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
+            onClick={handleCreateTaskAndCloseModal}
+          >
+            Dodaj zadania
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={taskSnackbar !== null}
