@@ -25,12 +25,6 @@ class GroupModel extends AbstractModel
 
     /**
      *
-     * @var boolean
-     */
-    public $is_individual;
-
-    /**
-     *
      * @var string
      */
     public $created_at;
@@ -42,12 +36,20 @@ class GroupModel extends AbstractModel
     public $updated_at;
 
     /**
+     *
+     * @var boolean
+     */
+    public $is_individual;
+
+    /**
      * Initialize method for model.
      */
     public function initialize()
     {
         $this->setSchema("public");
         $this->setSource("groups");
+        $this->hasMany('id', 'ChessAcademy\Models\TaskGroups', 'group_id', ['alias' => 'TaskGroups']);
+        $this->hasMany('id', 'ChessAcademy\Models\Tasks', 'group_id', ['alias' => 'Tasks']);
     }
 
     /**

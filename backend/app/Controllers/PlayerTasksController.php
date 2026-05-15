@@ -81,7 +81,7 @@ class PlayerTasksController extends AbstractController
 
         $tasks = Task::find([
             'conditions' => 'status = :status: AND id IN ({taskIds:array})',
-            'bind' => ['status' => 'active', 'taskIds' => $allTaskIds],
+            'bind' => ['status' => 'published', 'taskIds' => $allTaskIds],
             'order' => 'created_at DESC',
         ]);
 
@@ -105,8 +105,8 @@ class PlayerTasksController extends AbstractController
         $result = [];
         foreach ($tasks as $task) {
             $stages = TaskStage::find([
-                'conditions' => 'task_id = :taskId:',
-                'bind' => ['taskId' => $task->id],
+                'conditions' => 'task_id = :taskId: AND status = :status:',
+                'bind' => ['taskId' => $task->id, 'status' => 'published'],
                 'order' => 'sort_order ASC',
             ]);
 

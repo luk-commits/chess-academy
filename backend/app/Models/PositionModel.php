@@ -210,6 +210,7 @@ class PositionModel extends AbstractModel
     {
         $this->setSchema("public");
         $this->setSource("positions");
+        $this->hasMany('id', 'ChessAcademy\Models\TaskStages', 'position_id', ['alias' => 'TaskStages']);
         $this->belongsTo('created_by_user_id', 'ChessAcademy\Models\Users', 'id', ['alias' => 'Users']);
         $this->belongsTo('source_pgn_id', 'ChessAcademy\Models\PgnGames', 'id', ['alias' => 'PgnGames']);
     }

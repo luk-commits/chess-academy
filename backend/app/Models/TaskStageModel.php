@@ -37,12 +37,6 @@ class TaskStageModel extends AbstractModel
 
     /**
      *
-     * @var integer
-     */
-    public $position_id;
-
-    /**
-     *
      * @var string
      */
     public $created_at;
@@ -54,12 +48,33 @@ class TaskStageModel extends AbstractModel
     public $updated_at;
 
     /**
+     *
+     * @var integer
+     */
+    public $position_id;
+
+    /**
+     *
+     * @var string
+     */
+    public $status;
+
+    /**
+     *
+     * @var string
+     */
+    public $solution_pgn;
+
+    /**
      * Initialize method for model.
      */
     public function initialize()
     {
         $this->setSchema("public");
         $this->setSource("task_stages");
+        $this->hasMany('id', 'ChessAcademy\Models\UserStageProgress', 'task_stage_id', ['alias' => 'UserStageProgress']);
+        $this->belongsTo('position_id', 'ChessAcademy\Models\Positions', 'id', ['alias' => 'Positions']);
+        $this->belongsTo('task_id', 'ChessAcademy\Models\Tasks', 'id', ['alias' => 'Tasks']);
     }
 
     /**

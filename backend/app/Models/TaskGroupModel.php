@@ -2,50 +2,14 @@
 
 namespace ChessAcademy\Models;
 
-class TaskModel extends AbstractModel
+class TaskGroupModel extends AbstractModel
 {
 
     /**
      *
      * @var integer
      */
-    public $id;
-
-    /**
-     *
-     * @var string
-     */
-    public $title;
-
-    /**
-     *
-     * @var string
-     */
-    public $description;
-
-    /**
-     *
-     * @var integer
-     */
-    public $coach_id;
-
-    /**
-     *
-     * @var string
-     */
-    public $status;
-
-    /**
-     *
-     * @var string
-     */
-    public $created_at;
-
-    /**
-     *
-     * @var string
-     */
-    public $updated_at;
+    public $task_id;
 
     /**
      *
@@ -54,21 +18,26 @@ class TaskModel extends AbstractModel
     public $group_id;
 
     /**
+     *
+     * @var string
+     */
+    public $created_at;
+
+    /**
      * Initialize method for model.
      */
     public function initialize()
     {
         $this->setSchema("public");
-        $this->setSource("tasks");
-        $this->hasMany('id', 'ChessAcademy\Models\TaskGroups', 'task_id', ['alias' => 'TaskGroups']);
-        $this->hasMany('id', 'ChessAcademy\Models\TaskStages', 'task_id', ['alias' => 'TaskStages']);
+        $this->setSource("task_groups");
+        $this->belongsTo('task_id', 'ChessAcademy\Models\Tasks', 'id', ['alias' => 'Tasks']);
     }
 
     /**
      * Allows to query a set of records that match the specified conditions
      *
      * @param mixed $parameters
-     * @return TaskModel[]|TaskModel|\Phalcon\Mvc\Model\ResultSetInterface
+     * @return TaskGroupModel[]|TaskGroupModel|\Phalcon\Mvc\Model\ResultSetInterface
      */
     public static function find($parameters = null): \Phalcon\Mvc\Model\ResultsetInterface
     {
@@ -79,7 +48,7 @@ class TaskModel extends AbstractModel
      * Allows to query the first record that match the specified conditions
      *
      * @param mixed $parameters
-     * @return TaskModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
+     * @return TaskGroupModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
      */
     public static function findFirst($parameters = null): ?\Phalcon\Mvc\ModelInterface
     {

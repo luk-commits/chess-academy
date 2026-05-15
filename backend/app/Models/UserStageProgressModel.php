@@ -2,7 +2,7 @@
 
 namespace ChessAcademy\Models;
 
-class TaskModel extends AbstractModel
+class UserStageProgressModel extends AbstractModel
 {
 
     /**
@@ -13,27 +13,51 @@ class TaskModel extends AbstractModel
 
     /**
      *
-     * @var string
+     * @var integer
      */
-    public $title;
-
-    /**
-     *
-     * @var string
-     */
-    public $description;
+    public $user_id;
 
     /**
      *
      * @var integer
      */
-    public $coach_id;
+    public $task_stage_id;
+
+    /**
+     *
+     * @var integer
+     */
+    public $repetitions;
+
+    /**
+     *
+     * @var integer
+     */
+    public $interval_days;
 
     /**
      *
      * @var string
      */
-    public $status;
+    public $last_result;
+
+    /**
+     *
+     * @var string
+     */
+    public $last_reviewed_at;
+
+    /**
+     *
+     * @var string
+     */
+    public $next_review_at;
+
+    /**
+     *
+     * @var integer
+     */
+    public $attempts_total;
 
     /**
      *
@@ -48,27 +72,21 @@ class TaskModel extends AbstractModel
     public $updated_at;
 
     /**
-     *
-     * @var integer
-     */
-    public $group_id;
-
-    /**
      * Initialize method for model.
      */
     public function initialize()
     {
         $this->setSchema("public");
-        $this->setSource("tasks");
-        $this->hasMany('id', 'ChessAcademy\Models\TaskGroups', 'task_id', ['alias' => 'TaskGroups']);
-        $this->hasMany('id', 'ChessAcademy\Models\TaskStages', 'task_id', ['alias' => 'TaskStages']);
+        $this->setSource("user_stage_progress");
+        $this->belongsTo('task_stage_id', 'ChessAcademy\Models\TaskStages', 'id', ['alias' => 'TaskStages']);
+        $this->belongsTo('user_id', 'ChessAcademy\Models\Users', 'id', ['alias' => 'Users']);
     }
 
     /**
      * Allows to query a set of records that match the specified conditions
      *
      * @param mixed $parameters
-     * @return TaskModel[]|TaskModel|\Phalcon\Mvc\Model\ResultSetInterface
+     * @return UserStageProgressModel[]|UserStageProgressModel|\Phalcon\Mvc\Model\ResultSetInterface
      */
     public static function find($parameters = null): \Phalcon\Mvc\Model\ResultsetInterface
     {
@@ -79,7 +97,7 @@ class TaskModel extends AbstractModel
      * Allows to query the first record that match the specified conditions
      *
      * @param mixed $parameters
-     * @return TaskModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
+     * @return UserStageProgressModel|\Phalcon\Mvc\Model\ResultInterface|\Phalcon\Mvc\ModelInterface|null
      */
     public static function findFirst($parameters = null): ?\Phalcon\Mvc\ModelInterface
     {

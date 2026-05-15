@@ -82,6 +82,8 @@ class UserModel extends AbstractModel
         $this->hasMany('id', 'ChessAcademy\Models\PgnGames', 'created_by_user_id', ['alias' => 'PgnGames']);
         $this->hasMany('id', 'ChessAcademy\Models\Positions', 'created_by_user_id', ['alias' => 'Positions']);
         $this->hasMany('id', 'ChessAcademy\Models\RefreshTokens', 'user_id', ['alias' => 'RefreshTokens']);
+        $this->hasMany('id', 'ChessAcademy\Models\Tasks', 'coach_id', ['alias' => 'Tasks']);
+        $this->hasMany('id', 'ChessAcademy\Models\UserStageProgress', 'user_id', ['alias' => 'UserStageProgress']);
     }
 
     /**
