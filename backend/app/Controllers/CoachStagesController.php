@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ChessAcademy\Controllers;
 
+use ChessAcademy\Models\Position;
 use ChessAcademy\Models\Task;
 use ChessAcademy\Models\TaskStage;
 
@@ -34,6 +35,14 @@ class CoachStagesController extends AbstractController
             return $this->error('Stage not found', 404);
         }
 
+        $positionFen = null;
+        if ($stage->position_id !== null) {
+            $position = Position::findFirst((int) $stage->position_id);
+            if ($position !== null) {
+                $positionFen = (string) $position->fen;
+            }
+        }
+
         return $this->json([
             'stage' => [
                 'id'             => (int) $stage->id,
@@ -44,6 +53,7 @@ class CoachStagesController extends AbstractController
                 'status'         => (string) $stage->status,
                 'solutionPgn'    => $stage->solution_pgn !== null ? (string) $stage->solution_pgn : null,
                 'positionId'     => $stage->position_id !== null ? (int) $stage->position_id : null,
+                'positionFen'    => $positionFen,
             ],
         ]);
     }
