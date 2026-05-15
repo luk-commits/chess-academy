@@ -1,39 +1,13 @@
-import { Fade, IconButton, Paper, Tooltip, Typography } from '@mui/material';
-import InfoOutlined from '@mui/icons-material/InfoOutlined';
+import { Fade, Paper, Typography } from '@mui/material';
 import { ZEN_ACCENT } from './theme';
 
 interface Props {
   title: string;
   description: string;
   stageTitle: string;
-  minimized: boolean;
-  onExpand: () => void;
 }
 
-export function GlassHeader({ title, description, stageTitle, minimized, onExpand }: Props) {
-  if (minimized) {
-    return (
-      <Tooltip title={`${title}${description ? ' — ' + description : ''}`} placement="bottom">
-        <IconButton
-          onClick={onExpand}
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            bgcolor: 'rgba(255,255,255,0.6)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.5)',
-            zIndex: 4,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.85)' },
-          }}
-        >
-          <InfoOutlined fontSize="small" />
-        </IconButton>
-      </Tooltip>
-    );
-  }
-
+export function GlassHeader({ title, description, stageTitle }: Props) {
   return (
     <Fade in timeout={400}>
       <Paper

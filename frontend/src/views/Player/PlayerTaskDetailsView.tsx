@@ -127,7 +127,7 @@ export function PlayerTaskDetailsView() {
   const [runtime, setRuntime] = useState<StageRuntime | null>(null);
   const [score, setScore] = useState(0);
   const [deltas, setDeltas] = useState<ScoreDelta[]>([]);
-  const [headerMinimized, setHeaderMinimized] = useState(false);
+
   const [shakeKey, setShakeKey] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
@@ -180,7 +180,6 @@ export function PlayerTaskDetailsView() {
     setAnimateBoard(false);
     const rt = buildStageRuntime(currentStage);
     setRuntime(rt);
-    setHeaderMinimized(false);
     setSelectedSquare(null);
     setPendingPromotion(null);
     if (rt?.introFen) {
@@ -274,10 +273,9 @@ export function PlayerTaskDetailsView() {
     setRuntime(afterPlayer);
     setScore(s => s + 10);
     pushDelta(10);
-    if (!headerMinimized) setHeaderMinimized(true);
     playEngineReply(afterPlayer);
     return true;
-  }, [runtime, completed, pushDelta, headerMinimized, playEngineReply]);
+  }, [runtime, completed, pushDelta, playEngineReply]);
 
   const legalTargets = useMemo((): Set<string> => {
     if (!selectedSquare || !runtime) return new Set();
@@ -420,8 +418,6 @@ export function PlayerTaskDetailsView() {
         title={task.title}
         description={task.description}
         stageTitle={currentStage ? `Etap ${stageIdx + 1} z ${stages.length} · ${currentStage.title}` : ''}
-        minimized={headerMinimized && !completed}
-        onExpand={() => setHeaderMinimized(false)}
       />
 
       <Box
