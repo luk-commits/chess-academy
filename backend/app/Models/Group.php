@@ -10,6 +10,9 @@ class Group extends GroupModel
     {
         parent::initialize();
 
+        $this->skipAttributesOnCreate(['id']);
+        $this->skipAttributesOnUpdate(['id']);
+
         $this->belongsTo('coach_id', User::class, 'id', [
             'alias' => 'Coach',
             'reusable' => true,
