@@ -42,13 +42,13 @@ test.describe('Coach Positions E2E', () => {
     const card = page.locator('.MuiCard-root').first();
     await card.click();
     await page.waitForTimeout(300);
-    await expect(page.getByText(/wybrano: 1/i)).toBeVisible();
+    await expect(page.getByText(/wybrano:\s*1/i)).toBeVisible();
 
     await page.getByText('Demo Group', { exact: false }).click();
     await page.waitForTimeout(300);
     await page.getByText('Dodaj zadania').click();
     await expect(page.getByText('Zadania zostały utworzone!')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/wybrano: 1/i)).not.toBeVisible();
+    await expect(page.getByText(/wybrano:\s*1/i)).not.toBeVisible();
   });
 
   test('mobile viewport - modal flow', async ({ page }) => {

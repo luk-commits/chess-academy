@@ -230,19 +230,18 @@ test.describe('Formularz Rejestracji', () => {
 
   // --- Przełącznik widoczności hasła ---
 
-  test('kliknięcie ikony oka zmienia typ pola hasło na text', async ({ page }) => {
+  test('kliknięcie ikony oka przy polu hasło zmienia jego typ na text', async ({ page }) => {
     await page.goto('/register');
     await fillPassword(page, 'Password123!');
-    // Oba pola hasła mają wspólny stan showPassword
-    await page.locator('.MuiInputAdornment-positionEnd button').first().click();
+    await page.locator('label', { hasText: /^Hasło/ }).locator('..').locator('.MuiInputAdornment-positionEnd button').click();
     const inputType = await page.locator('label', { hasText: /^Hasło/ }).locator('..').locator('input').getAttribute('type');
     expect(inputType).toBe('text');
   });
 
-  test('kliknięcie ikony oka zmienia typ pola potwierdź hasło na text', async ({ page }) => {
+  test('kliknięcie ikony oka przy polu potwierdź hasło zmienia jego typ na text', async ({ page }) => {
     await page.goto('/register');
     await fillConfirmPassword(page, 'Password123!');
-    await page.locator('.MuiInputAdornment-positionEnd button').first().click();
+    await page.locator('label', { hasText: 'Potwierdź hasło' }).locator('..').locator('.MuiInputAdornment-positionEnd button').click();
     const inputType = await page.locator('label', { hasText: 'Potwierdź hasło' }).locator('..').locator('input').getAttribute('type');
     expect(inputType).toBe('text');
   });
