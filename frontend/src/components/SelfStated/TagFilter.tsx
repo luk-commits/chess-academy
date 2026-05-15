@@ -1,7 +1,13 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useState } from 'react';
 import { Box, Button, Chip, Collapse, IconButton, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+
+export interface TagFilterHandle {
+  commit: () => void;
+  clear: () => void;
+  resetSelection: () => void;
+}
 
 interface TagChipProps {
   tag: string;
@@ -29,12 +35,12 @@ interface SelfStatedTagFilterProps {
   label?: string;
 }
 
-const SelfStatedTagFilter = memo(function SelfStatedTagFilter({
+const SelfStatedTagFilter = memo(forwardRef<TagFilterHandle, SelfStatedTagFilterProps>(function SelfStatedTagFilter({
   availableTags,
   defaultValue,
   onCommit,
   label = 'Tagi tematyczne',
-}: SelfStatedTagFilterProps) {
+}, ref) {
   const [expanded, setExpanded] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(defaultValue ?? []));
   const [committed, setCommitted] = useState<Set<string>>(() => new Set(defaultValue ?? []));
@@ -44,6 +50,23 @@ const SelfStatedTagFilter = memo(function SelfStatedTagFilter({
     for (const t of selected) if (!committed.has(t)) return true;
     return false;
   }, [selected, committed]);
+
+  useImperativeHandle(ref, () => ({
+    commit: () => {
+      const arr = Array.from(selected);
+      setCommitted(new Set(arr));
+      onCommit(arr);
+    },
+    clear: () => {
+      setSelected(new Set());
+      setCommitted(new Set());
+      onCommit([]);
+    },
+    resetSelection: () => {
+      setSelected(new Set());
+      setCommitted(new Set());
+    },
+  }), [selected, onCommit]);
 
   const handleToggle = useCallback((tag: string) => {
     setSelected(prev => {
@@ -93,27 +116,9 @@ const SelfStatedTagFilter = memo(function SelfStatedTagFilter({
             />
           ))}
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            size="small"
-            variant="contained"
-            onClick={handleApply}
-            disabled={!dirty}
-          >
-            Zastosuj
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={handleClear}
-            disabled={selected.size === 0 && committed.size === 0}
-          >
-            Wyczyść
-          </Button>
-        </Box>
       </Collapse>
     </Box>
   );
-});
+}));
 
 export default SelfStatedTagFilter;
