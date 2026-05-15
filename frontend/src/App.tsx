@@ -6,6 +6,7 @@ import { PlayerLessonsView } from './views/Player/PlayerLessonsView';
 import { CoachesView } from './views/Player/CoachesView';
 import { PlayerTasksView } from './views/Player/PlayerTasksView';
 import { PlayerTaskDetailsView } from './views/Player/PlayerTaskDetailsView';
+import { PlayerLearnView } from './views/Player/PlayerLearnView';
 import { CoachLessonsView } from './views/Coach/CoachLessonsView';
 import { PlayersView } from './views/Coach/PlayersView';
 import { PositionsView } from './views/Coach/PositionsView';
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="player/lessons" element={<PlayerLessonsView />} />
         <Route path="coach/lessons" element={<CoachLessonsView />} />
         <Route path="player/coaches" element={<CoachesView />} />
+        <Route path="player/learn" element={<PlayerLearnView />} />
         <Route path="player/tasks" element={<PlayerTasksView />} />
         <Route path="player/tasks/:taskId" element={<PlayerTaskDetailsView />} />
         <Route path="player/tasks/:taskId/stages/:stageId" element={<PlayerTaskDetailsView />} />
