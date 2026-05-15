@@ -1,7 +1,7 @@
-import { memo, useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import { Box, Button, Paper } from '@mui/material';
 import BiotechIcon from '@mui/icons-material/Biotech';
-import SelfStatedText from '../SelfStated/Text';
+import SelfStatedText, { type TextHandle } from '../SelfStated/Text';
 import SelfStatedSlider from '../SelfStated/Slider';
 import SelfStatedTagFilter, { type TagFilterHandle } from '../SelfStated/TagFilter';
 import { THEME_TAGS } from '../../constants/themeTags';
@@ -20,9 +20,8 @@ export const PositionsToolbar = memo(function PositionsToolbar({
   defaultSelectedTags,
 }: PositionsToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<TextHandle>(null);
   const tagFilterRef = useRef<TagFilterHandle>(null);
-  const [searchResetKey, setSearchResetKey] = useState(0);
-  const ignoreBlurRef = useRef(false);
 
   const handleSearch = () => {
     const val = inputRef.current?.value.trim() ?? '';
@@ -30,17 +29,8 @@ export const PositionsToolbar = memo(function PositionsToolbar({
     tagFilterRef.current?.commit();
   };
 
-  const handleTextCommit = useCallback((val: string) => {
-    if (ignoreBlurRef.current) {
-      ignoreBlurRef.current = false;
-      return;
-    }
-    onSearchCommit(val.trim());
-  }, [onSearchCommit]);
-
   const handleClear = useCallback(() => {
-    ignoreBlurRef.current = true;
-    setSearchResetKey(k => k + 1);
+    textRef.current?.reset();
     tagFilterRef.current?.resetSelection();
   }, []);
 
@@ -64,17 +54,16 @@ export const PositionsToolbar = memo(function PositionsToolbar({
           sx={{ display: 'flex', gap: 1, width: '100%' }}
         >
           <SelfStatedText
-            key={`search-${searchResetKey}`}
+            ref={textRef}
             inputRef={inputRef}
             defaultValue=""
             label="Nazwa debiutu"
             fullWidth
-            onCommit={handleTextCommit}
           />
           <Button type="submit" variant="contained" sx={{ whiteSpace: 'nowrap' }}>
             Zastosuj
           </Button>
-          <Button type="button" variant="outlined" sx={{ whiteSpace: 'nowrap' }} onMouseDown={handleClear}>
+          <Button type="button" variant="outlined" sx={{ whiteSpace: 'nowrap' }} onClick={handleClear}>
             Wyczyść
           </Button>
         </Box>
