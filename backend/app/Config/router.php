@@ -58,6 +58,11 @@ $container->setShared('router', function (): Router {
         'action' => 'update',
     ])->via(['PATCH']);
 
+    $router->addGet('/api/coach/stages/{id:[0-9]+}', [
+        'controller' => 'coach_stages',
+        'action' => 'show',
+    ]);
+
     $router->add('/api/coach/stages/{id:[0-9]+}', [
         'controller' => 'coach_stages',
         'action' => 'update',
