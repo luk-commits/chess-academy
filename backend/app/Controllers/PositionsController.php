@@ -101,6 +101,23 @@ class PositionsController extends AbstractController
             $findParams['bind'] = $queryParams['bind'];
         }
 
+        // Fetch first 50 IDs from the same filtered query for batch selection
+        $selectableIds = [];
+        $idQueryParams = [
+            'columns' => 'id',
+            'order' => 'popularity DESC, id DESC',
+            'limit' => 50,
+            'offset' => 0,
+        ];
+        if (isset($queryParams['conditions'])) {
+            $idQueryParams['conditions'] = $queryParams['conditions'];
+            $idQueryParams['bind'] = $queryParams['bind'];
+        }
+        $idResult = Position::find($idQueryParams);
+        foreach ($idResult as $row) {
+            $selectableIds[] = (int) $row->id;
+        }
+
         $items = [];
         $positions = Position::find($findParams);
         foreach ($positions as $position) {
@@ -140,6 +157,7 @@ class PositionsController extends AbstractController
             'total' => $total,
             'totalPages' => $totalPages,
             'search' => $search,
+            'selectablePositionIds' => $selectableIds,
         ]);
     }
 }
