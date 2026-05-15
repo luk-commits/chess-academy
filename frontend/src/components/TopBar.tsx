@@ -9,9 +9,12 @@ import {
   MenuItem,
   Box,
   IconButton,
+  Divider,
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import PersonIcon from '@mui/icons-material/Person';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../hooks/useAuth';
 
 interface NavItem {
@@ -115,12 +118,19 @@ export function TopBar() {
         <Button
           color="inherit"
           onClick={handleMenuOpen}
-          sx={{ textTransform: 'none', display: { xs: 'none', md: 'inline-flex' } }}
+          sx={{
+            textTransform: 'none',
+            display: { xs: 'none', md: 'inline-flex' },
+            borderBottomLeftRadius: anchorEl ? 0 : undefined,
+            borderBottomRightRadius: anchorEl ? 0 : undefined,
+            bgcolor: anchorEl ? 'rgba(255,255,255,0.1)' : 'transparent',
+            pb: '10px',
+          }}
         >
-          <AccountCircleIcon sx={{ mr: { xs: 0, sm: 0.5 } }} />
           <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
             {user.email}
           </Box>
+          <AccountCircleIcon sx={{ ml: { xs: 0, sm: 0.5 } }} />
         </Button>
 
         <Menu
@@ -129,8 +139,31 @@ export function TopBar() {
           onClose={handleMenuClose}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          slotProps={{
+            paper: {
+              sx: {
+                width: anchorEl?.offsetWidth ?? 'auto',
+                minWidth: 180,
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              },
+            },
+          }}
         >
-          <MenuItem onClick={handleLogout}>Wyloguj</MenuItem>
+          <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <PersonIcon fontSize="small" />
+            <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+              Profil
+            </Typography>
+          </Box>
+          <Divider />
+          <MenuItem onClick={handleLogout} sx={{ gap: 1.5, py: 1.5, px: 2 }}>
+            <LogoutIcon fontSize="small" />
+            Wyloguj
+          </MenuItem>
         </Menu>
 
       </Toolbar>
