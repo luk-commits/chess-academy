@@ -22,14 +22,14 @@ describe('SelfStatedSlider', () => {
     expect(screen.getAllByRole('slider')).toHaveLength(2);
   });
 
-  it('updates local display while sliding without firing onCommit', () => {
-    const onCommit = vi.fn();
+  it('updates local label display while sliding', () => {
     renderWithTheme(
-      <SelfStatedSlider label="Trudność" defaultVal={[0, 3500]} onCommit={onCommit} />,
+      <SelfStatedSlider label="Trudność" defaultVal={[0, 3500]} />,
     );
     const thumbs = screen.getAllByRole('slider');
+    fireEvent.mouseDown(thumbs[0], { clientX: 0 });
     fireEvent.change(thumbs[0], { target: { value: 800 } });
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByText(/trudność:\s*800\s*–\s*3500/i)).toBeInTheDocument();
   });
 
   it('uses provided min/max props on slider thumbs', () => {
