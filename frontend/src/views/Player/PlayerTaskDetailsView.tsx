@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   FormControlLabel,
+  Paper,
   Switch,
   Typography,
 } from '@mui/material';
@@ -66,6 +67,57 @@ function buildStageRuntime(stage: PlayerTaskStage): StageRuntime | null {
   };
 }
 
+const PROMOTION_PIECES = ['q', 'r', 'b', 'n'] as const;
+const PIECE_SYMBOLS: Record<'w' | 'b', string[]> = {
+  w: ['♕', '♖', '♗', '♘'],
+  b: ['♛', '♜', '♝', '♞'],
+};
+
+function PromotionPopover({ color, onSelect }: { color: 'w' | 'b'; onSelect: (piece: string) => void }) {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 100,
+      }}
+    >
+      <Paper
+        elevation={24}
+        sx={{
+          display: 'flex',
+          gap: 0.5,
+          p: 1,
+          borderRadius: 2,
+        }}
+      >
+        {PROMOTION_PIECES.map((p, i) => (
+          <Box
+            key={p}
+            onClick={() => onSelect(p)}
+            sx={{
+              width: 56,
+              height: 56,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 40,
+              cursor: 'pointer',
+              borderRadius: 1,
+              '&:hover': { bgcolor: 'action.hover' },
+              userSelect: 'none',
+            }}
+          >
+            {PIECE_SYMBOLS[color][i]}
+          </Box>
+        ))}
+      </Paper>
+    </Box>
+  );
+}
+
 export function PlayerTaskDetailsView() {
   const { taskId, stageId } = useParams<{ taskId: string; stageId?: string }>();
   const navigate = useNavigate();
@@ -81,6 +133,7 @@ export function PlayerTaskDetailsView() {
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [animateBoard, setAnimateBoard] = useState(true);
+  const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
   const deltaSeq = useRef(0);
 
   const task = useMemo(() => {
@@ -102,6 +155,7 @@ export function PlayerTaskDetailsView() {
     setShakeKey(0);
     setCompleted(false);
     setSelectedSquare(null);
+    setPendingPromotion(null);
   }, [taskId]);
 
   // Redirect /tasks/:taskId → first stage; sync stageIdx from URL stageId
@@ -128,6 +182,7 @@ export function PlayerTaskDetailsView() {
     setRuntime(rt);
     setHeaderMinimized(false);
     setSelectedSquare(null);
+    setPendingPromotion(null);
     if (rt?.introFen) {
       const tid = window.setTimeout(() => {
         setAnimateBoard(true);
@@ -189,12 +244,13 @@ export function PlayerTaskDetailsView() {
     }, 350);
   }, [advanceStage]);
 
-  const tryMove = useCallback((from: string, to: string): boolean => {
+  const tryMove = useCallback((from: string, to: string, promotion?: string): boolean => {
     if (!runtime || completed) return false;
     const expectedUci = runtime.expected[runtime.expectedIndex];
     if (!expectedUci) return false;
 
-    const matches = from === expectedUci.slice(0, 2) && to === expectedUci.slice(2, 4);
+    const playerUci = from + to + (promotion ?? '');
+    const matches = playerUci === expectedUci;
 
     if (!matches) {
       setShakeKey(k => k + 1);
@@ -249,6 +305,18 @@ export function PlayerTaskDetailsView() {
         return;
       }
       if (!legalTargets.has(square)) return;
+
+      const chess = new Chess(runtime.currentFen);
+      const chessPiece = chess.get(selectedSquare as Square);
+      if (chessPiece && chessPiece.type === 'p') {
+        const rank = square[1];
+        if ((rank === '8' && chessPiece.color === 'w') || (rank === '1' && chessPiece.color === 'b')) {
+          setPendingPromotion({ from: selectedSquare, to: square });
+          setSelectedSquare(null);
+          return;
+        }
+      }
+
       tryMove(selectedSquare, square);
       setSelectedSquare(null);
       return;
@@ -265,6 +333,18 @@ export function PlayerTaskDetailsView() {
     const legal = chess.moves({ square: sourceSquare as Square, verbose: true })
       .some(m => m.to === targetSquare);
     if (!legal) return false;
+
+    const piece = chess.get(sourceSquare as Square);
+    if (piece && piece.type === 'p') {
+      const rank = targetSquare[1];
+      const turn = fenTurn(runtime.currentFen);
+      if ((rank === '8' && turn === 'w') || (rank === '1' && turn === 'b')) {
+        setPendingPromotion({ from: sourceSquare, to: targetSquare });
+        setSelectedSquare(null);
+        return true;
+      }
+    }
+
     setSelectedSquare(null);
     return tryMove(sourceSquare, targetSquare);
   }, [runtime, tryMove]);
@@ -380,7 +460,7 @@ export function PlayerTaskDetailsView() {
                 onPieceDrop: handlePieceDrop,
                 onSquareClick: handleSquareClick,
                 squareStyles,
-                showAnimations: animateBoard,
+                showAnimations: !pendingPromotion && animateBoard,
                 animationDurationInMs: 180,
                 boardStyle: {
                   width: '100%',
@@ -389,6 +469,15 @@ export function PlayerTaskDetailsView() {
                 },
               }}
             />
+            {pendingPromotion && (
+              <PromotionPopover
+                color={fenTurn(runtime.currentFen)}
+                onSelect={(piece) => {
+                  tryMove(pendingPromotion.from, pendingPromotion.to, piece);
+                  setPendingPromotion(null);
+                }}
+              />
+            )}
           </Box>
         ) : (
           <Alert severity="warning">Niepoprawna pozycja startowa tego etapu.</Alert>
