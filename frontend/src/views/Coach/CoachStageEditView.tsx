@@ -12,6 +12,7 @@ import ArrowBack from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
+import { PgnPreview } from '../../components/chess/PgnPreview';
 import { tasksService } from '../../services/tasksService';
 import type { CoachStageDetail, StageStatus } from '../../types/coachTasks';
 
@@ -122,16 +123,36 @@ export function CoachStageEditView() {
           fullWidth
         />
 
-        <TextField
-          label="Rozwiązanie (PGN)"
-          value={solutionPgn}
-          onChange={(e) => setSolutionPgn(e.target.value)}
-          placeholder={'1. e4 e5 2. Nf3 Nc6 3. Bb5'}
-          multiline
-          minRows={6}
-          fullWidth
-          helperText="Główna linia rozwiązania w notacji PGN. Pierwszy ruch będzie zagrany automatycznie jako wprowadzenie."
-        />
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+            gap: 2,
+            alignItems: 'start',
+          }}
+        >
+          <TextField
+            label="Rozwiązanie (PGN)"
+            value={solutionPgn}
+            onChange={(e) => setSolutionPgn(e.target.value)}
+            placeholder={'1. e4 e5 2. Nf3 Nc6 3. Bb5'}
+            multiline
+            minRows={10}
+            fullWidth
+            helperText="Główna linia rozwiązania w notacji PGN. Pierwszy ruch będzie zagrany automatycznie jako wprowadzenie."
+          />
+
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+              Podgląd
+            </Typography>
+            {stage.positionFen ? (
+              <PgnPreview baseFen={stage.positionFen} solutionPgn={solutionPgn} />
+            ) : (
+              <Alert severity="info">Etap nie ma przypisanej pozycji - podgląd niedostępny.</Alert>
+            )}
+          </Box>
+        </Box>
 
         <TextField
           select

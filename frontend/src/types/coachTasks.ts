@@ -32,6 +32,7 @@ export interface CoachStageDetail {
   status: StageStatus;
   solutionPgn: string | null;
   positionId: number | null;
+  positionFen?: string | null;
 }
 
 export interface CoachStageResponse {
