@@ -24,7 +24,7 @@ class TasksController extends AbstractController
         $task->title = $title;
         $task->description = $description;
         $task->coach_id = $coachId;
-        $task->status = 'active';
+        $task->status = 'draft';
         $task->group_id = (int) $groupIds[0];
 
         if ($task->save() === false) {
@@ -106,7 +106,7 @@ class TasksController extends AbstractController
             $task->title = $title;
             $task->description = $description;
             $task->coach_id = $coachId;
-            $task->status = 'active';
+            $task->status = 'draft';
             $task->group_id = (int) $groupIds[0];
 
             if ($task->save() === false) {
@@ -171,7 +171,7 @@ class TasksController extends AbstractController
             $task->title = $title;
             $task->description = $description;
             $task->coach_id = $coachId;
-            $task->status = 'active';
+            $task->status = 'draft';
             $task->group_id = (int) $groupIds[0];
 
             if ($task->save() === false) {
