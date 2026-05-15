@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box } from '@mui/material';
 import { positionsService } from '../../services/positionsService';
 import { groupsService } from '../../services/groupsService';
@@ -72,12 +72,14 @@ export function PositionsView() {
   const totalPages = positionsResponse?.totalPages ?? 1;
   const total = positionsResponse?.total ?? 0;
 
+  const pageRef = useRef(page);
+  pageRef.current = page;
   // Backend may clamp page; sync local state if it diverges.
   useEffect(() => {
-    if (positionsResponse && positionsResponse.page !== page) {
+    if (positionsResponse && positionsResponse.page !== pageRef.current) {
       setPage(positionsResponse.page);
     }
-  }, [positionsResponse, page]);
+  }, [positionsResponse]);
 
   const handlePositionToggle = useCallback((id: number) => {
     if (selectedPositionsRef.has(id))
