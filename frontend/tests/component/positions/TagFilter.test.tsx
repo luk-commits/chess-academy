@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ThemeProvider } from '@mui/material';
 import { theme } from '../../../src/theme';
@@ -45,7 +45,7 @@ describe('SelfStatedTagFilter', () => {
     await user.click(screen.getByText('fork'));
     await user.click(screen.getByText('mate'));
     expect(onCommit).not.toHaveBeenCalled();
-    ref.current!.commit();
+    act(() => { ref.current!.commit(); });
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith(expect.arrayContaining(['fork', 'mate']));
     expect(onCommit.mock.calls[0][0]).toHaveLength(2);
@@ -60,7 +60,7 @@ describe('SelfStatedTagFilter', () => {
     );
     await expand(user);
     await user.click(screen.getByText('pin'));
-    ref.current!.clear();
+    act(() => { ref.current!.clear(); });
     expect(onCommit).toHaveBeenCalledWith([]);
   });
 
@@ -73,7 +73,7 @@ describe('SelfStatedTagFilter', () => {
     );
     await expand(user);
     await user.click(screen.getByText('pin'));
-    ref.current!.resetSelection();
+    act(() => { ref.current!.resetSelection(); });
     expect(onCommit).not.toHaveBeenCalled();
   });
 
@@ -85,7 +85,7 @@ describe('SelfStatedTagFilter', () => {
     expect(screen.queryByText(/niezapisane/i)).not.toBeInTheDocument();
     await user.click(screen.getByText('fork'));
     expect(screen.getByText(/niezapisane/i)).toBeInTheDocument();
-    ref.current!.commit();
+    act(() => { ref.current!.commit(); });
     expect(screen.queryByText(/niezapisane/i)).not.toBeInTheDocument();
   });
 
