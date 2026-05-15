@@ -75,11 +75,18 @@ describe('Login', () => {
     expect(loginMock).toHaveBeenCalledWith({ email: 'a@b.c', password: 'secret123' });
   });
 
-  it('redirects to /home when user is set in context', () => {
+  it('redirects PLAYER to /home/player/tasks when user is set in context', () => {
     renderWithAuth(<LoginView />, {
       user: { id: 1, email: 'test@chess.local', fullName: 'Test', role: 'PLAYER' },
     });
-    expect(mockNavigate).toHaveBeenCalledWith('/home');
+    expect(mockNavigate).toHaveBeenCalledWith('/home/player/tasks');
+  });
+
+  it('redirects COACH to /home/coach/positions when user is set in context', () => {
+    renderWithAuth(<LoginView />, {
+      user: { id: 2, email: 'coach@chess.local', fullName: 'Coach', role: 'COACH' },
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/home/coach/positions');
   });
 
   it('disables email and password fields during loading', () => {
