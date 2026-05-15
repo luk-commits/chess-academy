@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 
 interface PaginationSummaryProps {
@@ -12,7 +13,7 @@ interface PaginationSummaryProps {
 
 const SELECT_COUNTS = [5, 10, 15, 25, 50];
 
-export function PaginationSummary({ total, page, totalPages, onPageChange, selectedCount = 0, onSelectFirst, onClearSelection }: PaginationSummaryProps) {
+export const PaginationSummary = memo(function PaginationSummary({ total, page, totalPages, onPageChange, selectedCount = 0, onSelectFirst, onClearSelection }: PaginationSummaryProps) {
   return (
     <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -59,4 +60,4 @@ export function PaginationSummary({ total, page, totalPages, onPageChange, selec
       />
     </Box>
   );
-}
+});

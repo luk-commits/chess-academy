@@ -1,7 +1,10 @@
+import { memo } from 'react';
 import Grid from '@mui/material/Grid';
 import type { PositionItem } from '../../types/position';
 import { isValidFen, boardOrientationFromFen, applyFirstMoveToFen } from '../../utils/chessPosition';
 import PositionCard from '../PositionCard';
+
+const NOOP = () => {};
 
 interface PositionGridProps {
   positions: PositionItem[];
@@ -14,7 +17,7 @@ interface PositionGridProps {
   keyPrefix?: string | number;
 }
 
-export function PositionGrid({
+export const PositionGrid = memo(function PositionGrid({
   positions,
   selectedIds,
   cardTagsExpanded,
@@ -38,8 +41,8 @@ export function PositionGrid({
               boardOrientation={boardOrientationFromFen(fen)}
               isSelected={selectedIds?.has(position.id) ?? false}
               tagsExpanded={!!cardTagsExpanded[position.id]}
-              onToggle={onToggle ?? (() => {})}
-              onCopy={onCopy ?? (() => {})}
+              onToggle={onToggle ?? NOOP}
+              onCopy={onCopy ?? NOOP}
               onToggleTags={onToggleTags}
               hideCheckbox={hideCheckbox ?? false}
             />
@@ -48,4 +51,4 @@ export function PositionGrid({
       })}
     </Grid>
   );
-}
+});

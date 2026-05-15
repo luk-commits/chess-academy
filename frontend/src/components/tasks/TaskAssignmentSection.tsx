@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import {
   Box,
   Button,
@@ -9,12 +9,12 @@ import {
   DialogTitle,
   FormControlLabel,
   Paper,
-  Switch,
   Tab,
   Tabs,
   Tooltip,
 } from '@mui/material';
 import { GroupSelectorList, type GroupSelectorItem } from '../groups/GroupSelectorList';
+import SelfStatedSwitch from '../SelfStated/Switch';
 import { SelectionStatusAlert } from './SelectionStatusAlert';
 
 interface MobileTabsProps {
@@ -76,7 +76,7 @@ export interface TaskAssignmentSectionProps {
   onCreateTaskFromModal: () => void;
 }
 
-export function TaskAssignmentSection({
+export const TaskAssignmentSection = memo(function TaskAssignmentSection({
   individuals,
   classes,
   loadingGroups,
@@ -92,6 +92,12 @@ export function TaskAssignmentSection({
   onCreateTaskDesktop,
   onCreateTaskFromModal,
 }: TaskAssignmentSectionProps) {
+  const handlePublishCommit = useCallback((checked: boolean) => {
+    publishDefaultRef.current = checked;
+  }, [publishDefaultRef]);
+
+  const stopPropagation = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
+
   return (
     <>
       <Box
@@ -142,11 +148,11 @@ export function TaskAssignmentSection({
               Dodaj zadania
             </Box>
             <Tooltip title="Opublikuj">
-              <Switch
+              <SelfStatedSwitch
                 defaultChecked={publishDefaultRef.current}
                 color="secondary"
-                onChange={(_, checked) => { publishDefaultRef.current = checked; }}
-                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                onCommit={handlePublishCommit}
+                onClick={stopPropagation}
               />
             </Tooltip>
           </Button>
@@ -175,9 +181,9 @@ export function TaskAssignmentSection({
           />
           <FormControlLabel
             control={
-              <Switch
+              <SelfStatedSwitch
                 defaultChecked={publishDefaultRef.current}
-                onChange={(_, checked) => { publishDefaultRef.current = checked; }}
+                onCommit={handlePublishCommit}
               />
             }
             label="Opublikuj"
@@ -225,4 +231,4 @@ export function TaskAssignmentSection({
       </Box>
     </>
   );
-}
+});

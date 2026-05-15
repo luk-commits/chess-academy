@@ -41,8 +41,14 @@ export function PositionsView() {
     [],
   );
 
-  const individuals = groupsData?.individuals ?? [];
-  const classes = groupsData?.classes ?? [];
+  const individuals = useMemo(
+    () => (groupsData?.individuals ?? []).map(ind => ({ id: ind.groupId, label: ind.playerName })),
+    [groupsData],
+  );
+  const classes = useMemo(
+    () => (groupsData?.classes ?? []).map(cls => ({ id: cls.groupId, label: cls.name })),
+    [groupsData],
+  );
 
   // Reset group selection whenever groups data refreshes (success or error)
   useEffect(() => {
@@ -113,7 +119,7 @@ export function PositionsView() {
     setSelectedGroupCount(selectedGroupsRef.size);
   }, [selectedGroupsRef]);
 
-  const handleCreateTask = async (opts?: { closeModal?: boolean }) => {
+  const handleCreateTask = useCallback(async (opts?: { closeModal?: boolean }) => {
     if (selectedPositionCount === 0 || selectedGroupCount === 0) return;
     setTaskCreating(true);
     try {
@@ -136,7 +142,12 @@ export function PositionsView() {
     } finally {
       setTaskCreating(false);
     }
-  };
+  }, [selectedPositionCount, selectedGroupCount, selectedPositionsRef, selectedGroupsRef, publishDefaultRef]);
+
+  const handleOpenAssignModal = useCallback(() => setAssignModalOpen(true), []);
+  const handleCloseAssignModal = useCallback(() => setAssignModalOpen(false), []);
+  const handleCreateTaskDesktop = useCallback(() => handleCreateTask(), [handleCreateTask]);
+  const handleCreateTaskFromModal = useCallback(() => handleCreateTask({ closeModal: true }), [handleCreateTask]);
 
   const handleSearchCommit = useCallback((query: string) => {
     setSearch(query);
@@ -213,20 +224,20 @@ export function PositionsView() {
         </Box>
 
         <TaskAssignmentSection
-          individuals={individuals.map(ind => ({ id: ind.groupId, label: ind.playerName }))}
-          classes={classes.map(cls => ({ id: cls.groupId, label: cls.name }))}
+          individuals={individuals}
+          classes={classes}
           loadingGroups={loadingGroups}
           selectedPositionCount={selectedPositionCount}
           selectedGroupCount={selectedGroupCount}
           taskCreating={taskCreating}
           assignModalOpen={assignModalOpen}
-          onOpenModal={() => setAssignModalOpen(true)}
-          onCloseModal={() => setAssignModalOpen(false)}
+          onOpenModal={handleOpenAssignModal}
+          onCloseModal={handleCloseAssignModal}
           sidebarResetKey={sidebarResetKey}
           onCommitGroup={handleGroupCommit}
           publishDefaultRef={publishDefaultRef}
-          onCreateTaskDesktop={() => handleCreateTask()}
-          onCreateTaskFromModal={() => handleCreateTask({ closeModal: true })}
+          onCreateTaskDesktop={handleCreateTaskDesktop}
+          onCreateTaskFromModal={handleCreateTaskFromModal}
         />
       </Box>
 

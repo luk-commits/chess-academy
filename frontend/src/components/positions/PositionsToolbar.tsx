@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { Box, Button, Paper } from '@mui/material';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import SelfStatedText from '../SelfStated/Text';
@@ -13,7 +13,7 @@ interface PositionsToolbarProps {
   defaultSelectedTags?: string[];
 }
 
-export function PositionsToolbar({
+export const PositionsToolbar = memo(function PositionsToolbar({
   onSearchCommit,
   onDifficultyCommit,
   onTagsCommit,
@@ -108,4 +108,4 @@ export function PositionsToolbar({
       />
     </Paper>
   );
-}
+});

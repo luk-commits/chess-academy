@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Box, CircularProgress, FormControlLabel, Paper, Typography } from '@mui/material';
 import SelfStatedCheckbox from '../SelfStated/Checkbox';
 
@@ -16,7 +17,7 @@ export interface GroupSelectorListProps {
   title?: string;
 }
 
-export function GroupSelectorList({
+export const GroupSelectorList = memo(function GroupSelectorList({
   items,
   loading,
   emptyText,
@@ -63,4 +64,4 @@ export function GroupSelectorList({
   }
 
   return content;
-}
+});
