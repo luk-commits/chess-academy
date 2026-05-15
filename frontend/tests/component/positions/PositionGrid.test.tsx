@@ -59,13 +59,13 @@ describe('PositionGrid', () => {
         <PositionGrid positions={[positions[0]]} cardTagsExpanded={{}} onToggleTags={() => {}} keyPrefix="a" />
       </ThemeProvider>,
     );
-    renderWithTheme(
-      rerender(
-        <ThemeProvider theme={theme}>
-          <PositionGrid positions={[positions[0]]} cardTagsExpanded={{}} onToggleTags={() => {}} keyPrefix="b" />
-        </ThemeProvider>,
-      ),
+    expect(screen.getByTestId('position-card')).toBeInTheDocument();
+
+    rerender(
+      <ThemeProvider theme={theme}>
+        <PositionGrid positions={[positions[0]]} cardTagsExpanded={{}} onToggleTags={() => {}} keyPrefix="b" />
+      </ThemeProvider>,
     );
-    expect(screen.getByTestId('position-card')).toBeTruthy();
+    expect(screen.getAllByTestId('position-card')).toHaveLength(1);
   });
 });

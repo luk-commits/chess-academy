@@ -1,8 +1,9 @@
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ThemeProvider } from '@mui/material';
 import { theme } from '../../../src/theme';
-import SelfStatedTagFilter from '../../../src/components/SelfStated/TagFilter';
+import SelfStatedTagFilter, { type TagFilterHandle } from '../../../src/components/SelfStated/TagFilter';
 import userEvent from '@testing-library/user-event';
 
 const TAGS = ['fork', 'pin', 'skewer', 'mate'];
@@ -35,68 +36,67 @@ describe('SelfStatedTagFilter', () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it('commits selected tags after Zastosuj click', async () => {
+  it('imperative commit() emits selected tags via onCommit', async () => {
     const onCommit = vi.fn();
+    const ref = createRef<TagFilterHandle>();
     const user = userEvent.setup();
-    renderWithTheme(<SelfStatedTagFilter availableTags={TAGS} onCommit={onCommit} />);
+    renderWithTheme(<SelfStatedTagFilter ref={ref} availableTags={TAGS} onCommit={onCommit} />);
     await expand(user);
     await user.click(screen.getByText('fork'));
     await user.click(screen.getByText('mate'));
-    await user.click(screen.getByRole('button', { name: /zastosuj/i }));
+    expect(onCommit).not.toHaveBeenCalled();
+    ref.current!.commit();
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith(expect.arrayContaining(['fork', 'mate']));
     expect(onCommit.mock.calls[0][0]).toHaveLength(2);
   });
 
-  it('Zastosuj is disabled when no changes (clean state)', async () => {
-    const user = userEvent.setup();
-    renderWithTheme(<SelfStatedTagFilter availableTags={TAGS} onCommit={() => {}} />);
-    await expand(user);
-    expect(screen.getByRole('button', { name: /zastosuj/i })).toBeDisabled();
-  });
-
-  it('Zastosuj becomes enabled after a local toggle and disabled again after commit', async () => {
-    const user = userEvent.setup();
-    renderWithTheme(<SelfStatedTagFilter availableTags={TAGS} onCommit={() => {}} />);
-    await expand(user);
-    await user.click(screen.getByText('fork'));
-    const applyBtn = screen.getByRole('button', { name: /zastosuj/i });
-    expect(applyBtn).toBeEnabled();
-    await user.click(applyBtn);
-    expect(applyBtn).toBeDisabled();
-  });
-
-  it('Wyczyść clears local selection and commits empty array', async () => {
+  it('imperative clear() resets selection and commits empty array', async () => {
     const onCommit = vi.fn();
+    const ref = createRef<TagFilterHandle>();
     const user = userEvent.setup();
     renderWithTheme(
-      <SelfStatedTagFilter availableTags={TAGS} defaultValue={['fork']} onCommit={onCommit} />,
+      <SelfStatedTagFilter ref={ref} availableTags={TAGS} defaultValue={['fork']} onCommit={onCommit} />,
     );
     await expand(user);
     await user.click(screen.getByText('pin'));
-    await user.click(screen.getByRole('button', { name: /wyczyść/i }));
+    ref.current!.clear();
     expect(onCommit).toHaveBeenCalledWith([]);
   });
 
-  it('shows "niezapisane" indicator when local differs from committed', async () => {
+  it('imperative resetSelection() clears state without emitting onCommit', async () => {
+    const onCommit = vi.fn();
+    const ref = createRef<TagFilterHandle>();
     const user = userEvent.setup();
-    renderWithTheme(<SelfStatedTagFilter availableTags={TAGS} onCommit={() => {}} />);
+    renderWithTheme(
+      <SelfStatedTagFilter ref={ref} availableTags={TAGS} defaultValue={['fork']} onCommit={onCommit} />,
+    );
+    await expand(user);
+    await user.click(screen.getByText('pin'));
+    ref.current!.resetSelection();
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('shows "niezapisane" indicator when local differs from committed', async () => {
+    const ref = createRef<TagFilterHandle>();
+    const user = userEvent.setup();
+    renderWithTheme(<SelfStatedTagFilter ref={ref} availableTags={TAGS} onCommit={() => {}} />);
     await expand(user);
     expect(screen.queryByText(/niezapisane/i)).not.toBeInTheDocument();
     await user.click(screen.getByText('fork'));
     expect(screen.getByText(/niezapisane/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /zastosuj/i }));
+    ref.current!.commit();
     expect(screen.queryByText(/niezapisane/i)).not.toBeInTheDocument();
   });
 
-  it('toggle twice returns to clean state (Zastosuj disabled again)', async () => {
+  it('toggle twice returns to clean state (no dirty indicator)', async () => {
     const user = userEvent.setup();
     renderWithTheme(<SelfStatedTagFilter availableTags={TAGS} onCommit={() => {}} />);
     await expand(user);
     await user.click(screen.getByText('fork'));
-    expect(screen.getByRole('button', { name: /zastosuj/i })).toBeEnabled();
+    expect(screen.getByText(/niezapisane/i)).toBeInTheDocument();
     await user.click(screen.getByText('fork'));
-    expect(screen.getByRole('button', { name: /zastosuj/i })).toBeDisabled();
+    expect(screen.queryByText(/niezapisane/i)).not.toBeInTheDocument();
   });
 
   it('respects defaultValue as initial committed state', async () => {
@@ -107,6 +107,6 @@ describe('SelfStatedTagFilter', () => {
     await expand(user);
     const pinChip = screen.getByText('pin').closest('.MuiChip-root');
     expect(pinChip).toHaveClass('MuiChip-colorPrimary');
-    expect(screen.getByRole('button', { name: /zastosuj/i })).toBeDisabled();
+    expect(screen.queryByText(/niezapisane/i)).not.toBeInTheDocument();
   });
 });

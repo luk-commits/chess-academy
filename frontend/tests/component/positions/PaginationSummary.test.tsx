@@ -47,4 +47,59 @@ describe('PaginationSummary', () => {
     );
     expect(screen.getByRole('button', { name: /page 1/i })).toBeInTheDocument();
   });
+
+  it('hides quick-select cluster when onSelectFirst is not provided', () => {
+    renderWithTheme(
+      <PaginationSummary total={50} page={1} totalPages={5} onPageChange={() => {}} />,
+    );
+    expect(screen.queryByText(/zaznacz pierwsze/i)).not.toBeInTheDocument();
+  });
+
+  it('renders quick-select buttons when onSelectFirst provided and triggers callback', async () => {
+    const onSelectFirst = vi.fn();
+    renderWithTheme(
+      <PaginationSummary
+        total={50}
+        page={1}
+        totalPages={5}
+        onPageChange={() => {}}
+        onSelectFirst={onSelectFirst}
+      />,
+    );
+    expect(screen.getByText(/zaznacz pierwsze/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '10' }));
+    expect(onSelectFirst).toHaveBeenCalledWith(10);
+  });
+
+  it('disables clear button when selectedCount is 0', () => {
+    renderWithTheme(
+      <PaginationSummary
+        total={50}
+        page={1}
+        totalPages={5}
+        onPageChange={() => {}}
+        onSelectFirst={() => {}}
+        onClearSelection={() => {}}
+        selectedCount={0}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /usuń zaznaczenie/i })).toBeDisabled();
+  });
+
+  it('clear button calls onClearSelection when something is selected', async () => {
+    const onClearSelection = vi.fn();
+    renderWithTheme(
+      <PaginationSummary
+        total={50}
+        page={1}
+        totalPages={5}
+        onPageChange={() => {}}
+        onSelectFirst={() => {}}
+        onClearSelection={onClearSelection}
+        selectedCount={3}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /usuń zaznaczenie/i }));
+    expect(onClearSelection).toHaveBeenCalledTimes(1);
+  });
 });

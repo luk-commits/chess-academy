@@ -1,5 +1,5 @@
 import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useState } from 'react';
-import { Box, Button, Chip, Collapse, IconButton, Typography } from '@mui/material';
+import { Box, Chip, Collapse, IconButton, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
@@ -76,18 +76,6 @@ const SelfStatedTagFilter = memo(forwardRef<TagFilterHandle, SelfStatedTagFilter
       return next;
     });
   }, []);
-
-  const handleApply = useCallback(() => {
-    const arr = Array.from(selected);
-    setCommitted(new Set(arr));
-    onCommit(arr);
-  }, [selected, onCommit]);
-
-  const handleClear = useCallback(() => {
-    setSelected(new Set());
-    setCommitted(new Set());
-    onCommit([]);
-  }, [onCommit]);
 
   return (
     <Box sx={{ mt: 2 }}>

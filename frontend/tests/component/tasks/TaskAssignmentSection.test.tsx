@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, it, expect, vi, type Mock } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { ThemeProvider } from '@mui/material';
 import { theme } from '../../../src/theme';
 import { TaskAssignmentSection } from '../../../src/components/tasks/TaskAssignmentSection';
@@ -204,16 +204,26 @@ describe('TaskAssignmentSection', () => {
     });
   });
 
-  it('sidebarResetKey propagates to GroupSelectorList', () => {
+  it('sidebarResetKey propagates to GroupSelectorList (resets checkbox state)', async () => {
     const { rerender } = render(
       <ThemeProvider theme={theme}>
         <TaskAssignmentSection {...defaultProps} sidebarResetKey={0} />
       </ThemeProvider>,
     );
+    const aliceCheckbox = screen.getAllByText('Alice')[0]
+      .closest('.MuiFormControlLabel-root')!
+      .querySelector('input[type="checkbox"]') as HTMLInputElement;
+    await userEvent.click(aliceCheckbox);
+    expect(aliceCheckbox).toBeChecked();
+
     rerender(
       <ThemeProvider theme={theme}>
         <TaskAssignmentSection {...defaultProps} sidebarResetKey={1} />
       </ThemeProvider>,
     );
+    const refreshed = screen.getAllByText('Alice')[0]
+      .closest('.MuiFormControlLabel-root')!
+      .querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(refreshed).not.toBeChecked();
   });
 });
