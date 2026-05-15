@@ -21,7 +21,7 @@ export function LoginView() {
   const { isInvalid: isEmailInvalid, errorMessage: emailErrorMessage } = useEmailValidation(email);
 
   useEffect(() => {
-    if (user) navigate('/home');
+    if (user) navigate(user.role === 'COACH' ? '/home/coach/positions' : '/home/player/tasks');
   }, [user, navigate]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
