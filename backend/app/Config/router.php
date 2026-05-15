@@ -53,6 +53,11 @@ $container->setShared('router', function (): Router {
         'action' => 'index',
     ]);
 
+    $router->addPost('/api/player/stages/{id:[0-9]+}/attempt', [
+        'controller' => 'player_stages',
+        'action' => 'attempt',
+    ]);
+
     $router->addOptions('/api/{path:.+}', [
         'controller' => 'auth',
         'action' => 'preflight',
