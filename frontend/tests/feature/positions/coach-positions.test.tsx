@@ -117,7 +117,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     mockFetchCoachPositions.mockResolvedValue(defaultPositionsResponse());
     const input = screen.getByLabelText(/nazwa debiutu/i);
     await userEvent.type(input, 'italian');
-    await userEvent.click(screen.getByRole('button', { name: /szukaj/i }));
+    await userEvent.click(screen.getByRole('button', { name: /zastosuj/i }));
     await waitFor(() => {
       const lastCall = mockFetchCoachPositions.mock.calls.at(-1)?.[0];
       expect(lastCall).toBeDefined();

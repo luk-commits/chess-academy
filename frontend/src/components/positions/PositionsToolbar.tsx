@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Box, Button, Paper } from '@mui/material';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import SelfStatedText from '../SelfStated/Text';
 import SelfStatedSlider from '../SelfStated/Slider';
-import SelfStatedTagFilter from '../SelfStated/TagFilter';
+import SelfStatedTagFilter, { type TagFilterHandle } from '../SelfStated/TagFilter';
 import { THEME_TAGS } from '../../constants/themeTags';
 
 interface PositionsToolbarProps {
@@ -20,15 +20,29 @@ export function PositionsToolbar({
   defaultSelectedTags,
 }: PositionsToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const tagFilterRef = useRef<TagFilterHandle>(null);
+  const [searchResetKey, setSearchResetKey] = useState(0);
+  const ignoreBlurRef = useRef(false);
 
   const handleSearch = () => {
     const val = inputRef.current?.value.trim() ?? '';
     onSearchCommit(val);
+    tagFilterRef.current?.commit();
   };
 
-  const handleTextCommit = (val: string) => {
+  const handleTextCommit = useCallback((val: string) => {
+    if (ignoreBlurRef.current) {
+      ignoreBlurRef.current = false;
+      return;
+    }
     onSearchCommit(val.trim());
-  };
+  }, [onSearchCommit]);
+
+  const handleClear = useCallback(() => {
+    ignoreBlurRef.current = true;
+    setSearchResetKey(k => k + 1);
+    tagFilterRef.current?.resetSelection();
+  }, []);
 
   return (
     <Paper elevation={4} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 4, mb: 3 }}>
@@ -50,6 +64,7 @@ export function PositionsToolbar({
           sx={{ display: 'flex', gap: 1, width: '100%' }}
         >
           <SelfStatedText
+            key={`search-${searchResetKey}`}
             inputRef={inputRef}
             defaultValue=""
             label="Nazwa debiutu"
@@ -57,12 +72,16 @@ export function PositionsToolbar({
             onCommit={handleTextCommit}
           />
           <Button type="submit" variant="contained" sx={{ whiteSpace: 'nowrap' }}>
-            Szukaj
+            Zastosuj
+          </Button>
+          <Button type="button" variant="outlined" sx={{ whiteSpace: 'nowrap' }} onMouseDown={handleClear}>
+            Wyczyść
           </Button>
         </Box>
       </Box>
 
       <SelfStatedSlider
+        key="slider"
         label="Poziom trudności"
         defaultVal={[0, 3500]}
         min={0}
@@ -82,6 +101,7 @@ export function PositionsToolbar({
       />
 
       <SelfStatedTagFilter
+        ref={tagFilterRef}
         availableTags={THEME_TAGS}
         defaultValue={defaultSelectedTags}
         onCommit={onTagsCommit}
