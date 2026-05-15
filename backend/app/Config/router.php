@@ -53,6 +53,11 @@ $container->setShared('router', function (): Router {
         'action' => 'index',
     ]);
 
+    $router->addGet('/api/player/stages/due', [
+        'controller' => 'player_stages',
+        'action' => 'due',
+    ]);
+
     $router->addPost('/api/player/stages/{id:[0-9]+}/attempt', [
         'controller' => 'player_stages',
         'action' => 'attempt',
