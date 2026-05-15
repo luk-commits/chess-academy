@@ -1,32 +1,21 @@
 import { useState, type FormEvent } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Divider,
-  IconButton,
-  InputAdornment,
-  Paper,
-  TextField,
-} from '@mui/material';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { Alert, Box, Button } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import { useAuth } from '../hooks/useAuth';
-import { BrandHeader } from '../components/BrandHeader';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { RegisterPayload } from '../types/auth';
+import { AuthLayout } from '../components/forms/AuthLayout';
+import { IconTextField } from '../components/forms/IconTextField';
+import { PasswordField } from '../components/forms/PasswordField';
+import { useEmailValidation } from '../hooks/useEmailValidation';
+import { usePasswordValidation } from '../hooks/usePasswordValidation';
 
 /**
  * Registration form with two-layer validation:
- * 1. Client-side: password confirmation matching + required field check.
- *    The submit button is disabled until all fields are valid.
- * 2. Server-side: the API validates email uniqueness, role values, etc.
- *    Server errors are displayed in an inline Alert.
+ * 1. Client-side: password rules + matching confirmation + email format.
+ * 2. Server-side: email uniqueness, role values, etc.
  */
 export function RegisterView() {
   const { loading } = useAuth();
@@ -35,31 +24,21 @@ export function RegisterView() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'PLAYER' | 'COACH'>('PLAYER');
-  const [showPassword, setShowPassword] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const navigate = useNavigate();
 
-  const passwordsMatch = password === confirmPassword && confirmPassword !== '';
+  const { isInvalid: isEmailInvalid, errorMessage: emailErrorMessage } = useEmailValidation(email);
+  const { isInvalid: isPasswordInvalid, message: passwordValidationMessage } = usePasswordValidation(password);
   const isPasswordMismatch = confirmPassword !== '' && password !== confirmPassword;
-  const isPasswordTooShort = password.length > 0 && password.length < 8;
-  const hasNoUppercase = password.length > 0 && !/[A-Z]/.test(password);
-  const hasNoLowercase = password.length > 0 && !/[a-z]/.test(password);
-  const isPasswordInvalid = isPasswordTooShort || hasNoUppercase || hasNoLowercase;
-  const isEmailInvalid = email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const emailErrorMessage = isEmailInvalid ? 'Nieprawidłowy adres email' : '';
-  const passwordValidationMessage =
-    password.length === 0
-      ? ''
-      : isPasswordTooShort
-        ? 'Hasło musi mieć co najmniej 8 znaków'
-        : hasNoUppercase
-          ? 'Hasło musi zawierać co najmniej 1 dużą literę'
-          : hasNoLowercase
-            ? 'Hasło musi zawierać co najmniej 1 małą literę'
-            : '';
+  const passwordsMatch = password === confirmPassword && confirmPassword !== '';
 
   const isFormValid =
-    email.trim() !== '' && password !== '' && fullName.trim() !== '' && passwordsMatch && !isPasswordInvalid && !isEmailInvalid;
+    email.trim() !== '' &&
+    password !== '' &&
+    fullName.trim() !== '' &&
+    passwordsMatch &&
+    !isPasswordInvalid &&
+    !isEmailInvalid;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,186 +57,100 @@ export function RegisterView() {
     }
   };
 
+  const topAlert = registerError ? (
+    <Alert severity="error" sx={{ mb: 2 }}>
+      {registerError}
+    </Alert>
+  ) : null;
+
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        background: 'linear-gradient(135deg, #1a237e 0%, #534bae 50%, #c2a878 100%)',
-        px: 2,
-      }}
-    >
-      <Container maxWidth="xs" disableGutters>
-        <Paper
-          elevation={12}
-          sx={{
-            p: { xs: 3, sm: 4.5 },
-            borderRadius: 4,
-            backdropFilter: 'blur(8px)',
-            background: 'rgba(255, 255, 255, 0.97)',
-          }}
+    <AuthLayout topAlert={topAlert}>
+      <Box component="form" onSubmit={handleSubmit} noValidate>
+        <IconTextField
+          startIcon={<PersonOutlinedIcon color="action" fontSize="small" />}
+          label="Imię i Nazwisko"
+          required
+          value={fullName}
+          onChange={setFullName}
+          disabled={loading}
+          sx={{ mb: 2 }}
+        />
+
+        <IconTextField
+          startIcon={<EmailIcon color="action" fontSize="small" />}
+          label="Email"
+          type="email"
+          required
+          value={email}
+          onChange={setEmail}
+          disabled={loading}
+          error={isEmailInvalid}
+          helperText={emailErrorMessage}
+          sx={{ mb: 2 }}
+        />
+
+        <PasswordField
+          label="Hasło"
+          required
+          value={password}
+          onChange={setPassword}
+          disabled={loading}
+          error={Boolean(passwordValidationMessage)}
+          helperText={passwordValidationMessage}
+          sx={{ mb: 2 }}
+        />
+
+        <PasswordField
+          label="Potwierdź hasło"
+          required
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          disabled={loading}
+          error={isPasswordMismatch}
+          helperText={isPasswordMismatch ? 'Hasła nie są identyczne' : ''}
+          sx={{ mb: 2 }}
+        />
+
+        <Box sx={{ mb: 3 }}>
+          <Button
+            onClick={() => setRole('PLAYER')}
+            variant={role === 'PLAYER' ? 'contained' : 'outlined'}
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            Gracz
+          </Button>
+          <Button
+            onClick={() => setRole('COACH')}
+            variant={role === 'COACH' ? 'contained' : 'outlined'}
+            size="small"
+          >
+            Trener
+          </Button>
+        </Box>
+
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={loading || !isFormValid}
+          sx={{ py: 1.4, fontSize: '1rem' }}
         >
-          <BrandHeader />
+          {loading ? 'Rejestracja...' : 'Zarejestruj się'}
+        </Button>
+      </Box>
 
-          {registerError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {registerError}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <TextField
-              label="Imię i Nazwisko"
-              fullWidth
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              disabled={loading}
-              sx={{ mb: 2 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                      <InputAdornment position="start">
-                        <PersonOutlinedIcon color="action" fontSize="small" />
-                      </InputAdornment>
-                  ),
-                },
-              }}
-            />
-
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              error={isEmailInvalid}
-              helperText={emailErrorMessage}
-              sx={{ mb: 2 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-
-            <TextField
-              label="Hasło"
-              type={showPassword ? 'text' : 'password'}
-              fullWidth
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              error={Boolean(passwordValidationMessage)}
-              helperText={passwordValidationMessage}
-              sx={{ mb: 2 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon color="action" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((v) => !v)}
-                        edge="end"
-                        size="small"
-                      >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-
-            <TextField
-              label="Potwierdź hasło"
-              type={showPassword ? 'text' : 'password'}
-              fullWidth
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={loading}
-              error={isPasswordMismatch}
-              helperText={isPasswordMismatch ? 'Hasła nie są identyczne' : ''}
-              sx={{ mb: 2 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon color="action" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((v) => !v)}
-                        edge="end"
-                        size="small"
-                      >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-
-            <Box sx={{ mb: 3 }}>
-              <Button
-                onClick={() => setRole('PLAYER')}
-                variant={role === 'PLAYER' ? 'contained' : 'outlined'}
-                size="small"
-                sx={{ mr: 1 }}
-              >
-                Gracz
-              </Button>
-              <Button
-                onClick={() => setRole('COACH')}
-                variant={role === 'COACH' ? 'contained' : 'outlined'}
-                size="small"
-              >
-                Trener
-              </Button>
-            </Box>
-
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              fullWidth
-              disabled={loading || !isFormValid}
-              sx={{ py: 1.4, fontSize: '1rem' }}
-            >
-              {loading ? 'Rejestracja...' : 'Zarejestruj się'}
-            </Button>
-          </Box>
-
-          <Divider sx={{ my: 3 }} />
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Button
-              onClick={() => navigate('/login')}
-              variant="text"
-              size="small"
-              sx={{ textTransform: 'none' }}
-            >
-              Masz już konto? Zaloguj się
-            </Button>
-          </Box>
-        </Paper>
-      </Container>
-    </Box>
+      <Box sx={{ textAlign: 'center', mt: 3 }}>
+        <Button
+          onClick={() => navigate('/login')}
+          variant="text"
+          size="small"
+          sx={{ textTransform: 'none' }}
+        >
+          Masz już konto? Zaloguj się
+        </Button>
+      </Box>
+    </AuthLayout>
   );
 }

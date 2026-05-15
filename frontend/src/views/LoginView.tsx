@@ -1,174 +1,105 @@
 import { useState, type FormEvent, useEffect } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Divider,
-  IconButton,
-  InputAdornment,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { Alert, Box, Button, Divider, Typography } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useAuth } from '../hooks/useAuth';
-import { BrandHeader } from '../components/BrandHeader';
 import { useNavigate } from 'react-router-dom';
+import { AuthLayout } from '../components/forms/AuthLayout';
+import { IconTextField } from '../components/forms/IconTextField';
+import { PasswordField } from '../components/forms/PasswordField';
+import { useEmailValidation } from '../hooks/useEmailValidation';
 
 /**
  * Login form with two-layer validation:
- * 1. Client-side: email format is validated (same regex as RegisterView).
- *    The submit button is disabled until all fields are valid.
- * 2. Server-side: the API verifies credentials.
- *    Server errors are displayed via the shared `error` state from AuthContext
- *    in an Alert above the form.
- * - Password visibility toggle is implemented client-side only (no effect on the value).
+ * 1. Client-side: email format (shared regex with RegisterView).
+ * 2. Server-side: error displayed via shared `error` state from AuthContext.
  */
 export function LoginView() {
   const { login, loading, error, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { isInvalid: isEmailInvalid, errorMessage: emailErrorMessage } = useEmailValidation(email);
 
   useEffect(() => {
-    if (user) {
-      navigate('/home');
-    }
+    if (user) navigate('/home');
   }, [user, navigate]);
-
-  const isEmailInvalid = email.trim().length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const emailErrorMessage = isEmailInvalid ? 'Nieprawidłowy adres email' : '';
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await login({ email: email.trim(), password });
   };
 
+  const topAlert = (
+    <>
+      {user && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Zalogowano jako {user.fullName} ({user.role})
+        </Alert>
+      )}
+      {error && !loading && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+    </>
+  );
+
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        background: 'linear-gradient(135deg, #1a237e 0%, #534bae 50%, #c2a878 100%)',
-        px: 2,
-      }}
-    >
-      <Container maxWidth="xs" disableGutters>
-        <Paper
-          elevation={12}
-          sx={{
-            p: { xs: 3, sm: 4.5 },
-            borderRadius: 4,
-            backdropFilter: 'blur(8MS)',
-            background: 'rgba(255, 255, 255, 0.97)',
-          }}
+    <AuthLayout topAlert={topAlert}>
+      <Box component="form" onSubmit={handleSubmit} noValidate>
+        <IconTextField
+          startIcon={<EmailIcon color="action" fontSize="small" />}
+          label="Email"
+          type="email"
+          autoComplete="email"
+          required
+          autoFocus
+          value={email}
+          onChange={setEmail}
+          disabled={loading}
+          error={isEmailInvalid}
+          helperText={emailErrorMessage}
+          sx={{ mb: 2 }}
+        />
+
+        <PasswordField
+          label="Hasło"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={setPassword}
+          disabled={loading}
+          sx={{ mb: 3 }}
+        />
+
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={loading || email === '' || password === '' || isEmailInvalid}
+          sx={{ py: 1.4, fontSize: '1rem' }}
         >
-          <BrandHeader />
+          {loading ? 'Logowanie...' : 'Zaloguj się'}
+        </Button>
+      </Box>
 
-          {user && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              Zalogowano jako {user.fullName} ({user.role})
-            </Alert>
-          )}
+      <Divider sx={{ my: 3 }} />
 
-          {error && !loading && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+      <Box sx={{ textAlign: 'center' }}>
+        <Button
+          onClick={() => navigate('/register')}
+          variant="text"
+          size="small"
+          sx={{ textTransform: 'none' }}
+        >
+          Nie masz konta? Zarejestruj się
+        </Button>
+      </Box>
 
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <TextField
-              label="Email"
-              type="email"
-              autoComplete="email"
-              required
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              error={isEmailInvalid}
-              helperText={emailErrorMessage}
-              sx={{ mb: 2 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-
-            <TextField
-              label="Hasło"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              sx={{ mb: 3 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon color="action" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((v) => !v)}
-                        edge="end"
-                        size="small"
-                        aria-label="toggle password visibility"
-                      >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              fullWidth
-              disabled={loading || email === '' || password === '' || isEmailInvalid}
-              sx={{ py: 1.4, fontSize: '1rem' }}
-            >
-              {loading ? 'Logowanie...' : 'Zaloguj się'}
-            </Button>
-          </Box>
-
-          <Divider sx={{ my: 3 }} />
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Button
-              onClick={() => navigate('/register')}
-              variant="text"
-              size="small"
-              sx={{ textTransform: 'none' }}
-            >
-              Nie masz konta? Zarejestruj się
-            </Button>
-          </Box>
-
-          <Typography variant="caption" color="text.secondary" align="center" component="p" sx={{ mt: 2 }}>
-            Konta demo: coach@chess.local / player@chess.local — hasło: password123
-          </Typography>
-        </Paper>
-      </Container>
-    </Box>
+      <Typography variant="caption" color="text.secondary" align="center" component="p" sx={{ mt: 2 }}>
+        Konta demo: coach@chess.local / player@chess.local — hasło: password123
+      </Typography>
+    </AuthLayout>
   );
 }

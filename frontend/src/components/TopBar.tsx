@@ -16,11 +16,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../hooks/useAuth';
-
-interface NavItem {
-  label: string;
-  path: string;
-}
+import { NAV_BY_ROLE } from '../constants/navigation';
 
 export function TopBar() {
   const { user, logout } = useAuth();
@@ -29,13 +25,8 @@ export function TopBar() {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   if (!user) return null;
 
-  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(e.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = async () => {
     handleMenuClose();
@@ -43,18 +34,7 @@ export function TopBar() {
     navigate('/login', { replace: true });
   };
 
-  const navItems: NavItem[] = user.role === 'PLAYER'
-    ? [
-        { label: 'Lekcje', path: '/home/player/lessons' },
-        { label: 'Zadania', path: '/home/player/tasks' },
-        { label: 'Trenerzy', path: '/home/player/coaches' },
-      ]
-    : [
-        { label: 'Lekcje', path: '/home/coach/lessons' },
-        { label: 'Zawodnicy', path: '/home/coach/players' },
-        { label: 'Pozycje', path: '/home/coach/positions' },
-      ];
-
+  const navItems = NAV_BY_ROLE[user.role];
   const isActive = (path: string) => location.pathname === path;
 
   return (

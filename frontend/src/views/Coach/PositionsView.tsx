@@ -4,31 +4,24 @@ import { positionsService } from '../../services/positionsService';
 import { groupsService } from '../../services/groupsService';
 import { tasksService } from '../../services/tasksService';
 import { TaskAssignmentSection } from '../../components/tasks/TaskAssignmentSection';
-import type { PositionItem, IndividualGroup, ClassGroup } from '../../types/position';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
-import { CopyFeedbackSnackbar } from '../../components/feedback/CopyFeedbackSnackbar';
-import { AlertSnackbar } from '../../components/feedback/AlertSnackbar';
+import { AppSnackbar } from '../../components/feedback/AppSnackbar';
 import { PositionGrid } from '../../components/positions/PositionGrid';
 import { PositionsToolbar } from '../../components/positions/PositionsToolbar';
 import { PaginationSummary } from '../../components/positions/PaginationSummary';
 import { useCardTagsExpanded } from '../../hooks/useCardTagsExpanded';
+import { useAsyncResource } from '../../hooks/useAsyncResource';
 
 const PER_PAGE = 12;
 
 export function PositionsView() {
-  const [positions, setPositions] = useState<PositionItem[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [committedDifficultyRange, setCommittedDifficultyRange] = useState<number[]>([0, 3500]);
-  const [selectablePositionIds, setSelectablePositionIds] = useState<number[]>([]);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const selectedPositionsRef = useMemo(() => new Set<number>(), []);
   const [selectedPositionCount, setSelectedPositionCount] = useState(0);
@@ -36,9 +29,6 @@ export function PositionsView() {
   const selectedGroupsRef = useMemo(() => new Set<number>(), []);
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
   const [sidebarResetKey, setSidebarResetKey] = useState(0);
-  const [individuals, setIndividuals] = useState<IndividualGroup[]>([]);
-  const [classes, setClasses] = useState<ClassGroup[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
   const [taskCreating, setTaskCreating] = useState(false);
   const publishDefaultRef = useMemo(() => ({ current: true }), []);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
@@ -46,34 +36,48 @@ export function PositionsView() {
 
   const { expanded: cardTagsExpanded, toggle: handleToggleTags } = useCardTagsExpanded();
 
+  const { data: groupsData, loading: loadingGroups } = useAsyncResource(
+    () => groupsService.fetchCoachGroups(),
+    [],
+  );
+
+  const individuals = groupsData?.individuals ?? [];
+  const classes = groupsData?.classes ?? [];
+
+  // Reset group selection whenever groups data refreshes (success or error)
   useEffect(() => {
-    let cancelled = false;
-    async function loadGroups() {
-      setLoadingGroups(true);
-      try {
-        const data = await groupsService.fetchCoachGroups();
-        if (!cancelled) {
-          setIndividuals(data.individuals);
-          setClasses(data.classes);
-          selectedGroupsRef.clear();
-          setSelectedGroupCount(0);
-          setSidebarResetKey(k => k + 1);
-        }
-      } catch {
-        if (!cancelled) {
-          setIndividuals([]);
-          setClasses([]);
-          selectedGroupsRef.clear();
-          setSelectedGroupCount(0);
-          setSidebarResetKey(k => k + 1);
-        }
-      } finally {
-        if (!cancelled) setLoadingGroups(false);
-      }
+    selectedGroupsRef.clear();
+    setSelectedGroupCount(0);
+    setSidebarResetKey((k) => k + 1);
+  }, [groupsData, selectedGroupsRef]);
+
+  const tagsParam = useMemo(() => selectedTags.join(','), [selectedTags]);
+
+  const { data: positionsResponse, loading, error } = useAsyncResource(
+    () =>
+      positionsService.fetchCoachPositions({
+        page,
+        perPage: PER_PAGE,
+        search,
+        tags: tagsParam,
+        difficultyMin: committedDifficultyRange[0],
+        difficultyMax: committedDifficultyRange[1],
+      }),
+    [page, search, tagsParam, committedDifficultyRange],
+    { defaultErrorMessage: 'Nie udalo sie pobrac pozycji.' },
+  );
+
+  const positions = positionsResponse?.items ?? [];
+  const selectablePositionIds = positionsResponse?.selectablePositionIds ?? [];
+  const totalPages = positionsResponse?.totalPages ?? 1;
+  const total = positionsResponse?.total ?? 0;
+
+  // Backend may clamp page; sync local state if it diverges.
+  useEffect(() => {
+    if (positionsResponse && positionsResponse.page !== page) {
+      setPage(positionsResponse.page);
     }
-    void loadGroups();
-    return () => { cancelled = true; };
-  }, [selectedGroupsRef]);
+  }, [positionsResponse, page]);
 
   const handlePositionToggle = useCallback((id: number) => {
     if (selectedPositionsRef.has(id))
@@ -149,45 +153,6 @@ export function PositionsView() {
     setPage(1);
   }, []);
 
-  const tagsParam = useMemo(() => selectedTags.join(','), [selectedTags]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadPositions() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await positionsService.fetchCoachPositions({
-          page,
-          perPage: PER_PAGE,
-          search,
-          tags: tagsParam,
-          difficultyMin: committedDifficultyRange[0],
-          difficultyMax: committedDifficultyRange[1],
-        });
-
-        if (cancelled) return;
-
-        setPositions(response.items);
-        setSelectablePositionIds(response.selectablePositionIds);
-        setPage(response.page);
-        setTotalPages(response.totalPages);
-        setTotal(response.total);
-      } catch (err) {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Nie udalo sie pobrac pozycji.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadPositions();
-
-    return () => { cancelled = true; };
-  }, [page, search, tagsParam, committedDifficultyRange]);
-
   const emptyMessage = useMemo(() => {
     if (loading) return '';
     if (search !== '' || selectedTags.length > 0) {
@@ -239,8 +204,9 @@ export function PositionsView() {
                 keyPrefix={selectionResetKey}
               />
 
-              <CopyFeedbackSnackbar
+              <AppSnackbar
                 open={copiedId !== null}
+                message="Skopiowano do schowka"
                 onClose={() => setCopiedId(null)}
               />
             </>
@@ -265,7 +231,7 @@ export function PositionsView() {
         />
       </Box>
 
-      <AlertSnackbar
+      <AppSnackbar
         open={taskSnackbar !== null}
         message={taskSnackbar?.message ?? ''}
         severity={taskSnackbar?.severity ?? 'success'}

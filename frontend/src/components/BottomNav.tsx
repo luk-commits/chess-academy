@@ -1,12 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import GroupIcon from '@mui/icons-material/Group';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import PeopleIcon from '@mui/icons-material/People';
-import GridViewIcon from '@mui/icons-material/GridView';
 import { useAuth } from '../hooks/useAuth';
+import { HOME_NAV_ITEM, NAV_BY_ROLE } from '../constants/navigation';
 
 export function BottomNav() {
   const { user } = useAuth();
@@ -15,20 +10,7 @@ export function BottomNav() {
 
   if (!user) return null;
 
-  const navItems = user.role === 'PLAYER'
-    ? [
-        { label: 'Home', icon: <HomeIcon />, path: '/home' },
-        { label: 'Lekcje', icon: <MenuBookIcon />, path: '/home/player/lessons' },
-        { label: 'Zadania', icon: <AssignmentIcon />, path: '/home/player/tasks' },
-        { label: 'Trenerzy', icon: <GroupIcon />, path: '/home/player/coaches' },
-      ]
-    : [
-        { label: 'Home', icon: <HomeIcon />, path: '/home' },
-        { label: 'Lekcje', icon: <MenuBookIcon />, path: '/home/coach/lessons' },
-        { label: 'Zawodnicy', icon: <PeopleIcon />, path: '/home/coach/players' },
-        { label: 'Pozycje', icon: <GridViewIcon />, path: '/home/coach/positions' },
-      ];
-
+  const navItems = [HOME_NAV_ITEM, ...NAV_BY_ROLE[user.role]];
   const currentValue = navItems.findIndex((item) => location.pathname === item.path);
 
   return (

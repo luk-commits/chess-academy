@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   FormControlLabel,
-  Paper,
   Switch,
   Typography,
 } from '@mui/material';
@@ -14,7 +13,6 @@ import { Chess } from 'chess.js';
 import type { Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import type { SquareHandlerArgs } from 'react-chessboard';
-import type { PlayerTaskStage } from '../../types/position';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
@@ -23,100 +21,10 @@ import { StageProgressBar } from '../../components/zen/StageProgressBar';
 import { ScoreBadge, type ScoreDelta } from '../../components/zen/ScoreBadge';
 import { CompletionCard } from '../../components/zen/CompletionCard';
 import { ZEN_SELECTED_SQUARE, shake } from '../../components/zen/theme';
-import {
-  applyFirstMoveToFen,
-  boardOrientationFromFen,
-  fenTurn,
-  isValidFen,
-  pieceColor,
-  uciToMove,
-} from '../../utils/chessPosition';
+import { PromotionPopover } from '../../components/chess/PromotionPopover';
+import { fenTurn, pieceColor, uciToMove } from '../../utils/chessPosition';
+import { buildStageRuntime, type StageRuntime } from '../../utils/stageRuntime';
 import { usePlayerTasks } from '../../hooks/usePlayerTasks';
-
-interface StageRuntime {
-  introFen: string | null;
-  expected: string[];
-  expectedIndex: number;
-  orientation: 'white' | 'black';
-  currentFen: string;
-  errored: boolean;
-}
-
-function buildStageRuntime(stage: PlayerTaskStage): StageRuntime | null {
-  const baseFen = stage.position.fen;
-  if (!isValidFen(baseFen)) return null;
-  const moves = stage.position.moves ?? (stage.position.firstMove ? [stage.position.firstMove] : []);
-  if (moves.length === 0) {
-    return {
-      introFen: null,
-      expected: [],
-      expectedIndex: 0,
-      orientation: boardOrientationFromFen(baseFen),
-      currentFen: baseFen,
-      errored: false,
-    };
-  }
-  const startFen = applyFirstMoveToFen(baseFen, moves[0]);
-  return {
-    introFen: startFen,
-    expected: moves.slice(1),
-    expectedIndex: 0,
-    orientation: boardOrientationFromFen(startFen),
-    currentFen: baseFen,
-    errored: false,
-  };
-}
-
-const PROMOTION_PIECES = ['q', 'r', 'b', 'n'] as const;
-const PIECE_SYMBOLS: Record<'w' | 'b', string[]> = {
-  w: ['♕', '♖', '♗', '♘'],
-  b: ['♛', '♜', '♝', '♞'],
-};
-
-function PromotionPopover({ color, onSelect }: { color: 'w' | 'b'; onSelect: (piece: string) => void }) {
-  return (
-    <Box
-      sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 100,
-      }}
-    >
-      <Paper
-        elevation={24}
-        sx={{
-          display: 'flex',
-          gap: 0.5,
-          p: 1,
-          borderRadius: 2,
-        }}
-      >
-        {PROMOTION_PIECES.map((p, i) => (
-          <Box
-            key={p}
-            onClick={() => onSelect(p)}
-            sx={{
-              width: 56,
-              height: 56,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 40,
-              cursor: 'pointer',
-              borderRadius: 1,
-              '&:hover': { bgcolor: 'action.hover' },
-              userSelect: 'none',
-            }}
-          >
-            {PIECE_SYMBOLS[color][i]}
-          </Box>
-        ))}
-      </Paper>
-    </Box>
-  );
-}
 
 export function PlayerTaskDetailsView() {
   const { taskId, stageId } = useParams<{ taskId: string; stageId?: string }>();
