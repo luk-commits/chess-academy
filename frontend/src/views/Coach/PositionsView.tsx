@@ -148,10 +148,8 @@ export function PositionsView() {
     setPage(1);
   }, []);
 
-  const handleTagToggle = useCallback((tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
+  const handleTagsCommit = useCallback((tags: string[]) => {
+    setSelectedTags(tags);
     setPage(1);
   }, []);
 
@@ -170,8 +168,7 @@ export function PositionsView() {
           <PositionsToolbar
             onSearchCommit={handleSearchCommit}
             onDifficultyCommit={handleDifficultyCommit}
-            selectedTags={selectedTags}
-            onTagToggle={handleTagToggle}
+            onTagsCommit={handleTagsCommit}
           />
 
           {error && (

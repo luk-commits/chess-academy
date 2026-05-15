@@ -16,8 +16,7 @@ describe('PositionsToolbar', () => {
       <PositionsToolbar
         onSearchCommit={onSearchCommit}
         onDifficultyCommit={() => {}}
-        selectedTags={[]}
-        onTagToggle={() => {}}
+        onTagsCommit={() => {}}
       />,
     );
     const input = screen.getByLabelText(/nazwa debiutu/i);
@@ -32,8 +31,7 @@ describe('PositionsToolbar', () => {
       <PositionsToolbar
         onSearchCommit={onSearchCommit}
         onDifficultyCommit={() => {}}
-        selectedTags={[]}
-        onTagToggle={() => {}}
+        onTagsCommit={() => {}}
       />,
     );
     const input = screen.getByLabelText(/nazwa debiutu/i);
@@ -41,17 +39,22 @@ describe('PositionsToolbar', () => {
     expect(onSearchCommit).toHaveBeenCalledWith('italian');
   });
 
-  it('calls onTagToggle when a tag chip is clicked', async () => {
-    const onTagToggle = vi.fn();
+  it('calls onTagsCommit only after Zastosuj button click (deferred commit)', async () => {
+    const onTagsCommit = vi.fn();
     renderWithTheme(
       <PositionsToolbar
         onSearchCommit={() => {}}
         onDifficultyCommit={() => {}}
-        selectedTags={[]}
-        onTagToggle={onTagToggle}
+        onTagsCommit={onTagsCommit}
       />,
     );
+    // Expand tag section
+    await userEvent.click(screen.getByText(/tagi tematyczne/i));
+    // Toggle chip locally - no commit yet
     await userEvent.click(screen.getByText('fork'));
-    expect(onTagToggle).toHaveBeenCalledWith('fork');
+    expect(onTagsCommit).not.toHaveBeenCalled();
+    // Commit
+    await userEvent.click(screen.getByRole('button', { name: /zastosuj/i }));
+    expect(onTagsCommit).toHaveBeenCalledWith(['fork']);
   });
 });

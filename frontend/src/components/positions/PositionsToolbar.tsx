@@ -3,20 +3,21 @@ import { Box, Button, Paper } from '@mui/material';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import SelfStatedText from '../SelfStated/Text';
 import SelfStatedSlider from '../SelfStated/Slider';
-import { TagFilterSection } from './TagFilterSection';
+import SelfStatedTagFilter from '../SelfStated/TagFilter';
+import { THEME_TAGS } from '../../constants/themeTags';
 
 interface PositionsToolbarProps {
   onSearchCommit: (query: string) => void;
   onDifficultyCommit: (range: [number, number]) => void;
-  selectedTags: string[];
-  onTagToggle: (tag: string) => void;
+  onTagsCommit: (tags: string[]) => void;
+  defaultSelectedTags?: string[];
 }
 
 export function PositionsToolbar({
   onSearchCommit,
   onDifficultyCommit,
-  selectedTags,
-  onTagToggle,
+  onTagsCommit,
+  defaultSelectedTags,
 }: PositionsToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -80,7 +81,11 @@ export function PositionsToolbar({
         onCommit={(val) => onDifficultyCommit(val as [number, number])}
       />
 
-      <TagFilterSection selectedTags={selectedTags} onToggle={onTagToggle} />
+      <SelfStatedTagFilter
+        availableTags={THEME_TAGS}
+        defaultValue={defaultSelectedTags}
+        onCommit={onTagsCommit}
+      />
     </Paper>
   );
 }
