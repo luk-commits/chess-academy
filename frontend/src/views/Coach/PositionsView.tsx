@@ -25,6 +25,7 @@ export function PositionsView() {
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [committedDifficultyRange, setCommittedDifficultyRange] = useState<number[]>([0, 3500]);
+  const [selectablePositionIds, setSelectablePositionIds] = useState<number[]>([]);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +81,19 @@ export function PositionsView() {
     else
       selectedPositionsRef.add(id);
     setSelectedPositionCount(selectedPositionsRef.size);
+  }, [selectedPositionsRef]);
+
+  const handleSelectFirst = useCallback((count: number) => {
+    selectedPositionsRef.clear();
+    for (let i = 0; i < Math.min(count, selectablePositionIds.length); i++) {
+      selectedPositionsRef.add(selectablePositionIds[i]);
+    }
+    setSelectedPositionCount(selectedPositionsRef.size);
+  }, [selectedPositionsRef, selectablePositionIds]);
+
+  const handleClearSelection = useCallback(() => {
+    selectedPositionsRef.clear();
+    setSelectedPositionCount(0);
   }, [selectedPositionsRef]);
 
   const handleCopyFen = useCallback((id: number, _fen: string) => {
@@ -157,6 +171,7 @@ export function PositionsView() {
         if (cancelled) return;
 
         setPositions(response.items);
+        setSelectablePositionIds(response.selectablePositionIds);
         setPage(response.page);
         setTotalPages(response.totalPages);
         setTotal(response.total);
@@ -210,6 +225,8 @@ export function PositionsView() {
                 totalPages={totalPages}
                 onPageChange={setPage}
                 selectedCount={selectedPositionCount}
+                onSelectFirst={handleSelectFirst}
+                onClearSelection={handleClearSelection}
               />
 
               <PositionGrid

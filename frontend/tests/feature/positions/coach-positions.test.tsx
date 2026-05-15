@@ -23,6 +23,16 @@ vi.mock('../../../src/services/tasksService', () => ({
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+const makePositions = (count: number) => {
+  const items = [];
+  const ids: number[] = [];
+  for (let i = 1; i <= count; i++) {
+    ids.push(i);
+    items.push({ id: i, fen: START_FEN, firstMove: null, opening: `Opening ${i}`, themeTags: ['fork'], rating: 1500, difficulty: 1200 });
+  }
+  return { items, ids };
+};
+
 const defaultPositionsResponse = () => ({
   items: [
     { id: 1, fen: START_FEN, firstMove: null, opening: 'Italian', themeTags: ['fork'], rating: 1500, difficulty: 1200 },
@@ -33,6 +43,7 @@ const defaultPositionsResponse = () => ({
   total: 2,
   totalPages: 1,
   search: '',
+  selectablePositionIds: [1, 2],
 });
 
 const defaultGroupsResponse = () => ({
@@ -138,11 +149,11 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     const card = screen.getByText('Italian').closest('.MuiCard-root')!;
     await userEvent.click(card);
     await waitFor(() => {
-      expect(screen.getByText(/wybrano: 1/i)).toBeInTheDocument();
+      expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
     });
     await userEvent.click(card);
     await waitFor(() => {
-      expect(screen.queryByText(/wybrano: 1/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/wybrano:\s*0/i)).toBeInTheDocument();
     });
   });
 
@@ -184,7 +195,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     const card = screen.getByText('Italian').closest('.MuiCard-root')!;
     await userEvent.click(card);
     await waitFor(() => {
-      expect(screen.getByText(/wybrano: 1/i)).toBeInTheDocument();
+      expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
     });
     const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
     await userEvent.click(aliceCheckbox);
@@ -200,7 +211,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
       expect(screen.getByText('Zadania zostały utworzone!')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.queryByText(/wybrano: 1/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/wybrano:\s*0/i)).toBeInTheDocument();
     });
   });
 
@@ -240,7 +251,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(screen.getByText('Backend down')).toBeInTheDocument();
     });
-    expect(screen.getByText(/wybrano: 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
   });
 
   it('create button disabled with 0 positions', async () => {
@@ -279,6 +290,36 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     await userEvent.click(screen.getByText('Dodaj zadania'));
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     await act(async () => { resolvePromise(defaultTaskResponse()); });
+  });
+
+  it('select first 50 uses global selectablePositionIds beyond visible page', async () => {
+    const { items, ids } = makePositions(60);
+    mockFetchCoachPositions.mockResolvedValue({
+      ...defaultPositionsResponse(),
+      items: items.slice(0, 12),
+      total: 60,
+      totalPages: 5,
+      selectablePositionIds: ids.slice(0, 50),
+    });
+    renderView();
+    await waitFor(() => {
+      expect(screen.getByText('Opening 1')).toBeInTheDocument();
+    });
+    const btn50 = screen.getByRole('button', { name: '50' });
+    await userEvent.click(btn50);
+    await waitFor(() => {
+      expect(screen.getByText(/wybrano:\s*50/i)).toBeInTheDocument();
+    });
+    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
+    await userEvent.click(aliceCheckbox);
+    await userEvent.click(screen.getByText('Dodaj zadania'));
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith({
+        positionIds: ids.slice(0, 50),
+        groupIds: [1],
+        publishDefault: true,
+      });
+    });
   });
 
   it('mobile Przypisz zadania button disabled when no positions', async () => {

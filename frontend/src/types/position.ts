@@ -16,6 +16,7 @@ export interface PositionsResponse {
   total: number;
   totalPages: number;
   search: string;
+  selectablePositionIds: number[];
 }
 
 export interface IndividualGroup {

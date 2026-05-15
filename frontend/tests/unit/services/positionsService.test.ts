@@ -43,7 +43,7 @@ describe('positionsService', () => {
   });
 
   it('returns apiRequest result unchanged', async () => {
-    const expected = { items: [], page: 1, perPage: 12, total: 0, totalPages: 0, search: '' };
+    const expected = { items: [], page: 1, perPage: 12, total: 0, totalPages: 0, search: '', selectablePositionIds: [] };
     mockedApiRequest.mockResolvedValue(expected);
     const result = await positionsService.fetchCoachPositions({ page: 1 });
     expect(result).toEqual(expected);

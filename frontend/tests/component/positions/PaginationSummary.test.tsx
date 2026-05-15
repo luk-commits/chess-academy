@@ -21,14 +21,14 @@ describe('PaginationSummary', () => {
     renderWithTheme(
       <PaginationSummary total={50} page={1} totalPages={5} onPageChange={() => {}} selectedCount={3} />,
     );
-    expect(screen.getByText(/wybrano: 3/i)).toBeInTheDocument();
+    expect(screen.getByText(/wybrano:\s*3/i)).toBeInTheDocument();
   });
 
-  it('does not display selectedCount when 0', () => {
+  it('displays selectedCount as 0 when no selection', () => {
     renderWithTheme(
       <PaginationSummary total={50} page={1} totalPages={5} onPageChange={() => {}} selectedCount={0} />,
     );
-    expect(screen.queryByText(/wybrano:/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/wybrano:\s*0/i)).toBeInTheDocument();
   });
 
   it('calls onPageChange with page number on click', async () => {
