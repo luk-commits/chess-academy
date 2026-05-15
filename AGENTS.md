@@ -18,12 +18,12 @@ docker compose up --build       # everything: DB + migrations + backend API + fr
 
 ```
 backend/   Phalcon PHP 8.3 API — app/Config/router.php → Controllers, JWT via HttpOnly cookies
-frontend/  React 19 + Vite + TypeScript + MUI 6 — entrypoint: index.html → src/main.tsx
+frontend/  React 19 + Vite + TypeScript + MUI 9 — entrypoint: index.html → src/main.tsx
 ```
 
 - **No Composer at repo root** — everything lives inside `backend/` and `frontend/`.
 - Backend controller namespace: `ChessAcademy\Controllers` (autoload `app/` via PSR-4).
-- Frontend `tsconfig.json` `include` covers only `src/`; tests use their own config.
+- Frontend ma jeden `tsconfig.json` z `include: ['src']`. Testy są transpilowane przez Vite (`vitest.config.ts`), więc `tsc -b` ich nie typecheckuje — nie ma osobnego tsconfig dla testów.
 - Nginx proxies `/api` requests to PHP-FPM on port 9000 → router handles `/api/*`.
 
 ## Source-of-truth commands
@@ -85,9 +85,10 @@ docker compose exec backend php vendor/bin/phpunit
 - **No `.js` files belong in `frontend/src/`** — source is `.tsx`/`.ts` only. Vite resolves `.js` before `.tsx`, so any stray emitted `.js` will shadow the real source and silently serve stale code. `tsconfig.json` has `"noEmit": true` to prevent `tsc -b` from regenerating them; if you spot any in `src/`, delete them.
 - Auth uses **HttpOnly cookies** (`chess_session` + `chess_refresh`). The frontend **never reads tokens from JS**. API calls use `credentials: 'include'`. Do not switch to localStorage bearer tokens.
 - Backend `JWT_SECRET` defaults to a dev value set in `docker-compose.yml`. E2E tests that issue tokens internally (PHPUnit tests) use their own hardcoded secret — changing one without the other will break those tests.
-- `migrator` service runs raw `.sql` files from `backend/migrations/` on every `docker compose up`. The init insert (`01_init.sql`) has no `ON CONFLICT` clause; restarting with a populated DB volume will fail on duplicate keys. Drop the `db_data` volume or drop the seed rows before re-running.
+- `migrator` service runs raw `.sql` files from `backend/migrations/` on every `docker compose up`. The init insert (`01_init.sql`) uses `ON CONFLICT (id) DO NOTHING`, so restarting with a populated DB volume is safe.
 - Frontend `VITE_PROXY_API_TARGET` (default `http://web`) is the container-to-container API URL. When running Playwright from the host (not in Docker), set `VITE_API_URL` or ensure the proxy is reachable at `http://localhost:8080`.
 - Backend CORS allows only `CORS_ORIGIN` (default `http://localhost:5173`). Direct API calls from other origins or Postman will fail; use `http://localhost:8080` through the Nginx proxy (which adds no CORS header, so browser calls must go through the Vite proxy).
+- **`exactOptionalPropertyTypes: true`** in `frontend/tsconfig.json`. Stricter than plain `strict`: a prop typed `foo?: string` does **not** accept an explicit `undefined` — write `foo?: string | undefined` if `undefined` must be passed explicitly. TypeScript errors with "Type 'undefined' is not assignable to type 'string'" even for optional props.
 
 ## Git conventions
 
@@ -130,8 +131,45 @@ Relationships (belongsTo, hasMany, hasManyToMany) must go in the consumer class 
 ## Migration helper
 
 ```bash
-# Generate a Phalcon model from DB table (inside container):
+# Generate Phalcon models from DB tables (run from repo root, NOT inside container):
 bash manage/model.sh
 ```
 
-This helper wraps `phalcon model` DevTools with proper namespacing and post-processing (extends `AbstractModel`).
+This helper wraps `phalcon model` DevTools with proper namespacing and post-processing (extends `AbstractModel`). The script uses `docker compose run` internally, so it must be run from the host/repo root. It regenerates all models listed at the bottom of `manage/model.sh` — add new tables there to include them.
+
+## Frontend conventions
+
+### Routing and roles
+
+Two user roles with separate URL trees, guarded by `RequireAuth`:
+
+| Role | Default redirect after login | URL prefix |
+|---|---|---|
+| COACH | `/home/coach/positions` | `/home/coach/…` |
+| PLAYER | `/home/player/tasks` | `/home/player/…` |
+
+Full route map is in `frontend/src/App.tsx`. Catch-all `*` redirects to `/login`.
+
+### API service layer
+
+All HTTP calls go through `frontend/src/services/api.ts` → `apiRequest<TResponse>(path, options)`. Features:
+- Sends `credentials: 'include'` on every request (HttpOnly cookie auth).
+- On **401**: automatically calls `POST /api/refresh` once, then retries the original request. Throws `ExpiredSessionError` if refresh also fails.
+- On non-2xx: throws `ApiError` with `status` and backend error message.
+- **Never write bare `fetch()` calls** — always go through `apiRequest` or a service in `src/services/`.
+
+Async data fetching in components uses `useAsyncResource(fetcher, deps)` (`src/hooks/useAsyncResource.ts`), which returns `{ data, loading, error }`.
+
+### SelfStated components
+
+`src/components/SelfStated/` contains input wrappers that **own their state locally** and only call `onCommit` on semantically meaningful events (blur, slider release, explicit commit via ref). All are wrapped in `memo`.
+
+| Component | Commit trigger |
+|---|---|
+| `SelfStatedText` | `onBlur` |
+| `SelfStatedSlider` | `onChangeCommitted` (mouse/touch release) |
+| `SelfStatedCheckbox` | `onChange` |
+| `SelfStatedSwitch` | `onChange` |
+| `SelfStatedTagFilter` | imperative `ref.current.commit()` / `clear()` / `resetSelection()` |
+
+**Rule:** if a parent only needs a value when the user finishes interacting (not on every keystroke/drag), use a SelfStated component instead of lifting state. Pair with `memo` on the parent's stable child components and `useCallback` on all callbacks passed as props — otherwise `memo` is bypassed.
