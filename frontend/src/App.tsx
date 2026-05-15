@@ -10,6 +10,8 @@ import { PlayerLearnView } from './views/Player/PlayerLearnView';
 import { CoachLessonsView } from './views/Coach/CoachLessonsView';
 import { PlayersView } from './views/Coach/PlayersView';
 import { PositionsView } from './views/Coach/PositionsView';
+import { CoachTasksView } from './views/Coach/CoachTasksView';
+import { CoachStageEditView } from './views/Coach/CoachStageEditView';
 import { RequireAuth } from './components/RequireAuth';
 
 export default function App() {
@@ -28,6 +30,8 @@ export default function App() {
         <Route path="player/tasks/:taskId/stages/:stageId" element={<PlayerTaskDetailsView />} />
         <Route path="coach/players" element={<PlayersView />} />
         <Route path="coach/positions" element={<PositionsView />} />
+        <Route path="coach/tasks" element={<CoachTasksView />} />
+        <Route path="coach/stages/:stageId" element={<CoachStageEditView />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

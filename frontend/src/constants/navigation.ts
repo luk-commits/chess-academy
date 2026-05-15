@@ -32,5 +32,6 @@ export const NAV_BY_ROLE: Record<UserRole, NavConfigItem[]> = {
     { label: 'Lekcje', path: '/home/coach/lessons', icon: createElement(MenuBookIcon) },
     { label: 'Zawodnicy', path: '/home/coach/players', icon: createElement(PeopleIcon) },
     { label: 'Pozycje', path: '/home/coach/positions', icon: createElement(GridViewIcon) },
+    { label: 'Zadania', path: '/home/coach/tasks', icon: createElement(AssignmentIcon) },
   ],
 };
