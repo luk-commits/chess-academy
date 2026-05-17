@@ -18,7 +18,7 @@ import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { GlassHeader } from '../../components/zen/GlassHeader';
 import { StageProgressBar } from '../../components/zen/StageProgressBar';
-import { ScoreBadge, type ScoreDelta } from '../../components/zen/ScoreBadge';
+import { type ScoreDelta } from '../../components/zen/ScoreBadge';
 import { CompletionCard } from '../../components/zen/CompletionCard';
 import { ZEN_SELECTED_SQUARE, shake } from '../../components/zen/theme';
 import { PromotionPopover } from '../../components/chess/PromotionPopover';
@@ -341,6 +341,8 @@ export function PlayerTaskDetailsView() {
         title={task.title}
         description={task.description}
         stageTitle={currentStage ? `Etap ${stageIdx + 1} z ${stages.length} · ${currentStage.title}` : ''}
+        score={score}
+        deltas={deltas}
       />
 
       <Box
@@ -352,7 +354,6 @@ export function PlayerTaskDetailsView() {
           width: '100%',
         }}
       >
-        <ScoreBadge score={score} deltas={deltas} />
 
         {completed ? (
           <CompletionCard

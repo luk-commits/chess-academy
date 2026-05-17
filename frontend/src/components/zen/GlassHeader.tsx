@@ -1,18 +1,22 @@
 import { Fade, Paper, Typography } from '@mui/material';
 import { ZEN_ACCENT } from './theme';
+import { ScoreBadge, type ScoreDelta } from './ScoreBadge';
 
 interface Props {
   title: string;
   description: string;
   stageTitle: string;
+  score?: number;
+  deltas?: ScoreDelta[];
 }
 
-export function GlassHeader({ title, description, stageTitle }: Props) {
+export function GlassHeader({ title, description, stageTitle, score = 0, deltas = [] }: Props) {
   return (
     <Fade in timeout={400}>
       <Paper
         elevation={0}
         sx={{
+          position: 'relative',
           mx: 'auto',
           maxWidth: 560,
           mb: 2,
@@ -37,6 +41,7 @@ export function GlassHeader({ title, description, stageTitle }: Props) {
             {description}
           </Typography>
         )}
+        <ScoreBadge score={score} deltas={deltas} />
       </Paper>
     </Fade>
   );
