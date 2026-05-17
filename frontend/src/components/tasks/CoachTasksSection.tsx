@@ -32,10 +32,10 @@ export const CoachTasksSection = memo(function CoachTasksSection({ coachName, ta
         >
           {coachName}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
+        <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto', cursor: 'pointer', userSelect: 'none' }} onClick={toggle}>
           {tasksLabel(tasks.length)}
         </Typography>
-        <IconButton size="small" onClick={toggle}>
+        <IconButton size="small" onClick={toggle} aria-label={tasksLabel(tasks.length)}>
           {collapsed ? <ExpandMore /> : <ExpandLess />}
         </IconButton>
       </Box>
