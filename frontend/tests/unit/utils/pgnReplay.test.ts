@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsePgnReplay } from '../../../src/utils/pgnReplay';
+import { buildPgnFromSans, parsePgnReplay } from '../../../src/utils/pgnReplay';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -28,5 +28,25 @@ describe('parsePgnReplay', () => {
 
   it('returns null for invalid PGN', () => {
     expect(parsePgnReplay(START_FEN, '1. zz9 invalid')).toBeNull();
+  });
+});
+
+describe('buildPgnFromSans', () => {
+  it('returns empty string for no moves', () => {
+    expect(buildPgnFromSans(START_FEN, [])).toBe('');
+  });
+
+  it('builds main-line PGN starting with white to move', () => {
+    expect(buildPgnFromSans(START_FEN, ['e4', 'e5', 'Nf3', 'Nc6'])).toBe('1. e4 e5 2. Nf3 Nc6');
+  });
+
+  it('prefixes black-to-move start with ... ellipsis', () => {
+    const blackToMove = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    expect(buildPgnFromSans(blackToMove, ['Nc6', 'Nf3'])).toBe('1... Nc6 2. Nf3');
+  });
+
+  it('respects starting full move number from FEN', () => {
+    const midGame = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2';
+    expect(buildPgnFromSans(midGame, ['Nc6', 'Bb5'])).toBe('2... Nc6 3. Bb5');
   });
 });

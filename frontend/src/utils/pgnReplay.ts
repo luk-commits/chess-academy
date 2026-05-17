@@ -12,6 +12,32 @@ export interface PgnReplay {
   moves: ReplayMove[];
 }
 
+export function buildPgnFromSans(baseFen: string, sans: string[]): string {
+  if (sans.length === 0) return '';
+  const parts = baseFen.split(' ');
+  let turn: 'w' | 'b' = parts[1] === 'b' ? 'b' : 'w';
+  let moveNum = parseInt(parts[5] ?? '1', 10);
+  if (!Number.isFinite(moveNum) || moveNum < 1) moveNum = 1;
+
+  const tokens: string[] = [];
+  let isFirst = true;
+  for (const san of sans) {
+    if (turn === 'w') {
+      tokens.push(`${moveNum}.`);
+      tokens.push(san);
+    } else {
+      if (isFirst) {
+        tokens.push(`${moveNum}...`);
+      }
+      tokens.push(san);
+      moveNum++;
+    }
+    turn = turn === 'w' ? 'b' : 'w';
+    isFirst = false;
+  }
+  return tokens.join(' ');
+}
+
 export function parsePgnReplay(baseFen: string, solutionPgn: string): PgnReplay | null {
   if (!isValidFen(baseFen)) return null;
 

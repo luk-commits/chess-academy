@@ -1,33 +1,65 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Chip, IconButton, Typography } from '@mui/material';
 import SkipPrevious from '@mui/icons-material/SkipPrevious';
 import NavigateBefore from '@mui/icons-material/NavigateBefore';
 import NavigateNext from '@mui/icons-material/NavigateNext';
 import SkipNext from '@mui/icons-material/SkipNext';
+import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { boardOrientationFromFen } from '../../utils/chessPosition';
-import { parsePgnReplay } from '../../utils/pgnReplay';
+import { buildPgnFromSans, parsePgnReplay } from '../../utils/pgnReplay';
 
 interface Props {
   baseFen: string;
   solutionPgn: string;
+  onChange?: (newPgn: string) => void;
 }
 
-export function PgnPreview({ baseFen, solutionPgn }: Props) {
+export function PgnPreview({ baseFen, solutionPgn, onChange }: Props) {
   const replay = useMemo(() => parsePgnReplay(baseFen, solutionPgn), [baseFen, solutionPgn]);
   const [moveIndex, setMoveIndex] = useState(0);
 
   useEffect(() => {
     setMoveIndex(0);
-  }, [baseFen, solutionPgn]);
+  }, [baseFen]);
+
+  useEffect(() => {
+    if (!replay) return;
+    setMoveIndex((idx) => Math.min(idx, replay.moves.length));
+  }, [replay]);
 
   if (!replay) {
     return <Alert severity="warning">Nieprawidłowy PGN lub FEN startowy.</Alert>;
   }
 
   const total = replay.moves.length;
-  const currentFen = moveIndex === 0 ? replay.startFen : replay.moves[moveIndex - 1].fenAfter;
+  const safeIndex = Math.min(moveIndex, total);
+  const currentFen = safeIndex === 0 ? replay.startFen : replay.moves[safeIndex - 1].fenAfter;
   const orientation = boardOrientationFromFen(replay.startFen);
+  const editable = onChange !== undefined;
+
+  const handlePieceDrop = useCallback(
+    ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }): boolean => {
+      if (!editable || !onChange || !replay || !targetSquare) return false;
+      const chess = new Chess(baseFen);
+      for (let i = 0; i < safeIndex; i++) {
+        chess.move(replay.moves[i].san);
+      }
+      let result;
+      try {
+        result = chess.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+      } catch {
+        return false;
+      }
+      if (!result) return false;
+      const sans = replay.moves.slice(0, safeIndex).map((m) => m.san);
+      sans.push(result.san);
+      onChange(buildPgnFromSans(baseFen, sans));
+      setMoveIndex(safeIndex + 1);
+      return true;
+    },
+    [editable, onChange, replay, baseFen, safeIndex],
+  );
 
   const pairs: { num: number; white?: { idx: number; san: string }; black?: { idx: number; san: string } }[] = [];
   const firstColor = replay.moves[0]?.color ?? 'w';
@@ -54,7 +86,8 @@ export function PgnPreview({ baseFen, solutionPgn }: Props) {
             id: 'pgn-preview',
             position: currentFen,
             boardOrientation: orientation,
-            allowDragging: false,
+            allowDragging: editable,
+            onPieceDrop: handlePieceDrop,
             showAnimations: true,
             animationDurationInMs: 160,
             boardStyle: {
@@ -67,19 +100,19 @@ export function PgnPreview({ baseFen, solutionPgn }: Props) {
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 1 }}>
-        <IconButton size="small" onClick={() => setMoveIndex(0)} disabled={moveIndex === 0} aria-label="Początek">
+        <IconButton size="small" onClick={() => setMoveIndex(0)} disabled={safeIndex === 0} aria-label="Początek">
           <SkipPrevious />
         </IconButton>
-        <IconButton size="small" onClick={() => setMoveIndex((i) => Math.max(0, i - 1))} disabled={moveIndex === 0} aria-label="Poprzedni">
+        <IconButton size="small" onClick={() => setMoveIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0} aria-label="Poprzedni">
           <NavigateBefore />
         </IconButton>
         <Typography variant="body2" sx={{ minWidth: 56, textAlign: 'center' }}>
-          {moveIndex} / {total}
+          {safeIndex} / {total}
         </Typography>
-        <IconButton size="small" onClick={() => setMoveIndex((i) => Math.min(total, i + 1))} disabled={moveIndex === total || total === 0} aria-label="Następny">
+        <IconButton size="small" onClick={() => setMoveIndex((i) => Math.min(total, i + 1))} disabled={safeIndex === total || total === 0} aria-label="Następny">
           <NavigateNext />
         </IconButton>
-        <IconButton size="small" onClick={() => setMoveIndex(total)} disabled={moveIndex === total || total === 0} aria-label="Koniec">
+        <IconButton size="small" onClick={() => setMoveIndex(total)} disabled={safeIndex === total || total === 0} aria-label="Koniec">
           <SkipNext />
         </IconButton>
       </Box>
@@ -94,8 +127,8 @@ export function PgnPreview({ baseFen, solutionPgn }: Props) {
                   <Chip
                     label={p.white.san}
                     size="small"
-                    color={moveIndex === p.white.idx ? 'primary' : 'default'}
-                    variant={moveIndex === p.white.idx ? 'filled' : 'outlined'}
+                    color={safeIndex === p.white.idx ? 'primary' : 'default'}
+                    variant={safeIndex === p.white.idx ? 'filled' : 'outlined'}
                     onClick={() => setMoveIndex(p.white!.idx)}
                   />
                 )}
@@ -105,8 +138,8 @@ export function PgnPreview({ baseFen, solutionPgn }: Props) {
                   <Chip
                     label={p.black.san}
                     size="small"
-                    color={moveIndex === p.black.idx ? 'primary' : 'default'}
-                    variant={moveIndex === p.black.idx ? 'filled' : 'outlined'}
+                    color={safeIndex === p.black.idx ? 'primary' : 'default'}
+                    variant={safeIndex === p.black.idx ? 'filled' : 'outlined'}
                     onClick={() => setMoveIndex(p.black!.idx)}
                   />
                 )}

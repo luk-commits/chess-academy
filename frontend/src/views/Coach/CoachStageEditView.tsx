@@ -139,7 +139,7 @@ export function CoachStageEditView() {
             multiline
             minRows={10}
             fullWidth
-            helperText="Główna linia rozwiązania w notacji PGN. Pierwszy ruch będzie zagrany automatycznie jako wprowadzenie."
+            helperText="Główna linia rozwiązania w notacji PGN. Możesz też przeciągać figury na szachownicy obok - ruchy dopisują się od bieżącej pozycji."
           />
 
           <Box>
@@ -147,7 +147,11 @@ export function CoachStageEditView() {
               Podgląd
             </Typography>
             {stage.positionFen ? (
-              <PgnPreview baseFen={stage.positionFen} solutionPgn={solutionPgn} />
+              <PgnPreview
+                baseFen={stage.positionFen}
+                solutionPgn={solutionPgn}
+                onChange={setSolutionPgn}
+              />
             ) : (
               <Alert severity="info">Etap nie ma przypisanej pozycji - podgląd niedostępny.</Alert>
             )}
