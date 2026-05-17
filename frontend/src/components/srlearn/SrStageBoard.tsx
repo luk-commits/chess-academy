@@ -6,7 +6,7 @@ import { Chessboard } from 'react-chessboard';
 import type { SquareHandlerArgs } from 'react-chessboard';
 import { PromotionPopover } from '../chess/PromotionPopover';
 import { ZEN_SELECTED_SQUARE, shake } from '../zen/theme';
-import { fenTurn, pieceColor, uciToMove } from '../../utils/chessPosition';
+import { fenTurn, isUciCheckmate, pieceColor, uciToMove } from '../../utils/chessPosition';
 import { buildPgnRuntime, type PgnRuntime } from '../../utils/pgnRuntime';
 import type { DueStage } from '../../types/playerStages';
 
@@ -82,6 +82,19 @@ export function SrStageBoard({ stage, onComplete }: Props) {
 
     const playerUci = from + to + (promotion ?? '');
     if (playerUci !== expectedUci) {
+      const attemptChess = new Chess(runtime.currentFen);
+      const altResult = attemptChess.move(uciToMove(playerUci));
+      if (altResult && attemptChess.isCheckmate() && isUciCheckmate(runtime.currentFen, expectedUci)) {
+        const afterPlayer: PgnRuntime = {
+          ...runtime,
+          currentFen: attemptChess.fen(),
+          expectedIndex: runtime.expectedIndex + 1,
+        };
+        setRuntime(afterPlayer);
+        finish(!afterPlayer.errored, 600);
+        return true;
+      }
+
       setShakeKey((k) => k + 1);
       if (!runtime.errored) {
         const updated = { ...runtime, errored: true };

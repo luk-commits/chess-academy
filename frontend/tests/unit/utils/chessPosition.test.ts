@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidFen, boardOrientationFromFen, applyFirstMoveToFen } from '../../../src/utils/chessPosition';
+import { isValidFen, boardOrientationFromFen, applyFirstMoveToFen, isUciCheckmate } from '../../../src/utils/chessPosition';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -57,5 +57,23 @@ describe('applyFirstMoveToFen', () => {
   it('returns original FEN for invalid input fen', () => {
     const result = applyFirstMoveToFen('garbage', 'e2e4');
     expect(result).toBe('garbage');
+  });
+});
+
+describe('isUciCheckmate', () => {
+  it('returns true when move delivers checkmate', () => {
+    // Ka8, pawns a7+b7 vs Kh1, Rf1 — Rf8# (back-rank mate, king trapped by own pawns)
+    const fen = 'k7/pp6/8/8/8/8/8/5R1K w - - 0 1';
+    expect(isUciCheckmate(fen, 'f1f8')).toBe(true);
+  });
+
+  it('returns false for a legal non-mate move', () => {
+    const fen = 'k7/pp6/8/8/8/8/8/5R1K w - - 0 1';
+    expect(isUciCheckmate(fen, 'f1f7')).toBe(false);
+  });
+
+  it('returns false for an illegal move', () => {
+    const fen = 'k7/pp6/8/8/8/8/8/5R1K w - - 0 1';
+    expect(isUciCheckmate(fen, 'e2e4')).toBe(false);
   });
 });

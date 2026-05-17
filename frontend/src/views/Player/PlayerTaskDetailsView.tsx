@@ -22,7 +22,7 @@ import { ScoreBadge, type ScoreDelta } from '../../components/zen/ScoreBadge';
 import { CompletionCard } from '../../components/zen/CompletionCard';
 import { ZEN_SELECTED_SQUARE, shake } from '../../components/zen/theme';
 import { PromotionPopover } from '../../components/chess/PromotionPopover';
-import { fenTurn, pieceColor, uciToMove } from '../../utils/chessPosition';
+import { fenTurn, isUciCheckmate, pieceColor, uciToMove } from '../../utils/chessPosition';
 import { buildStageRuntime, type StageRuntime } from '../../utils/stageRuntime';
 import { usePlayerTasks } from '../../hooks/usePlayerTasks';
 
@@ -160,6 +160,21 @@ export function PlayerTaskDetailsView() {
     const matches = playerUci === expectedUci;
 
     if (!matches) {
+      const attemptChess = new Chess(runtime.currentFen);
+      const altResult = attemptChess.move(uciToMove(playerUci));
+      if (altResult && attemptChess.isCheckmate() && isUciCheckmate(runtime.currentFen, expectedUci)) {
+        const afterPlayer: StageRuntime = {
+          ...runtime,
+          currentFen: attemptChess.fen(),
+          expectedIndex: runtime.expectedIndex + 1,
+        };
+        setRuntime(afterPlayer);
+        setScore(s => s + 10);
+        pushDelta(10);
+        window.setTimeout(advanceStage, 450);
+        return true;
+      }
+
       setShakeKey(k => k + 1);
       if (!runtime.errored) {
         setRuntime({ ...runtime, errored: true });
@@ -183,7 +198,7 @@ export function PlayerTaskDetailsView() {
     pushDelta(10);
     playEngineReply(afterPlayer);
     return true;
-  }, [runtime, completed, pushDelta, playEngineReply]);
+  }, [runtime, completed, pushDelta, playEngineReply, advanceStage]);
 
   const legalTargets = useMemo((): Set<string> => {
     if (!selectedSquare || !runtime) return new Set();

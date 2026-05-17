@@ -35,6 +35,16 @@ export function boardOrientationFromFen(fen: string): 'white' | 'black' {
   return turn === 'b' ? 'black' : 'white';
 }
 
+export function isUciCheckmate(fen: string, uci: string): boolean {
+  try {
+    const chess = new Chess(fen);
+    const result = chess.move(uciToMove(uci));
+    return result !== null && chess.isCheckmate();
+  } catch {
+    return false;
+  }
+}
+
 export function applyFirstMoveToFen(fen: string, uci: string | null): string {
   if (!uci) return fen;
   try {
