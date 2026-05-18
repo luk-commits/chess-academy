@@ -24,7 +24,7 @@ class TasksController extends AbstractController
         $task->title = $title;
         $task->description = $description;
         $task->coach_id = $coachId;
-        $task->status = 'published';
+        $task->status = 'draft';
         $task->group_id = (int) $groupIds[0];
 
         if ($task->save() === false) {
@@ -48,7 +48,7 @@ class TasksController extends AbstractController
             $stage->title = 'Pozycja ' . ($i + 1);
             $stage->sort_order = $i;
             $stage->position_id = (int) $positionId;
-            $stage->status = 'published';
+            $stage->status = 'draft';
 
             if ($stage->save() === false) {
                 $task->delete();
