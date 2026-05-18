@@ -126,6 +126,15 @@ export function PositionsView() {
     setSelectedGroupCount(selectedGroupsRef.size);
   }, [selectedGroupsRef]);
 
+  const clearAllSelections = useCallback(() => {
+    selectedPositionsRef.clear();
+    setSelectedPositionCount(0);
+    setSelectionResetKey(k => k + 1);
+    selectedGroupsRef.clear();
+    setSelectedGroupCount(0);
+    setSidebarResetKey(k => k + 1);
+  }, [selectedPositionsRef, selectedGroupsRef]);
+
   const handleCreateTask = useCallback(async (opts?: { closeModal?: boolean }) => {
     if (selectedPositionCount === 0 || selectedGroupCount === 0) return;
     setTaskCreating(true);
@@ -136,12 +145,7 @@ export function PositionsView() {
         publishDefault: publishDefaultRef.current,
       });
       setTaskSnackbar({ message: 'Zadania zostały utworzone!', severity: 'success' });
-      selectedPositionsRef.clear();
-      setSelectedPositionCount(0);
-      setSelectionResetKey(k => k + 1);
-      selectedGroupsRef.clear();
-      setSelectedGroupCount(0);
-      setSidebarResetKey(k => k + 1);
+      clearAllSelections();
       reloadPositions();
       if (opts?.closeModal) setAssignModalOpen(false);
     } catch (err) {
@@ -150,7 +154,7 @@ export function PositionsView() {
     } finally {
       setTaskCreating(false);
     }
-  }, [selectedPositionCount, selectedGroupCount, selectedPositionsRef, selectedGroupsRef, publishDefaultRef, reloadPositions]);
+  }, [selectedPositionCount, selectedGroupCount, selectedPositionsRef, selectedGroupsRef, publishDefaultRef, reloadPositions, clearAllSelections]);
 
   const handleOpenAssignModal = useCallback(() => setAssignModalOpen(true), []);
   const handleCloseAssignModal = useCallback(() => setAssignModalOpen(false), []);
@@ -160,22 +164,26 @@ export function PositionsView() {
   const handleSearchCommit = useCallback((query: string) => {
     setSearch(query);
     setPage(1);
-  }, []);
+    clearAllSelections();
+  }, [clearAllSelections]);
 
   const handleDifficultyCommit = useCallback((range: [number, number]) => {
     setCommittedDifficultyRange(range);
     setPage(1);
-  }, []);
+    clearAllSelections();
+  }, [clearAllSelections]);
 
   const handleTagsCommit = useCallback((tags: string[]) => {
     setSelectedTags(tags);
     setPage(1);
-  }, []);
+    clearAllSelections();
+  }, [clearAllSelections]);
 
   const handleToggleOnlyNew = useCallback(() => {
     setOnlyNew(v => !v);
     setPage(1);
-  }, []);
+    clearAllSelections();
+  }, [clearAllSelections]);
 
   const emptyMessage = useMemo(() => {
     if (loading) return '';
