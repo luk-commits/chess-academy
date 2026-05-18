@@ -11,6 +11,8 @@ interface PositionsToolbarProps {
   onDifficultyCommit: (range: [number, number]) => void;
   onTagsCommit: (tags: string[]) => void;
   defaultSelectedTags?: string[];
+  onlyNew?: boolean;
+  onToggleOnlyNew?: () => void;
 }
 
 export const PositionsToolbar = memo(function PositionsToolbar({
@@ -18,6 +20,8 @@ export const PositionsToolbar = memo(function PositionsToolbar({
   onDifficultyCommit,
   onTagsCommit,
   defaultSelectedTags,
+  onlyNew = false,
+  onToggleOnlyNew,
 }: PositionsToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<TextHandle>(null);
@@ -66,6 +70,18 @@ export const PositionsToolbar = memo(function PositionsToolbar({
           <Button type="button" variant="outlined" sx={{ whiteSpace: 'nowrap' }} onClick={handleClear}>
             Wyczyść
           </Button>
+          {onToggleOnlyNew && (
+            <Button
+              type="button"
+              variant={onlyNew ? 'contained' : 'outlined'}
+              color={onlyNew ? 'secondary' : 'primary'}
+              sx={{ whiteSpace: 'nowrap' }}
+              onClick={onToggleOnlyNew}
+              aria-pressed={onlyNew}
+            >
+              Unikalne
+            </Button>
+          )}
         </Box>
       </Box>
 

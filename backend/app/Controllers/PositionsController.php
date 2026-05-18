@@ -80,6 +80,36 @@ class PositionsController extends AbstractController
             $bind['difficultyMax'] = $difficultyMax;
         }
 
+        $onlyNew = (bool) $this->request->getQuery('onlyNew', 'int', 0);
+
+        if ($onlyNew) {
+            $coachId = (int) $this->dispatcher->getParam('authUserId');
+
+            // Collect position IDs already used in any task for any of the coach's groups
+            $excludedRows = $this->db->fetchAll(
+                "SELECT DISTINCT ts.position_id
+                 FROM task_stages ts
+                 JOIN tasks t ON t.id = ts.task_id
+                 JOIN task_groups tg ON tg.task_id = t.id
+                 JOIN groups g ON g.id = tg.group_id
+                 WHERE g.coach_id = ?
+                   AND ts.position_id IS NOT NULL",
+                \Phalcon\Db\Enum::FETCH_ASSOC,
+                [$coachId]
+            );
+            $excludedIds = array_map(static fn (array $row): int => (int) $row['position_id'], $excludedRows);
+
+            if (!empty($excludedIds)) {
+                $excludedPlaceholders = [];
+                foreach ($excludedIds as $i => $eid) {
+                    $key = 'excluded_' . $i;
+                    $excludedPlaceholders[] = ':' . $key . ':';
+                    $bind[$key] = $eid;
+                }
+                $conditions[] = 'id NOT IN (' . implode(',', $excludedPlaceholders) . ')';
+            }
+        }
+
         $queryParams = [];
         if (!empty($conditions)) {
             $queryParams['conditions'] = implode(' AND ', $conditions);

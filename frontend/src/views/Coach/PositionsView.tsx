@@ -34,6 +34,7 @@ export function PositionsView() {
   const publishDefaultRef = useMemo(() => ({ current: false }), []);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [onlyNew, setOnlyNew] = useState(false);
 
   const { expanded: cardTagsExpanded, toggle: handleToggleTags } = useCardTagsExpanded();
 
@@ -61,16 +62,21 @@ export function PositionsView() {
   const tagsParam = useMemo(() => selectedTags.join(','), [selectedTags]);
 
   const { data: positionsResponse, loading, error } = useAsyncResource(
-    () =>
-      positionsService.fetchCoachPositions({
+    () => {
+      const fetchParams: Parameters<typeof positionsService.fetchCoachPositions>[0] = {
         page,
         perPage: PER_PAGE,
         search,
         tags: tagsParam,
         difficultyMin: committedDifficultyRange[0],
         difficultyMax: committedDifficultyRange[1],
-      }),
-    [page, search, tagsParam, committedDifficultyRange],
+      };
+      if (onlyNew) {
+        fetchParams.onlyNew = true;
+      }
+      return positionsService.fetchCoachPositions(fetchParams);
+    },
+    [page, search, tagsParam, committedDifficultyRange, onlyNew],
     { defaultErrorMessage: 'Nie udalo sie pobrac pozycji.' },
   );
 
@@ -165,6 +171,11 @@ export function PositionsView() {
     setPage(1);
   }, []);
 
+  const handleToggleOnlyNew = useCallback(() => {
+    setOnlyNew(v => !v);
+    setPage(1);
+  }, []);
+
   const emptyMessage = useMemo(() => {
     if (loading) return '';
     if (search !== '' || selectedTags.length > 0) {
@@ -181,6 +192,8 @@ export function PositionsView() {
             onSearchCommit={handleSearchCommit}
             onDifficultyCommit={handleDifficultyCommit}
             onTagsCommit={handleTagsCommit}
+            onlyNew={onlyNew}
+            onToggleOnlyNew={handleToggleOnlyNew}
           />
 
           {error && (

@@ -330,4 +330,38 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     const btn = screen.getByText('Przypisz zadania').closest('button')!;
     expect(btn).toBeDisabled();
   });
+
+  it('onlyNew toggle sends onlyNew param (global filter)', async () => {
+    renderView();
+    await waitFor(() => {
+      expect(screen.getByText('Italian')).toBeInTheDocument();
+    });
+    mockFetchCoachPositions.mockClear();
+    mockFetchCoachPositions.mockResolvedValue(defaultPositionsResponse());
+    const btn = screen.getByRole('button', { name: /unikalne/i });
+    await userEvent.click(btn);
+    await waitFor(() => {
+      const lastCall = mockFetchCoachPositions.mock.calls.at(-1)?.[0];
+      expect(lastCall).toBeDefined();
+      expect(lastCall.onlyNew).toBe(true);
+    });
+  });
+
+  it('onlyNew filter does not include groupIds in request', async () => {
+    renderView();
+    await waitFor(() => {
+      expect(screen.getByText('Italian')).toBeInTheDocument();
+    });
+    mockFetchCoachPositions.mockClear();
+    mockFetchCoachPositions.mockResolvedValue(defaultPositionsResponse());
+    const btn = screen.getByRole('button', { name: /unikalne/i });
+    await userEvent.click(btn);
+    await waitFor(() => {
+      const lastCall = mockFetchCoachPositions.mock.calls.at(-1)?.[0];
+      expect(lastCall).toBeDefined();
+      expect(lastCall.onlyNew).toBe(true);
+      expect(lastCall.groupIds).toBeUndefined();
+    });
+  });
+
 });

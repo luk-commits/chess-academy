@@ -48,4 +48,14 @@ describe('positionsService', () => {
     const result = await positionsService.fetchCoachPositions({ page: 1 });
     expect(result).toEqual(expected);
   });
+
+  it('adds onlyNew param when true', () => {
+    positionsService.fetchCoachPositions({ page: 1, onlyNew: true });
+    expect(mockedApiRequest).toHaveBeenCalledWith('/api/coach/positions?page=1&onlyNew=1');
+  });
+
+  it('omits onlyNew when undefined/false', () => {
+    positionsService.fetchCoachPositions({ page: 1, onlyNew: false });
+    expect(mockedApiRequest).toHaveBeenCalledWith('/api/coach/positions?page=1');
+  });
 });

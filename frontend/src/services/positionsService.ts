@@ -8,6 +8,7 @@ interface FetchPositionsParams {
   tags?: string;
   difficultyMin?: number;
   difficultyMax?: number;
+  onlyNew?: boolean;
 }
 
 export const positionsService = {
@@ -33,6 +34,10 @@ export const positionsService = {
 
     if (params.difficultyMax !== undefined) {
       query.set('difficultyMax', String(params.difficultyMax));
+    }
+
+    if (params.onlyNew) {
+      query.set('onlyNew', '1');
     }
 
     return apiRequest<PositionsResponse>(`/api/coach/positions?${query.toString()}`);

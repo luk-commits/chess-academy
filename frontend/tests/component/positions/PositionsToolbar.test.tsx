@@ -79,4 +79,44 @@ describe('PositionsToolbar', () => {
     await userEvent.click(screen.getByRole('button', { name: /zastosuj/i }));
     expect(onTagsCommit).toHaveBeenCalledWith(['fork']);
   });
+
+  it('Unikalne button calls onToggleOnlyNew on click', async () => {
+    const onToggleOnlyNew = vi.fn();
+    renderWithTheme(
+      <PositionsToolbar
+        onSearchCommit={() => {}}
+        onDifficultyCommit={() => {}}
+        onTagsCommit={() => {}}
+        onlyNew={false}
+        onToggleOnlyNew={onToggleOnlyNew}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /unikalne/i }));
+    expect(onToggleOnlyNew).toHaveBeenCalledTimes(1);
+  });
+
+  it('Unikalne button shows contained variant when onlyNew is true', () => {
+    renderWithTheme(
+      <PositionsToolbar
+        onSearchCommit={() => {}}
+        onDifficultyCommit={() => {}}
+        onTagsCommit={() => {}}
+        onlyNew={true}
+        onToggleOnlyNew={() => {}}
+      />,
+    );
+    const btn = screen.getByRole('button', { name: /unikalne/i });
+    expect(btn).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('Unikalne button is hidden when onToggleOnlyNew is not provided', () => {
+    renderWithTheme(
+      <PositionsToolbar
+        onSearchCommit={() => {}}
+        onDifficultyCommit={() => {}}
+        onTagsCommit={() => {}}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /unikalne/i })).not.toBeInTheDocument();
+  });
 });
