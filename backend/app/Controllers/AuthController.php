@@ -174,7 +174,7 @@ class AuthController extends AbstractController
      * Set an HttpOnly cookie for token storage.
      * Using HttpOnly + SameSite prevents XSS and CSRF attacks:
      * - HttpOnly: JavaScript cannot read the token
-     * - SameSite=Strict (prod) / Lax (dev): mitigates CSRF
+     * - SameSite=Lax: prevents CSRF while allowing same-origin navigation
      * - Secure: only sent over HTTPS in production
      */
     private function writeCookie(string $name, string $value, int $ttl): void
@@ -187,7 +187,7 @@ class AuthController extends AbstractController
             'domain' => '',
             'secure' => $isProd,
             'httponly' => true,
-            'samesite' => $isProd ? 'Strict' : 'Lax',
+            'samesite' => 'Lax',
         ]);
     }
 }
