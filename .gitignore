@@ -12,7 +12,8 @@ frontend/playwright-report/
 *.log
 .DS_Store
 .idea/
-.vscode/\nfrontend/test-results/*.json
+.vscode/
+frontend/test-results/*.json
 backend/.phpunit.cache/
 backend/imports
 frontend/tsconfig.tsbuildinfo
