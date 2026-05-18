@@ -31,7 +31,7 @@ export function PositionsView() {
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
   const [sidebarResetKey, setSidebarResetKey] = useState(0);
   const [taskCreating, setTaskCreating] = useState(false);
-  const publishDefaultRef = useMemo(() => ({ current: true }), []);
+  const publishDefaultRef = useMemo(() => ({ current: false }), []);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
 

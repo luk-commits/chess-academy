@@ -204,7 +204,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
       expect(mockCreateTask).toHaveBeenCalledWith({
         positionIds: [1],
         groupIds: [1],
-        publishDefault: true,
+        publishDefault: false,
       });
     });
     await waitFor(() => {
@@ -215,7 +215,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     });
   });
 
-  it('create task with publishDefault=false', async () => {
+  it('create task with publishDefault=true', async () => {
     renderView();
     await waitFor(() => {
       expect(screen.getByText('Italian')).toBeInTheDocument();
@@ -232,7 +232,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
       expect(mockCreateTask).toHaveBeenCalledWith({
         positionIds: [1],
         groupIds: [1],
-        publishDefault: false,
+        publishDefault: true,
       });
     });
   });
@@ -317,7 +317,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
       expect(mockCreateTask).toHaveBeenCalledWith({
         positionIds: ids.slice(0, 50),
         groupIds: [1],
-        publishDefault: true,
+        publishDefault: false,
       });
     });
   });
