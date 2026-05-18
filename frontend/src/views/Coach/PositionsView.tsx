@@ -61,7 +61,7 @@ export function PositionsView() {
 
   const tagsParam = useMemo(() => selectedTags.join(','), [selectedTags]);
 
-  const { data: positionsResponse, loading, error } = useAsyncResource(
+  const { data: positionsResponse, loading, error, reload: reloadPositions } = useAsyncResource(
     () => {
       const fetchParams: Parameters<typeof positionsService.fetchCoachPositions>[0] = {
         page,
@@ -142,6 +142,7 @@ export function PositionsView() {
       selectedGroupsRef.clear();
       setSelectedGroupCount(0);
       setSidebarResetKey(k => k + 1);
+      reloadPositions();
       if (opts?.closeModal) setAssignModalOpen(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Nie udało się utworzyć zadania.';
@@ -149,7 +150,7 @@ export function PositionsView() {
     } finally {
       setTaskCreating(false);
     }
-  }, [selectedPositionCount, selectedGroupCount, selectedPositionsRef, selectedGroupsRef, publishDefaultRef]);
+  }, [selectedPositionCount, selectedGroupCount, selectedPositionsRef, selectedGroupsRef, publishDefaultRef, reloadPositions]);
 
   const handleOpenAssignModal = useCallback(() => setAssignModalOpen(true), []);
   const handleCloseAssignModal = useCallback(() => setAssignModalOpen(false), []);
