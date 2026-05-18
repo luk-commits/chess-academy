@@ -234,9 +234,6 @@ class ImportTask extends Task
         $position->difficulty = $rating;
         $position->popularity = $popularity;
         $position->times_seen = $nbPlays;
-        $position->is_puzzle = true;
-        $position->created_by_user_id = $userId;
-
         if (!empty($data['Moves'])) {
             $movesArray = preg_split('/\s+/', trim($data['Moves']));
             $position->engine_top_lines = json_encode([['moves' => $movesArray]]);

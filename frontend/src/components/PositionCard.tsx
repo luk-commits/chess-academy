@@ -127,7 +127,6 @@ const PositionCard = memo(function PositionCard({
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {position.rating !== null && <Chip size="small" label={`Rating: ${position.rating}`} variant="outlined" />}
           {position.difficulty !== null && (
             <Chip size="small" label={`Difficulty: ${position.difficulty}`} variant="outlined" />
           )}

@@ -5,7 +5,6 @@ export interface PositionItem {
   moves?: string[];
   opening: string;
   themeTags: string[];
-  rating: number | null;
   difficulty: number | null;
 }
 

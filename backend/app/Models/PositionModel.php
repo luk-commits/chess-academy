@@ -15,13 +15,43 @@ class PositionModel extends AbstractModel
      *
      * @var string
      */
-    public $fen;
+    public $created_at;
 
     /**
      *
      * @var string
      */
-    public $description;
+    public $updated_at;
+
+    /**
+     *
+     * @var integer
+     */
+    public $times_seen;
+
+    /**
+     *
+     * @var integer
+     */
+    public $difficulty;
+
+    /**
+     *
+     * @var integer
+     */
+    public $popularity;
+
+    /**
+     *
+     * @var boolean
+     */
+    public $is_puzzle;
+
+    /**
+     *
+     * @var string
+     */
+    public $fen;
 
     /**
      *
@@ -39,163 +69,13 @@ class PositionModel extends AbstractModel
      *
      * @var string
      */
-    public $pieces;
-
-    /**
-     *
-     * @var string
-     */
-    public $type;
-
-    /**
-     *
-     * @var integer
-     */
-    public $difficulty;
-
-    /**
-     *
-     * @var integer
-     */
-    public $evaluation_mate;
-
-    /**
-     *
-     * @var string
-     */
-    public $theme_tags;
-
-    /**
-     *
-     * @var integer
-     */
-    public $material_balance;
-
-    /**
-     *
-     * @var integer
-     */
-    public $source_pgn_id;
-
-    /**
-     *
-     * @var boolean
-     */
-    public $is_puzzle;
-
-    /**
-     *
-     * @var boolean
-     */
-    public $is_study_position;
-
-    /**
-     *
-     * @var boolean
-     */
-    public $is_opening_position;
-
-    /**
-     *
-     * @var boolean
-     */
-    public $is_endgame_position;
-
-    /**
-     *
-     * @var integer
-     */
-    public $popularity_score;
-
-    /**
-     *
-     * @var integer
-     */
-    public $times_seen;
-
-    /**
-     *
-     * @var integer
-     */
-    public $times_solved;
-
-    /**
-     *
-     * @var double
-     */
-    public $success_rate;
-
-    /**
-     *
-     * @var integer
-     */
-    public $created_by_user_id;
-
-    /**
-     *
-     * @var string
-     */
-    public $created_at;
-
-    /**
-     *
-     * @var string
-     */
-    public $updated_at;
-
-    /**
-     *
-     * @var string
-     */
-    public $board_orientation;
-
-    /**
-     *
-     * @var string
-     */
-    public $prev_move;
-
-    /**
-     *
-     * @var integer
-     */
-    public $popularity;
-
-    /**
-     *
-     * @var integer
-     */
-    public $rating;
-
-    /**
-     *
-     * @var string
-     */
     public $other_game_id;
 
     /**
      *
      * @var string
      */
-    public $game_phase;
-
-    /**
-     *
-     * @var integer
-     */
-    public $king_safety_score;
-
-    /**
-     *
-     * @var integer
-     */
-    public $space_advantage;
-
-    /**
-     *
-     * @var string
-     */
-    public $initiative_side;
+    public $theme_tags;
 
     /**
      *
@@ -211,8 +91,6 @@ class PositionModel extends AbstractModel
         $this->setSchema("public");
         $this->setSource("positions");
         $this->hasMany('id', 'ChessAcademy\Models\TaskStages', 'position_id', ['alias' => 'TaskStages']);
-        $this->belongsTo('created_by_user_id', 'ChessAcademy\Models\Users', 'id', ['alias' => 'Users']);
-        $this->belongsTo('source_pgn_id', 'ChessAcademy\Models\PgnGames', 'id', ['alias' => 'PgnGames']);
     }
 
     /**

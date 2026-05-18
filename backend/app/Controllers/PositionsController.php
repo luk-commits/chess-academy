@@ -145,7 +145,6 @@ class PositionsController extends AbstractController
                     ($pos = mb_strpos($v, ' ')) !== false ? mb_substr($v, $pos + 1) : $v
                 )($position->opening) : '',
                 'themeTags' => $themeTags,
-                'rating' => $position->rating !== null ? (int) $position->rating : null,
                 'difficulty' => $position->difficulty !== null ? (int) $position->difficulty : null,
             ];
         }

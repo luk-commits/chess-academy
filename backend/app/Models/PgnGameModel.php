@@ -90,7 +90,6 @@ class PgnGameModel extends AbstractModel
     {
         $this->setSchema("public");
         $this->setSource("pgn_games");
-        $this->hasMany('id', 'ChessAcademy\Models\Positions', 'source_pgn_id', ['alias' => 'Positions']);
         $this->belongsTo('created_by_user_id', 'ChessAcademy\Models\Users', 'id', ['alias' => 'Users']);
     }
 
