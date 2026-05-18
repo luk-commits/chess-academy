@@ -3,7 +3,7 @@ import { Alert, Box } from '@mui/material';
 import { Chess } from 'chess.js';
 import type { Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import type { SquareHandlerArgs } from 'react-chessboard';
+import type { PieceHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { PromotionPopover } from '../chess/PromotionPopover';
 import { ZEN_SELECTED_SQUARE, shake } from '../zen/theme';
 import { fenTurn, isUciCheckmate, pieceColor, uciToMove } from '../../utils/chessPosition';
@@ -161,9 +161,17 @@ export function SrStageBoard({ stage, onComplete }: Props) {
     }
   }, [runtime, selectedSquare, legalTargets, tryMove]);
 
+  const canDragPiece = useCallback(({ piece }: PieceHandlerArgs): boolean => {
+    if (!runtime || runtime.introFen) return false;
+    if (runtime.expected.length <= runtime.expectedIndex) return false;
+    return pieceColor(piece.pieceType) === fenTurn(runtime.currentFen);
+  }, [runtime]);
+
   const handlePieceDrop = useCallback(({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }): boolean => {
     if (!targetSquare || !runtime || runtime.introFen) return false;
     const chess = new Chess(runtime.currentFen);
+    const dragPiece = chess.get(sourceSquare as Square);
+    if (!dragPiece || dragPiece.color !== fenTurn(runtime.currentFen)) return false;
     const legal = chess.moves({ square: sourceSquare as Square, verbose: true }).some((m) => m.to === targetSquare);
     if (!legal) return false;
 
@@ -216,6 +224,7 @@ export function SrStageBoard({ stage, onComplete }: Props) {
           position: runtime.currentFen,
           boardOrientation: runtime.orientation,
           allowDragging: !runtime.introFen && runtime.expected.length > runtime.expectedIndex && !finishedRef.current,
+          canDragPiece,
           onPieceDrop: handlePieceDrop,
           onSquareClick: handleSquareClick,
           squareStyles,
