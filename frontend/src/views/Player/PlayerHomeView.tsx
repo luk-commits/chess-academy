@@ -1,14 +1,5 @@
-import { WelcomeCard } from '../../components/home/WelcomeCard';
-import { useAuth } from '../../hooks/useAuth';
+import { Navigate } from 'react-router-dom';
 
 export function PlayerHomeView() {
-  const { user } = useAuth();
-  if (!user) return null;
-
-  return (
-    <WelcomeCard
-      greeting="Witaj zawodniku!"
-      description="Panel zawodnika – wkrótce dostępne lekcje i lista trenerów."
-    />
-  );
+  return <Navigate to="/home/player/tasks" replace />;
 }
