@@ -26,6 +26,7 @@ export function PositionsView() {
   const selectedPositionsRef = useMemo(() => new Set<number>(), []);
   const [selectedPositionCount, setSelectedPositionCount] = useState(0);
   const [selectionResetKey, setSelectionResetKey] = useState(0);
+  const selectedIds = useMemo(() => new Set(selectedPositionsRef), [selectedPositionCount]);
   const selectedGroupsRef = useMemo(() => new Set<number>(), []);
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
   const [sidebarResetKey, setSidebarResetKey] = useState(0);
@@ -206,7 +207,7 @@ export function PositionsView() {
 
               <PositionGrid
                 positions={positions}
-                selectedIds={selectedPositionsRef}
+                selectedIds={selectedIds}
                 cardTagsExpanded={cardTagsExpanded}
                 onToggle={handlePositionToggle}
                 onCopy={handleCopyFen}
