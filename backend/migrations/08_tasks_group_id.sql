@@ -1,3 +1,0 @@
-ALTER TABLE tasks DROP COLUMN IF EXISTS player_id;
-ALTER TABLE tasks ADD COLUMN IF NOT EXISTS group_id BIGINT REFERENCES groups(id) ON DELETE SET NULL;
-CREATE INDEX IF NOT EXISTS idx_tasks_group_id ON tasks(group_id);
