@@ -19,7 +19,7 @@ export function BrandedPage({ children, maxWidth = 'md', centered = false }: Bra
         ...(centered ? { display: 'grid', placeItems: 'center' } : {}),
       }}
     >
-      <Container maxWidth={maxWidth} disableGutters={centered}>
+      <Container maxWidth={maxWidth} disableGutters>
         {children}
       </Container>
     </Box>

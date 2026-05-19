@@ -10,7 +10,7 @@ interface PageLayoutProps {
 export function PageLayout({ children, maxWidth = 'lg', bgcolor = '#f5f5f5' }: PageLayoutProps) {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor, py: 4, px: { xs: 0.25, sm: 2 } }}>
-      <Container maxWidth={maxWidth}>{children}</Container>
+      <Container maxWidth={maxWidth} disableGutters>{children}</Container>
     </Box>
   );
 }
