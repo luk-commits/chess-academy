@@ -503,7 +503,7 @@ export function PlayerTaskDetailsView() {
       <Box
         sx={{
           position: 'relative',
-          maxWidth: 560,
+          maxWidth: 590,
           mx: 'auto',
           aspectRatio: '1 / 1',
           width: '100%',
