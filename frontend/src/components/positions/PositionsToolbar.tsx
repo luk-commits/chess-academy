@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef } from 'react';
-import { Box, Button, Paper } from '@mui/material';
+import { Box, Button, Paper, Tooltip } from '@mui/material';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import SelfStatedText, { type TextHandle } from '../SelfStated/Text';
 import SelfStatedSlider from '../SelfStated/Slider';
@@ -71,16 +71,18 @@ export const PositionsToolbar = memo(function PositionsToolbar({
             Wyczyść
           </Button>
           {onToggleOnlyNew && (
-            <Button
-              type="button"
-              variant={onlyNew ? 'contained' : 'outlined'}
-              color={onlyNew ? 'secondary' : 'primary'}
-              sx={{ whiteSpace: 'nowrap' }}
-              onClick={onToggleOnlyNew}
-              aria-pressed={onlyNew}
-            >
-              Unikalne
-            </Button>
+            <Tooltip title="Wyświetl tylko pozycje do tej pory nieprzypisane zawodnikom">
+              <Button
+                type="button"
+                variant={onlyNew ? 'contained' : 'outlined'}
+                color={onlyNew ? 'secondary' : 'primary'}
+                sx={{ whiteSpace: 'nowrap' }}
+                onClick={onToggleOnlyNew}
+                aria-pressed={onlyNew}
+              >
+                Unikalne
+              </Button>
+            </Tooltip>
           )}
         </Box>
       </Box>
