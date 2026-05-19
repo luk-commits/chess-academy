@@ -9,7 +9,7 @@ interface LazyChessboardProps {
   maxWidth?: number;
 }
 
-export function LazyChessboard({ id, fen, boardOrientation, maxWidth = 290 }: LazyChessboardProps) {
+export function LazyChessboard({ id, fen, boardOrientation, maxWidth = 320 }: LazyChessboardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
