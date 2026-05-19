@@ -10,6 +10,8 @@ use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
 use ChessAcademy\Models\User;
 use ChessAcademy\Models\GroupPlayers;
+use ChessAcademy\Models\UserTaskProgress;
+use ChessAcademy\Models\UserTaskStageProgress;
 
 class PlayerTasksController extends AbstractController
 {
@@ -102,6 +104,29 @@ class PlayerTasksController extends AbstractController
             }
         }
 
+        $taskIds = array_map(static fn ($t) => (int) $t->id, iterator_to_array($tasks));
+        $progressMap = [];
+        if (!empty($taskIds)) {
+            $rows = UserTaskProgress::find([
+                'conditions' => 'user_id = :userId: AND task_id IN ({taskIds:array})',
+                'bind' => ['userId' => $playerId, 'taskIds' => $taskIds],
+            ]);
+            foreach ($rows as $r) {
+                $progressMap[(int) $r->task_id] = $r;
+            }
+        }
+
+        $stageProgressMap = [];
+        if (!empty($taskIds)) {
+            $rows = UserTaskStageProgress::find([
+                'conditions' => 'user_id = :userId: AND task_id IN ({taskIds:array})',
+                'bind' => ['userId' => $playerId, 'taskIds' => $taskIds],
+            ]);
+            foreach ($rows as $r) {
+                $stageProgressMap[(int) $r->task_stage_id] = $r;
+            }
+        }
+
         $result = [];
         foreach ($tasks as $task) {
             $stages = TaskStage::find([
@@ -138,10 +163,26 @@ class PlayerTasksController extends AbstractController
                     }
                 }
 
+                $stageProgress = $stageProgressMap[(int) $stage->id] ?? null;
+                $stageProgressData = $stageProgress !== null ? [
+                    'status' => (string) $stageProgress->status,
+                    'attemptsTotal' => (int) $stageProgress->attempts_total,
+                    'errorsTotal' => (int) $stageProgress->errors_total,
+                    'wrongMoves' => is_string($stageProgress->wrong_moves) ? (json_decode($stageProgress->wrong_moves, true) ?? []) : [],
+                    'thinkingTimeMs' => (int) $stageProgress->thinking_time_ms,
+                    'avgMoveTimeMs' => (int) $stageProgress->avg_move_time_ms,
+                    'longestMoveTimeMs' => (int) $stageProgress->longest_move_time_ms,
+                    'firstErrorAtPly' => $stageProgress->first_error_at_ply !== null ? (int) $stageProgress->first_error_at_ply : null,
+                    'completedAt' => $stageProgress->completed_at !== null ? (string) $stageProgress->completed_at : null,
+                    'inRepetition' => (bool) $stageProgress->in_repetition,
+                    'addedToRepetitionAt' => $stageProgress->added_to_repetition_at !== null ? (string) $stageProgress->added_to_repetition_at : null,
+                ] : null;
+
                 $stageData[] = [
                     'id' => (int) $stage->id,
                     'title' => $stage->title,
                     'sortOrder' => (int) $stage->sort_order,
+                    'progress' => $stageProgressData,
                     'position' => [
                         'id' => (int) $position->id,
                         'fen' => (string) $position->fen,
@@ -157,12 +198,27 @@ class PlayerTasksController extends AbstractController
             }
 
             if (!empty($stageData)) {
+                $tp = $progressMap[(int) $task->id] ?? null;
+                $taskProgressData = $tp !== null ? [
+                    'status' => (string) $tp->status,
+                    'currentStageId' => $tp->current_stage_id !== null ? (int) $tp->current_stage_id : null,
+                    'startedAt' => $tp->started_at !== null ? (string) $tp->started_at : null,
+                    'lastActivityAt' => $tp->last_activity_at !== null ? (string) $tp->last_activity_at : null,
+                    'interruptedAt' => $tp->interrupted_at !== null ? (string) $tp->interrupted_at : null,
+                    'completedAt' => $tp->completed_at !== null ? (string) $tp->completed_at : null,
+                    'archivedAt' => $tp->archived_at !== null ? (string) $tp->archived_at : null,
+                    'totalTimeMs' => (int) $tp->total_time_ms,
+                    'attemptsTotal' => (int) $tp->attempts_total,
+                    'errorsTotal' => (int) $tp->errors_total,
+                ] : null;
+
                 $result[] = [
                     'id' => (int) $task->id,
                     'title' => $task->title,
                     'description' => $task->description,
                     'coachName' => $coachMap[(int) $task->coach_id] ?? '',
                     'isIndividual' => in_array((int) $task->id, $individualTaskIdsUnique, true),
+                    'taskProgress' => $taskProgressData,
                     'stages' => $stageData,
                 ];
             }

@@ -7,6 +7,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import PeopleIcon from '@mui/icons-material/People';
 import GridViewIcon from '@mui/icons-material/GridView';
 import ReplayIcon from '@mui/icons-material/Replay';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
 import type { UserRole } from '../types/auth';
 
 export interface NavConfigItem {
@@ -27,6 +28,7 @@ export const NAV_BY_ROLE: Record<UserRole, NavConfigItem[]> = {
     { label: 'Lekcje', path: '/home/player/lessons', icon: createElement(MenuBookIcon) },
     { label: 'Zadania', path: '/home/player/tasks', icon: createElement(AssignmentIcon) },
     { label: 'Trenerzy', path: '/home/player/coaches', icon: createElement(GroupIcon) },
+    { label: 'Archiwum', path: '/home/player/tasks/archive', icon: createElement(Inventory2Icon) },
   ],
   COACH: [
     { label: 'Lekcje', path: '/home/coach/lessons', icon: createElement(MenuBookIcon) },

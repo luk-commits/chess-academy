@@ -4,11 +4,15 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   FormControlLabel,
   Switch,
   Typography,
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
+import PlusOneIcon from '@mui/icons-material/PlusOne';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Cancel from '@mui/icons-material/Cancel';
 import { Chess } from 'chess.js';
 import type { Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
@@ -20,16 +24,18 @@ import { GlassHeader } from '../../components/zen/GlassHeader';
 import { StageProgressBar } from '../../components/zen/StageProgressBar';
 import { type ScoreDelta } from '../../components/zen/ScoreBadge';
 import { CompletionCard } from '../../components/zen/CompletionCard';
-import { ZEN_SELECTED_SQUARE, shake } from '../../components/zen/theme';
+import { ZEN_PENALTY, ZEN_REWARD, ZEN_SELECTED_SQUARE, shake } from '../../components/zen/theme';
 import { PromotionPopover } from '../../components/chess/PromotionPopover';
 import { fenTurn, isUciCheckmate, pieceColor, uciToMove } from '../../utils/chessPosition';
 import { buildStageRuntime, type StageRuntime } from '../../utils/stageRuntime';
 import { usePlayerTasks } from '../../hooks/usePlayerTasks';
+import { playerTasksService } from '../../services/playerTasksService';
+import type { StageCompletePayload } from '../../types/position';
 
 export function PlayerTaskDetailsView() {
   const { taskId, stageId } = useParams<{ taskId: string; stageId?: string }>();
   const navigate = useNavigate();
-  const { tasks, loading, error } = usePlayerTasks();
+  const { tasks, loading, error, reload } = usePlayerTasks();
 
   const [stageIdx, setStageIdx] = useState(0);
   const [runtime, setRuntime] = useState<StageRuntime | null>(null);
@@ -42,7 +48,18 @@ export function PlayerTaskDetailsView() {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [animateBoard, setAnimateBoard] = useState(true);
   const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ kind: 'pass' | 'fail' } | null>(null);
   const deltaSeq = useRef(0);
+
+  // Stage stats tracking
+  const stageStartRef = useRef<number>(0);
+  const lastDecisionRef = useRef<number>(0);
+  const moveTimesMsRef = useRef<number[]>([]);
+  const wrongMovesRef = useRef<string[]>([]);
+  const errorsTotalRef = useRef<number>(0);
+  const attemptsTotalRef = useRef<number>(0);
+  const firstErrorAtPlyRef = useRef<number | null>(null);
+  const moveCountRef = useRef<number>(0);
 
   const task = useMemo(() => {
     const id = Number(taskId);
@@ -55,7 +72,7 @@ export function PlayerTaskDetailsView() {
     return idx !== -1 && idx + 1 < tasks.length ? tasks[idx + 1].id : null;
   }, [tasks, task]);
 
-  // Reset session state when switching tasks (not stages)
+  // Reset session state when switching tasks
   useEffect(() => {
     setRuntime(null);
     setScore(0);
@@ -66,14 +83,28 @@ export function PlayerTaskDetailsView() {
     setPendingPromotion(null);
   }, [taskId]);
 
-  // Redirect /tasks/:taskId → first stage; sync stageIdx from URL stageId
+  // Auto start/resume task progress on mount
+  const initialisedRef = useRef(false);
+  useEffect(() => {
+    if (!task || initialisedRef.current) return;
+    initialisedRef.current = true;
+    const tp = task.taskProgress;
+    if (tp?.status === 'new' || !tp) {
+      playerTasksService.startTask(task.id).catch(() => {});
+    } else if (tp.status === 'interrupted') {
+      playerTasksService.resumeTask(task.id).catch(() => {});
+    }
+  }, [task]);
+
+  // Redirect /tasks/:taskId -> first stage; sync stageIdx from URL stageId or progress
   useEffect(() => {
     if (!task) return;
-    if (!stageId) {
-      const firstStageId = task.stages[0]?.id;
-      if (firstStageId != null) {
-        navigate(`/home/player/tasks/${taskId}/stages/${firstStageId}`, { replace: true });
-      }
+    const tp = task.taskProgress;
+    const targetStageId = stageId
+      ? Number(stageId)
+      : (tp?.currentStageId ?? task.stages[0]?.id);
+    if (!stageId && targetStageId) {
+      navigate(`/home/player/tasks/${taskId}/stages/${targetStageId}`, { replace: true });
       return;
     }
     const idx = task.stages.findIndex(s => s.id === Number(stageId));
@@ -90,6 +121,18 @@ export function PlayerTaskDetailsView() {
     setRuntime(rt);
     setSelectedSquare(null);
     setPendingPromotion(null);
+
+    // Reset stage stats
+    const now = performance.now();
+    stageStartRef.current = now;
+    lastDecisionRef.current = now;
+    moveTimesMsRef.current = [];
+    wrongMovesRef.current = [];
+    errorsTotalRef.current = 0;
+    attemptsTotalRef.current = 0;
+    firstErrorAtPlyRef.current = null;
+    moveCountRef.current = 0;
+
     if (rt?.introFen) {
       const tid = window.setTimeout(() => {
         setAnimateBoard(true);
@@ -121,22 +164,51 @@ export function PlayerTaskDetailsView() {
     window.setTimeout(() => setDeltas(prev => prev.filter(d => d.id !== id)), 900);
   }, []);
 
+  const sendCompleteStats = useCallback(async () => {
+    if (!task || !currentStage) return;
+    const moveTimes = moveTimesMsRef.current;
+    const payload: StageCompletePayload = {
+      thinkingTimeMs: Math.round(performance.now() - stageStartRef.current),
+      attemptsTotal: attemptsTotalRef.current,
+      errorsTotal: errorsTotalRef.current,
+      wrongMoves: wrongMovesRef.current,
+      moveTimesMs: moveTimes,
+      firstErrorAtPly: firstErrorAtPlyRef.current,
+    };
+    try {
+      await playerTasksService.completeStage(task.id, currentStage.id, payload);
+      reload();
+    } catch {
+      // silently fail stats save
+    }
+  }, [task, currentStage, reload]);
+
   const advanceStage = useCallback(() => {
     if (!task) return;
     const nextIdx = stageIdx + 1;
     if (nextIdx >= task.stages.length) {
       setCompleted(true);
+      sendCompleteStats();
       return;
     }
+    sendCompleteStats();
     const nextStageId = task.stages[nextIdx].id;
     navigate(`/home/player/tasks/${taskId}/stages/${nextStageId}`, { replace: true });
-  }, [task, stageIdx, taskId, navigate]);
+  }, [task, stageIdx, taskId, navigate, sendCompleteStats]);
+
+  const completeWithFeedback = useCallback(() => {
+    setFeedback({ kind: 'pass' });
+    window.setTimeout(() => {
+      setFeedback(null);
+      advanceStage();
+    }, 1500);
+  }, [advanceStage]);
 
   const playEngineReply = useCallback((rt: StageRuntime) => {
     const engineUci = rt.expected[rt.expectedIndex];
     if (!engineUci) {
       setRuntime(rt);
-      window.setTimeout(advanceStage, 450);
+      window.setTimeout(completeWithFeedback, 450);
       return;
     }
     window.setTimeout(() => {
@@ -146,10 +218,10 @@ export function PlayerTaskDetailsView() {
       const updated: StageRuntime = { ...rt, currentFen: chess.fen(), expectedIndex: rt.expectedIndex + 1 };
       setRuntime(updated);
       if (updated.expectedIndex >= updated.expected.length) {
-        window.setTimeout(advanceStage, 600);
+        window.setTimeout(completeWithFeedback, 600);
       }
     }, 350);
-  }, [advanceStage]);
+  }, [completeWithFeedback]);
 
   const tryMove = useCallback((from: string, to: string, promotion?: string): boolean => {
     if (!runtime || completed) return false;
@@ -157,6 +229,15 @@ export function PlayerTaskDetailsView() {
     if (!expectedUci) return false;
 
     const playerUci = from + to + (promotion ?? '');
+    const now = performance.now();
+
+    // Track move time
+    if (lastDecisionRef.current > 0) {
+      moveTimesMsRef.current.push(Math.round(now - lastDecisionRef.current));
+    }
+    lastDecisionRef.current = now;
+    attemptsTotalRef.current += 1;
+
     const matches = playerUci === expectedUci;
 
     if (!matches) {
@@ -171,11 +252,17 @@ export function PlayerTaskDetailsView() {
         setRuntime(afterPlayer);
         setScore(s => s + 10);
         pushDelta(10);
-        window.setTimeout(advanceStage, 450);
+        moveCountRef.current += 1;
+        window.setTimeout(completeWithFeedback, 450);
         return true;
       }
 
       setShakeKey(k => k + 1);
+      errorsTotalRef.current += 1;
+      wrongMovesRef.current.push(playerUci);
+      if (firstErrorAtPlyRef.current === null) {
+        firstErrorAtPlyRef.current = moveCountRef.current;
+      }
       if (!runtime.errored) {
         setRuntime({ ...runtime, errored: true });
         setScore(s => Math.max(0, s - 5));
@@ -196,9 +283,10 @@ export function PlayerTaskDetailsView() {
     setRuntime(afterPlayer);
     setScore(s => s + 10);
     pushDelta(10);
+    moveCountRef.current += 1;
     playEngineReply(afterPlayer);
     return true;
-  }, [runtime, completed, pushDelta, playEngineReply, advanceStage]);
+  }, [runtime, completed, pushDelta, playEngineReply, completeWithFeedback]);
 
   const legalTargets = useMemo((): Set<string> => {
     if (!selectedSquare || !runtime) return new Set();
@@ -298,6 +386,36 @@ export function PlayerTaskDetailsView() {
     else navigate('/home/player/tasks');
   }, [nextTaskId, navigate]);
 
+  const handleInterrupt = useCallback(() => {
+    if (task) {
+      playerTasksService.interruptTask(task.id).catch(() => {});
+    }
+    navigate('/home/player/tasks');
+  }, [task, navigate]);
+
+  const uciMovesToPgn = useCallback((fen: string, uciMoves: string[]): string => {
+    try {
+      const chess = new Chess(fen);
+      for (const uci of uciMoves) {
+        chess.move(uciToMove(uci));
+      }
+      return chess.pgn();
+    } catch {
+      return '';
+    }
+  }, []);
+
+  const handleToggleRepetition = useCallback(() => {
+    if (!currentStage) return;
+    const sp = currentStage.progress;
+    const newEnabled = !(sp?.inRepetition ?? false);
+    const moves = currentStage.position.moves ?? (currentStage.position.firstMove ? [currentStage.position.firstMove] : []);
+    const pgn = newEnabled ? uciMovesToPgn(currentStage.position.fen, moves) : undefined;
+    playerTasksService.setStageRepetition(currentStage.id, newEnabled, pgn).then(() => reload()).catch(() => {});
+  }, [currentStage, reload, uciMovesToPgn]);
+
+  const stageProgress = currentStage?.progress;
+
   if (loading) return <PageLayout maxWidth="md"><LoadingState /></PageLayout>;
   if (error) {
     return (
@@ -321,9 +439,23 @@ export function PlayerTaskDetailsView() {
   return (
     <PageLayout maxWidth="md">
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/home/player/tasks')}>
-          Wróć do listy
+        <Button startIcon={<ArrowBack />} onClick={handleInterrupt}>
+          Przerwij
         </Button>
+
+        {currentStage && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<PlusOneIcon />}
+            color={stageProgress?.inRepetition ? 'primary' : 'inherit'}
+            onClick={handleToggleRepetition}
+            sx={{ textTransform: 'none' }}
+          >
+            {stageProgress?.inRepetition ? 'Usuń z powtórek' : 'Dodaj do powtórek'}
+          </Button>
+        )}
+
         <Box sx={{ flex: 1 }} />
         <FormControlLabel
           control={
@@ -362,7 +494,6 @@ export function PlayerTaskDetailsView() {
           width: '100%',
         }}
       >
-
         {completed ? (
           <CompletionCard
             score={score}
@@ -411,7 +542,99 @@ export function PlayerTaskDetailsView() {
         ) : (
           <Alert severity="warning">Niepoprawna pozycja startowa tego etapu.</Alert>
         )}
+
+        {feedback && (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(15, 23, 42, 0.55)',
+              borderRadius: 3,
+              color: 'common.white',
+              zIndex: 2,
+              gap: 1,
+            }}
+          >
+            {feedback.kind === 'pass' ? (
+              <CheckCircle sx={{ fontSize: 80, color: ZEN_REWARD }} />
+            ) : (
+              <Cancel sx={{ fontSize: 80, color: ZEN_PENALTY }} />
+            )}
+            <Typography variant="h6">
+              {feedback.kind === 'pass' ? 'Świetnie!' : 'Następnym razem.'}
+            </Typography>
+          </Box>
+        )}
       </Box>
+
+      {/* Stage statistics panel */}
+      {currentStage && stageProgress && stageProgress.status === 'completed' && (
+        <Box
+          sx={{
+            mt: 3,
+            p: 2,
+            borderRadius: 2,
+            bgcolor: 'grey.50',
+            border: '1px solid',
+            borderColor: 'grey.200',
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Statystyki etapu
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {stageProgress.thinkingTimeMs > 0 && (
+              <Chip
+                label={`Czas: ${Math.round(stageProgress.thinkingTimeMs / 1000)}s`}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            {stageProgress.errorsTotal > 0 && (
+              <Chip
+                label={`Błędy: ${stageProgress.errorsTotal}`}
+                size="small"
+                color="warning"
+                variant="outlined"
+              />
+            )}
+            {stageProgress.avgMoveTimeMs > 0 && (
+              <Chip
+                label={`Średni ruch: ${Math.round(stageProgress.avgMoveTimeMs / 1000)}s`}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            {stageProgress.longestMoveTimeMs > 0 && (
+              <Chip
+                label={`Najdłuższy: ${Math.round(stageProgress.longestMoveTimeMs / 1000)}s`}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            {stageProgress.wrongMoves.length > 0 && (
+              <Chip
+                label={`Błędne ruchy: ${stageProgress.wrongMoves.join(', ')}`}
+                size="small"
+                color="error"
+                variant="outlined"
+              />
+            )}
+            {stageProgress.inRepetition && (
+              <Chip
+                label="W powtórkach"
+                size="small"
+                color="success"
+                variant="filled"
+              />
+            )}
+          </Box>
+        </Box>
+      )}
     </PageLayout>
   );
 }

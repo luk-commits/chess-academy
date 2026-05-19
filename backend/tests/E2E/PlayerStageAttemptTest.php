@@ -10,6 +10,7 @@ use ChessAcademy\Models\Task;
 use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
 use ChessAcademy\Models\UserStageProgress;
+use ChessAcademy\Models\UserTaskStageProgress;
 use PHPUnit\Framework\TestCase;
 
 final class PlayerStageAttemptTest extends TestCase
@@ -65,6 +66,14 @@ final class PlayerStageAttemptTest extends TestCase
         $stage->status = 'published';
         $this->assertTrue($stage->save(), $this->modelErrors($stage));
         $this->stageId = (int) $stage->id;
+
+        // Mark stage for repetition so attempt is allowed
+        $stageProgress = new UserTaskStageProgress();
+        $stageProgress->user_id = self::PLAYER_ID;
+        $stageProgress->task_id = $this->taskId;
+        $stageProgress->task_stage_id = $this->stageId;
+        $stageProgress->in_repetition = true;
+        $this->assertTrue($stageProgress->save(), $this->modelErrors($stageProgress));
     }
 
     protected function tearDown(): void

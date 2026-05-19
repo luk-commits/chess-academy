@@ -6,14 +6,15 @@ interface UsePlayerTasksResult {
   tasks: PlayerTask[];
   loading: boolean;
   error: string | null;
+  reload: () => void;
 }
 
 export function usePlayerTasks(): UsePlayerTasksResult {
-  const { data, loading, error } = useAsyncResource(
+  const { data, loading, error, reload } = useAsyncResource(
     () => playerTasksService.fetchTasks().then((d) => d.tasks),
     [],
     { defaultErrorMessage: 'Nie udało się pobrać zadań.' },
   );
 
-  return { tasks: data ?? [], loading, error };
+  return { tasks: data ?? [], loading, error, reload };
 }

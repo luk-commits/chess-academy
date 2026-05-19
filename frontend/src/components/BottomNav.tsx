@@ -10,8 +10,9 @@ export function BottomNav() {
 
   if (!user) return null;
 
-  const navItems = [HOME_NAV_ITEM, ...NAV_BY_ROLE[user.role]];
-  const currentValue = navItems.findIndex((item) => location.pathname === item.path);
+  const isPlayer = user.role === 'PLAYER';
+  const navItems = isPlayer ? NAV_BY_ROLE[user.role] : [HOME_NAV_ITEM, ...NAV_BY_ROLE[user.role]];
+  const currentValue = navItems.findIndex((item) => location.pathname.startsWith(item.path));
 
   return (
     <Paper

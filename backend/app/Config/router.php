@@ -83,6 +83,47 @@ $container->setShared('router', function (): Router {
         'action' => 'attempt',
     ]);
 
+    // Player task progress lifecycle
+    $router->addPost('/api/player/tasks/{id:[0-9]+}/start', [
+        'controller' => 'player_task_progress',
+        'action' => 'start',
+    ]);
+
+    $router->addPost('/api/player/tasks/{id:[0-9]+}/interrupt', [
+        'controller' => 'player_task_progress',
+        'action' => 'interrupt',
+    ]);
+
+    $router->addPost('/api/player/tasks/{id:[0-9]+}/resume', [
+        'controller' => 'player_task_progress',
+        'action' => 'resume',
+    ]);
+
+    $router->addPost('/api/player/tasks/{id:[0-9]+}/reset', [
+        'controller' => 'player_task_progress',
+        'action' => 'reset',
+    ]);
+
+    $router->addPost('/api/player/tasks/{id:[0-9]+}/archive', [
+        'controller' => 'player_task_progress',
+        'action' => 'archive',
+    ]);
+
+    $router->addPost('/api/player/tasks/{id:[0-9]+}/restore', [
+        'controller' => 'player_task_progress',
+        'action' => 'restore',
+    ]);
+
+    $router->addPost('/api/player/tasks/{taskId:[0-9]+}/stages/{stageId:[0-9]+}/complete', [
+        'controller' => 'player_task_progress',
+        'action' => 'completeStage',
+    ]);
+
+    $router->addPost('/api/player/stages/{id:[0-9]+}/repetition', [
+        'controller' => 'player_task_progress',
+        'action' => 'repetition',
+    ]);
+
     $router->addOptions('/api/{path:.+}', [
         'controller' => 'auth',
         'action' => 'preflight',

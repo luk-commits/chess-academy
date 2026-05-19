@@ -10,6 +10,8 @@ use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
 use ChessAcademy\Models\User;
 use ChessAcademy\Models\UserStageProgress;
+use ChessAcademy\Models\UserTaskProgress;
+use ChessAcademy\Models\UserTaskStageProgress;
 use ChessAcademy\Services\SpacedRepetitionService;
 use DateTimeImmutable;
 use RuntimeException;
@@ -47,6 +49,15 @@ class PlayerStagesController extends AbstractController
 
         if (!$this->playerHasAccessToTask($playerId, (int) $task->id)) {
             return $this->error('Forbidden', 403);
+        }
+
+        // Verify stage is marked for repetition by this player
+        $stageProgress = UserTaskStageProgress::findFirst([
+            'conditions' => 'user_id = :u: AND task_stage_id = :s: AND in_repetition = :rep:',
+            'bind' => ['u' => $playerId, 's' => $stageId, 'rep' => true],
+        ]);
+        if ($stageProgress === null) {
+            return $this->error('Stage is not in your repetition list', 403);
         }
 
         try {
@@ -106,10 +117,36 @@ class PlayerStagesController extends AbstractController
 
         $coachMap = $this->coachNameMap(array_values(array_unique($coachIds)));
 
+        // Filter to tasks where user has marked stages for repetition, and task is not archived
+        $userTaskProgresses = UserTaskProgress::find([
+            'conditions' => 'user_id = :userId: AND task_id IN ({taskIds:array}) AND status != :archived:',
+            'bind' => ['userId' => $playerId, 'taskIds' => $publishedTaskIds, 'archived' => 'archived'],
+        ]);
+        $nonArchivedTaskIds = [];
+        foreach ($userTaskProgresses as $utp) {
+            $nonArchivedTaskIds[] = (int) $utp->task_id;
+        }
+        if (empty($nonArchivedTaskIds)) {
+            return $this->json(['stages' => []]);
+        }
+
+        // Find stages with in_repetition = true for this player
+        $repetitionStages = UserTaskStageProgress::find([
+            'conditions' => 'user_id = :userId: AND in_repetition = :rep: AND task_id IN ({taskIds:array})',
+            'bind' => ['userId' => $playerId, 'rep' => true, 'taskIds' => $nonArchivedTaskIds],
+        ]);
+        $repetitionStageIds = [];
+        foreach ($repetitionStages as $rs) {
+            $repetitionStageIds[] = (int) $rs->task_stage_id;
+        }
+        if (empty($repetitionStageIds)) {
+            return $this->json(['stages' => []]);
+        }
+
         $stages = TaskStage::find([
-            'conditions' => 'status = :status: AND task_id IN ({taskIds:array}) '
+            'conditions' => 'status = :status: AND id IN ({stageIds:array}) '
                 . 'AND position_id IS NOT NULL AND solution_pgn IS NOT NULL',
-            'bind' => ['status' => 'published', 'taskIds' => $publishedTaskIds],
+            'bind' => ['status' => 'published', 'stageIds' => $repetitionStageIds],
         ]);
         if (count($stages) === 0) {
             return $this->json(['stages' => []]);

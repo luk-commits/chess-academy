@@ -24,5 +24,10 @@ class TaskStage extends TaskStageModel
             'alias' => 'Progress',
             'reusable' => true,
         ]);
+
+        $this->hasMany('id', UserTaskStageProgress::class, 'task_stage_id', [
+            'alias' => 'TaskStageProgress',
+            'reusable' => true,
+        ]);
     }
 }

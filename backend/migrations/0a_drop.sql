@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS user_task_stage_progress CASCADE;
+DROP TABLE IF EXISTS user_task_progress CASCADE;
 DROP TABLE IF EXISTS user_stage_progress CASCADE;
 DROP TABLE IF EXISTS task_groups CASCADE;
 DROP TABLE IF EXISTS task_stages CASCADE;

@@ -36,6 +36,16 @@ class User extends UserModel
             'alias' => 'CoachedTasks',
             'reusable' => true,
         ]);
+
+        $this->hasMany('id', UserTaskProgress::class, 'user_id', [
+            'alias' => 'TaskProgress',
+            'reusable' => true,
+        ]);
+
+        $this->hasMany('id', UserTaskStageProgress::class, 'user_id', [
+            'alias' => 'StageProgress',
+            'reusable' => true,
+        ]);
     }
 
     public function validation(): bool

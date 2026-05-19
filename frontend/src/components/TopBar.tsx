@@ -14,6 +14,7 @@ import {
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import PersonIcon from '@mui/icons-material/Person';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../hooks/useAuth';
 import { NAV_BY_ROLE } from '../constants/navigation';
@@ -35,7 +36,11 @@ export function TopBar() {
   };
 
   const navItems = NAV_BY_ROLE[user.role];
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/home/player/tasks' && location.pathname.startsWith('/home/player/tasks/archive')) return false;
+    if (path === '/home/player/tasks/archive') return location.pathname === '/home/player/tasks/archive';
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   return (
     <AppBar position="static" sx={{ bgcolor: 'primary.dark' }}>
@@ -139,6 +144,13 @@ export function TopBar() {
               Profil
             </Typography>
           </Box>
+          <Divider />
+          {user.role === 'PLAYER' && (
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/home/player/tasks/archive'); }} sx={{ gap: 1.5, py: 1.5, px: 2 }}>
+              <Inventory2Icon fontSize="small" />
+              Archiwum
+            </MenuItem>
+          )}
           <Divider />
           <MenuItem onClick={handleLogout} sx={{ gap: 1.5, py: 1.5, px: 2 }}>
             <LogoutIcon fontSize="small" />

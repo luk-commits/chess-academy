@@ -11,6 +11,8 @@ use ChessAcademy\Models\Task;
 use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
 use ChessAcademy\Models\UserStageProgress;
+use ChessAcademy\Models\UserTaskStageProgress;
+use ChessAcademy\Models\UserTaskProgress;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -75,10 +77,35 @@ final class PlayerStagesDueTest extends TestCase
 
         $this->seedProgress($this->dueStageId, $duePast);
         $this->seedProgress($this->futureStageId, $futurePast);
+
+        // Mark all three stages for repetition so they're eligible for due
+        foreach ([$this->newStageId, $this->dueStageId, $this->futureStageId] as $sid) {
+            $sp = new UserTaskStageProgress();
+            $sp->user_id = self::PLAYER_ID;
+            $sp->task_id = $this->taskId;
+            $sp->task_stage_id = $sid;
+            $sp->in_repetition = true;
+            $this->assertTrue($sp->save(), $this->modelErrors($sp));
+        }
+
+        // Mark task as started (not archived) for due eligibility
+        $tp = new UserTaskProgress();
+        $tp->user_id = self::PLAYER_ID;
+        $tp->task_id = $this->taskId;
+        $tp->status = 'in_progress';
+        $this->assertTrue($tp->save(), $this->modelErrors($tp));
     }
 
     protected function tearDown(): void
     {
+        UserTaskStageProgress::find([
+            'conditions' => 'task_stage_id IN ({ids:array})',
+            'bind' => ['ids' => [$this->newStageId, $this->dueStageId, $this->futureStageId]],
+        ])->delete();
+        UserTaskProgress::find([
+            'conditions' => 'task_id = :t:',
+            'bind' => ['t' => $this->taskId],
+        ])->delete();
         UserStageProgress::find([
             'conditions' => 'task_stage_id IN ({ids:array})',
             'bind' => ['ids' => [$this->newStageId, $this->dueStageId, $this->futureStageId]],

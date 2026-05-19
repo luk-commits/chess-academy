@@ -1,5 +1,5 @@
-import { Box, Card, CardActionArea, Chip, Typography } from '@mui/material';
-import FlagOutlined from '@mui/icons-material/FlagOutlined';
+import { Box, Card, CardActionArea, Chip, Tooltip, Typography } from '@mui/material';
+import Flag from '@mui/icons-material/Flag';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import type { PlayerTask } from '../../types/position';
 import { stageLabel } from '../../utils/pluralize';
@@ -9,7 +9,35 @@ interface Props {
   onOpen: (taskId: number) => void;
 }
 
+const FLAG_COLOR: Record<string, 'success' | 'info' | 'warning' | 'primary' | 'disabled'> = {
+  new: 'success',
+  in_progress: 'info',
+  interrupted: 'warning',
+  completed: 'primary',
+  archived: 'disabled',
+};
+
+const STATUS_TOOLTIP: Record<string, string> = {
+  new: 'Nowe – kliknij, aby rozpocząć',
+  in_progress: 'Rozpoczęte – możesz kontynuować',
+  interrupted: 'Przerwane – możesz wrócić do zadania',
+  completed: 'Ukończone – zadanie zaliczone',
+  archived: 'W archiwum – zadanie zarchiwizowane',
+};
+
+function statusDescription(task: PlayerTask): string {
+  const tp = task.taskProgress;
+  if (!tp || tp.status === 'new') return 'Kliknij, aby rozpocząć';
+  if (tp.status === 'completed') return 'Ukończone';
+  if (tp.status === 'archived') return 'W archiwum';
+  return 'Wróć do etapu ' + ((task.stages.findIndex(s => s.id === tp.currentStageId) ?? 0) + 1);
+}
+
 export function PlayerTaskCard({ task, onOpen }: Props) {
+  const tp = task.taskProgress;
+  const status = tp?.status ?? 'new';
+  const stagesCount = task.stages.length;
+
   return (
     <Card
       elevation={2}
@@ -41,17 +69,21 @@ export function PlayerTaskCard({ task, onOpen }: Props) {
           minHeight: 64,
         }}
       >
-        <FlagOutlined color="secondary" sx={{ fontSize: 22 }} />
+        <Tooltip title={STATUS_TOOLTIP[status]} arrow>
+          <Flag color={FLAG_COLOR[status]} sx={{ fontSize: 22 }} />
+        </Tooltip>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }} noWrap>
-            {task.title}
-          </Typography>
+          <Tooltip title={task.title} arrow>
+            <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }} noWrap>
+              {task.title}
+            </Typography>
+          </Tooltip>
           <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
-            Kliknij, aby rozpocząć
+            {statusDescription(task)}
           </Typography>
         </Box>
         <Chip
-          label={stageLabel(task.stages.length)}
+          label={stageLabel(stagesCount)}
           size="small"
           color="primary"
           variant="outlined"

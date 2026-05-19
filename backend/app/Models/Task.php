@@ -25,6 +25,11 @@ class Task extends TaskModel
             'reusable' => true,
         ]);
 
+        $this->hasMany('id', UserTaskProgress::class, 'task_id', [
+            'alias' => 'UserProgress',
+            'reusable' => true,
+        ]);
+
         $this->hasManyToMany(
             'id',
             TaskGroup::class,
