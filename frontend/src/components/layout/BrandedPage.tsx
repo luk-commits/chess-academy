@@ -15,7 +15,7 @@ export function BrandedPage({ children, maxWidth = 'md', centered = false }: Bra
         minHeight: '100vh',
         background: BRAND_GRADIENT,
         py: 4,
-        px: 2,
+        px: { xs: 0.25, sm: 2 },
         ...(centered ? { display: 'grid', placeItems: 'center' } : {}),
       }}
     >
