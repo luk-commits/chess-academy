@@ -36,8 +36,10 @@ export function PlayerLearnView() {
     setFeedback({ kind: passed ? 'pass' : 'fail' });
     void playerStagesService.submitAttempt(currentStage.id, passed).catch(() => undefined);
     window.setTimeout(() => {
-      setFeedback(null);
       setCurrentIndex((idx) => idx + 1);
+      window.setTimeout(() => {
+        setFeedback(null);
+      }, 400);
     }, 1500);
   }, [currentStage]);
 

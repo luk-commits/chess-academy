@@ -199,8 +199,10 @@ export function PlayerTaskDetailsView() {
   const completeWithFeedback = useCallback(() => {
     setFeedback({ kind: 'pass' });
     window.setTimeout(() => {
-      setFeedback(null);
       advanceStage();
+      window.setTimeout(() => {
+        setFeedback(null);
+      }, 400);
     }, 1500);
   }, [advanceStage]);
 
