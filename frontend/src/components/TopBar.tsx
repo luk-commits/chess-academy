@@ -19,6 +19,9 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../hooks/useAuth';
 import { NAV_BY_ROLE } from '../constants/navigation';
 
+/**
+ * Górny pasek nawigacji z linkami zależnymi od roli i menu konta.
+ */
 export function TopBar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();

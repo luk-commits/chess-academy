@@ -17,6 +17,9 @@ export interface GroupSelectorListProps {
   title?: string;
 }
 
+/**
+ * Wielokrotnego użytku lista checkboxów dla graczy/grup z ładowaniem i stanem pustym.
+ */
 export const GroupSelectorList = memo(function GroupSelectorList({
   items,
   loading,

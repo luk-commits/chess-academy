@@ -17,6 +17,11 @@ interface PositionGridProps {
   keyPrefix?: string | number;
 }
 
+/**
+ * Responsywna siatka kart pozycji.
+ *
+ * Przekształca dane pozycji z backendu na właściwości gotowe do renderowania.
+ */
 export const PositionGrid = memo(function PositionGrid({
   positions,
   selectedIds,

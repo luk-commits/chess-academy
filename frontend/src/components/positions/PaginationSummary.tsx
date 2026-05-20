@@ -11,8 +11,12 @@ interface PaginationSummaryProps {
   onClearSelection?: () => void;
 }
 
+/** Predefiniowane wartości szybkiego wyboru dla zaznaczenia zbiorczego. */
 const SELECT_COUNTS = [5, 10, 15, 25, 50];
 
+/**
+ * Podsumowanie stronicowania i zaznaczenia wyświetlane nad siatką pozycji.
+ */
 export const PaginationSummary = memo(function PaginationSummary({ total, page, totalPages, onPageChange, selectedCount = 0, onSelectFirst, onClearSelection }: PaginationSummaryProps) {
   return (
     <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>

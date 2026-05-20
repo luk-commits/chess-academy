@@ -13,6 +13,9 @@ interface SelfStatedSliderProps {
   onCommit?: (value: number[]) => void;
 }
 
+/**
+ * Suwak zakresu z lokalnym stanem i commitem po puszczeniu.
+ */
 const SelfStatedSlider = memo(function SelfStatedSlider({
   defaultVal = [0, 3500],
   min = 0,

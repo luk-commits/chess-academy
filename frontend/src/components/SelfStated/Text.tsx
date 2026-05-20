@@ -11,6 +11,9 @@ interface SelfStatedTextProps extends Omit<TextFieldProps, 'onChange' | 'value'>
   onCommit?: (value: string) => void;
 }
 
+/**
+ * Pole tekstowe z lokalnym stanem, które zatwierdza wartość na blur/ręczny commit.
+ */
 const SelfStatedText = memo(forwardRef<TextHandle, SelfStatedTextProps>(function SelfStatedText({
   onCommit,
   defaultValue = '',

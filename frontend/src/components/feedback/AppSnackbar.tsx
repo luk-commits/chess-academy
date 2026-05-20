@@ -10,6 +10,9 @@ interface AppSnackbarProps {
   autoHideDuration?: number;
 }
 
+/**
+ * Wspólna otoczka snackbara dla zwykłych komunikatów i alertów.
+ */
 export function AppSnackbar({
   open,
   message,

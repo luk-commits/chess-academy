@@ -25,6 +25,9 @@ interface MobileTabsProps {
   loading: boolean;
 }
 
+/**
+ * Selektor grup dostępny tylko na mobile, używany w oknie przypisania.
+ */
 function MobileTabs({ individuals, classes, onCommitGroup, resetKey, loading }: MobileTabsProps) {
   const [tab, setTab] = useState(0);
 
@@ -76,6 +79,9 @@ export interface TaskAssignmentSectionProps {
   onCreateTaskFromModal: () => void;
 }
 
+/**
+ * Sidebar + mobilny modal do przypisywania zaznaczonych pozycji do grup.
+ */
 export const TaskAssignmentSection = memo(function TaskAssignmentSection({
   individuals,
   classes,

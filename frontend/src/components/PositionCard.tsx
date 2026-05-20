@@ -26,6 +26,13 @@ interface PositionCardProps {
   hideCheckbox?: boolean;
 }
 
+/**
+ * Pojedynczy kafelek pozycji używany w widokach coacha i gracza.
+ *
+ * Kliknięcie kafelka przełącza zaznaczenie, a wewnętrzne kontrolki
+ * zatrzymują propagację, aby akcje pomocnicze (kopiuj, rozwiń tagi,
+ * checkbox) działały niezależnie.
+ */
 const PositionCard = memo(function PositionCard({
   position,
   fen,

@@ -6,6 +6,9 @@ interface SelfStatedCheckboxProps extends CheckboxProps {
   onCommit?: (checked: boolean) => void;
 }
 
+/**
+ * Otoczka checkboxa przekazująca zdarzenia MUI i semantyczną wartość commitu.
+ */
 const SelfStatedCheckbox = memo(function SelfStatedCheckbox({
   onCommit,
   onChange,

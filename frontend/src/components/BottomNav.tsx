@@ -13,6 +13,9 @@ const SHOW_NAV_PATHS = [
   '/home/coach/tasks',
 ];
 
+/**
+ * Mobilna nawigacja dolna widoczna tylko na wybranych podścieżkach home.
+ */
 export function BottomNav() {
   const { user } = useAuth();
   const navigate = useNavigate();

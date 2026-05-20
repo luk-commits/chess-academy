@@ -9,6 +9,12 @@ interface LazyChessboardProps {
   maxWidth?: number;
 }
 
+/**
+ * Renderuje szachownicę tylko gdy jest blisko viewportu.
+ *
+ * Dzięki temu długie listy kart pozostają responsywne, a koszt
+ * początkowego renderowania jest mniejszy.
+ */
 export function LazyChessboard({ id, fen, boardOrientation, maxWidth = 320 }: LazyChessboardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);

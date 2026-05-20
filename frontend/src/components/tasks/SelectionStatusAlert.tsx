@@ -5,6 +5,9 @@ export interface SelectionStatusAlertProps {
   selectedGroupCount: number;
 }
 
+/**
+ * Kontekstowy komunikat statusu gotowości do przypisania.
+ */
 export function SelectionStatusAlert({ selectedPositionCount, selectedGroupCount }: SelectionStatusAlertProps) {
   if (selectedPositionCount > 0 && selectedGroupCount > 0) {
     return (

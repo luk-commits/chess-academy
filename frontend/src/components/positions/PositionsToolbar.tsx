@@ -15,6 +15,11 @@ interface PositionsToolbarProps {
   onToggleOnlyNew?: () => void;
 }
 
+/**
+ * Pasek filtrów dla listy pozycji coacha.
+ *
+ * Używa komponentów SelfStated, aby filtry były zatwierdzane przy znaczących akcjach.
+ */
 export const PositionsToolbar = memo(function PositionsToolbar({
   onSearchCommit,
   onDifficultyCommit,
@@ -23,11 +28,13 @@ export const PositionsToolbar = memo(function PositionsToolbar({
   onlyNew = false,
   onToggleOnlyNew,
 }: PositionsToolbarProps) {
+  // Imperatywne refy umożliwiają akcje z poziomu rodzica (apply/reset) bez podnoszenia każdego znaku.
   const inputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<TextHandle>(null);
   const tagFilterRef = useRef<TagFilterHandle>(null);
 
   const handleSearch = () => {
+    // Wysłanie wyszukiwania zatwierdza również oczekujący wybór tagów w jednej akcji.
     const val = inputRef.current?.value.trim() ?? '';
     onSearchCommit(val);
     tagFilterRef.current?.commit();

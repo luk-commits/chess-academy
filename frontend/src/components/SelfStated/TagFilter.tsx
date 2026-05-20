@@ -35,6 +35,9 @@ interface SelfStatedTagFilterProps {
   label?: string;
 }
 
+/**
+ * Selektor tagów z odroczonym commitem przez imperatywne API.
+ */
 const SelfStatedTagFilter = memo(forwardRef<TagFilterHandle, SelfStatedTagFilterProps>(function SelfStatedTagFilter({
   availableTags,
   defaultValue,

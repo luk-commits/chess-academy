@@ -6,6 +6,9 @@ interface SelfStatedSwitchProps extends SwitchProps {
   onCommit?: (checked: boolean) => void;
 }
 
+/**
+ * Lekka otoczka switcha emitująca semantyczne callbacki commitu.
+ */
 const SelfStatedSwitch = memo(function SelfStatedSwitch({
   onCommit,
   onChange,

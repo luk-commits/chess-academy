@@ -6,6 +6,9 @@ import { BottomNav } from '../components/BottomNav';
 import { PlayerHomeView } from './Player/PlayerHomeView';
 import { CoachHomeView } from './Coach/CoachHomeView';
 
+/**
+ * Widok layoutu po zalogowaniu, otaczający strony właściwe dla roli.
+ */
 export function HomeView() {
   const { user } = useAuth();
   const location = useLocation();

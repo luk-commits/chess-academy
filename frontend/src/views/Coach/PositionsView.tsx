@@ -14,19 +14,28 @@ import { PaginationSummary } from '../../components/positions/PaginationSummary'
 import { useCardTagsExpanded } from '../../hooks/useCardTagsExpanded';
 import { useAsyncResource } from '../../hooks/useAsyncResource';
 
+// Stały rozmiar strony dla katalogu pozycji coacha.
 const PER_PAGE = 12;
 
+/**
+ * Ekran pozycji coacha.
+ *
+ * Obsługuje filtry, stronicowanie, zaznaczanie i przypisywanie pozycji do grup.
+ */
 export function PositionsView() {
+  // Lokalny stan widoku dla filtrów i informacji zwrotnej.
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [committedDifficultyRange, setCommittedDifficultyRange] = useState<number[]>([0, 3500]);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
+  // Zaznaczenie przechowywane w refach, aby uniknąć ponownego renderowania przy każdym przełączeniu.
   const selectedPositionsRef = useMemo(() => new Set<number>(), []);
   const [selectedPositionCount, setSelectedPositionCount] = useState(0);
   const [selectionResetKey, setSelectionResetKey] = useState(0);
   const selectedIds = useMemo(() => new Set(selectedPositionsRef), [selectedPositionCount]);
+  // Ten sam wzorzec dla zaznaczonych grup docelowych (gracze/klasy).
   const selectedGroupsRef = useMemo(() => new Set<number>(), []);
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
   const [sidebarResetKey, setSidebarResetKey] = useState(0);

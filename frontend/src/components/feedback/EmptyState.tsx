@@ -6,6 +6,9 @@ interface EmptyStateProps {
   children?: ReactNode;
 }
 
+/**
+ * Generyczny kontener stanu pustego.
+ */
 export function EmptyState({ message, children }: EmptyStateProps) {
   return (
     <Paper elevation={1} sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
