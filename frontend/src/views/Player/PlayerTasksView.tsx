@@ -21,14 +21,13 @@ export function PlayerTasksView() {
 
   const groupedByCoach = useMemo(() => {
     const groups: Record<string, PlayerTask[]> = {};
-    const source = inProgressTasks.length > 0 ? inProgressTasks : activeTasks;
-    for (const task of source) {
+    for (const task of inProgressTasks) {
       const coach = task.coachName || 'Nieznany trener';
       if (!groups[coach]) groups[coach] = [];
       groups[coach].push(task);
     }
     return groups;
-  }, [inProgressTasks, activeTasks]);
+  }, [inProgressTasks]);
 
   const handleArchive = async (taskId: number) => {
     try {

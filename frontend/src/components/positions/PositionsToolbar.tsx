@@ -71,7 +71,7 @@ export const PositionsToolbar = memo(function PositionsToolbar({
             Wyczyść
           </Button>
           {onToggleOnlyNew && (
-            <Tooltip title="Wyświetl tylko pozycje do tej pory nieprzypisane zawodnikom">
+             <Tooltip title={<span>Wyświetl tylko pozycje do tej pory<br />nieprzypisane zawodnikom</span>}>
               <Button
                 type="button"
                 variant={onlyNew ? 'contained' : 'outlined'}

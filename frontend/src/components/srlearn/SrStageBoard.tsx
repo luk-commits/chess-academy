@@ -169,6 +169,20 @@ export function SrStageBoard({ stage, onComplete }: Props) {
 
   const handlePieceDrop = useCallback(({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }): boolean => {
     if (!targetSquare || !runtime || runtime.introFen) return false;
+
+    // Drop on the same square = click to select (handles micro-movements that
+    // trigger DnD before the click event fires).
+    if (sourceSquare === targetSquare) {
+      const turn = fenTurn(runtime.currentFen);
+      const chess = new Chess(runtime.currentFen);
+      const dragPiece = chess.get(sourceSquare as Square);
+      if (dragPiece && dragPiece.color === turn) {
+        setSelectedSquare(sourceSquare);
+        return true;
+      }
+      return false;
+    }
+
     const chess = new Chess(runtime.currentFen);
     const dragPiece = chess.get(sourceSquare as Square);
     if (!dragPiece || dragPiece.color !== fenTurn(runtime.currentFen)) return false;
