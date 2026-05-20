@@ -40,6 +40,7 @@ export interface CreateTaskPayload {
   positionIds: number[];
   groupIds: number[];
   publishDefault?: boolean;
+  openingName?: string;
 }
 
 export interface TaskStageData {

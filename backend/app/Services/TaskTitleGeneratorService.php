@@ -47,13 +47,19 @@ class TaskTitleGeneratorService
     /**
      * @param array<int, array{fen?: string, opening?: string, themeTags?: array<int, string>}> $positions
      */
-    public function generateTaskTitle(array $positions): string
+    public function generateTaskTitle(array $positions, string $openingName = ''): string
     {
         if ($positions === []) {
             return self::DEFAULT_TITLE;
         }
 
         $analysis = $this->analyzePositions($positions);
+
+        if ($openingName !== '') {
+            $analysis['opening'] = ['name' => $openingName, 'count' => count($positions), 'ratio' => 1.0];
+            $analysis['openingFamily'] = ['name' => $openingName, 'count' => count($positions), 'ratio' => 1.0];
+        }
+
         $title = $this->composeTitle($analysis);
 
         return $this->sanitizeTitle($title);
@@ -151,7 +157,7 @@ class TaskTitleGeneratorService
         $materialName = (string) ($material['name'] ?? '');
         $themeName = (string) ($theme['name'] ?? '');
 
-        $openingStrong = (float) ($opening['ratio'] ?? 0.0) >= 0.60;
+        $openingStrong = (float) ($opening['ratio'] ?? 0.0) >= 0.80;
         $themeStrong = (float) ($theme['ratio'] ?? 0.0) >= 0.35;
         $phaseStrong = (float) ($phase['ratio'] ?? 0.0) >= 0.60;
         $materialStrong = (float) ($material['ratio'] ?? 0.0) >= 0.55;
