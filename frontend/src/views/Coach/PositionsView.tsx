@@ -31,7 +31,7 @@ export function PositionsView() {
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
   const [sidebarResetKey, setSidebarResetKey] = useState(0);
   const [taskCreating, setTaskCreating] = useState(false);
-  const publishDefaultRef = useMemo(() => ({ current: false }), []);
+  const publishDefaultRef = useMemo(() => ({ current: true }), []);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
@@ -143,6 +143,7 @@ export function PositionsView() {
         positionIds: Array.from(selectedPositionsRef),
         groupIds: Array.from(selectedGroupsRef),
         publishDefault: publishDefaultRef.current,
+        ...(search ? { openingName: search } : {}),
       });
       setTaskSnackbar({ message: 'Zadania zostały utworzone!', severity: 'success' });
       clearAllSelections();
@@ -154,7 +155,7 @@ export function PositionsView() {
     } finally {
       setTaskCreating(false);
     }
-  }, [selectedPositionCount, selectedGroupCount, selectedPositionsRef, selectedGroupsRef, publishDefaultRef, reloadPositions, clearAllSelections]);
+  }, [selectedPositionCount, selectedGroupCount, selectedPositionsRef, selectedGroupsRef, publishDefaultRef, reloadPositions, clearAllSelections, search]);
 
   const handleOpenAssignModal = useCallback(() => setAssignModalOpen(true), []);
   const handleCloseAssignModal = useCallback(() => setAssignModalOpen(false), []);

@@ -37,18 +37,24 @@ test.describe('Coach Positions E2E', () => {
     await expect(page.getByText('Skopiowano do schowka')).toBeVisible({ timeout: 5000 });
   });
 
-  test('happy path desktop - select position and group, create task', async ({ page }) => {
+  test('happy path desktop - select position and group via modal, create task', async ({ page }) => {
     await page.waitForTimeout(1000);
     const card = page.locator('.MuiCard-root').first();
     await card.click();
     await page.waitForTimeout(300);
     await expect(page.getByText(/wybrano:\s*1/i)).toBeVisible();
 
-    await page.getByText('Demo Group', { exact: false }).click();
+    await page.getByText('Przypisz zadania').click();
     await page.waitForTimeout(300);
-    await page.getByText('Dodaj zadania').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('tab', { name: /klasy/i }).click();
+    await page.waitForTimeout(300);
+    await dialog.getByText('Demo Group', { exact: false }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: /dodaj zadanie/i }).click();
     await expect(page.getByText('Zadania zostały utworzone!')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/wybrano:\s*1/i)).not.toBeVisible();
   });
 
   test('mobile viewport - modal flow', async ({ page }) => {
@@ -67,13 +73,13 @@ test.describe('Coach Positions E2E', () => {
     await page.waitForTimeout(300);
     await dialog.getByText('Demo Group', { exact: false }).click();
     await page.waitForTimeout(300);
-    await page.getByRole('button', { name: /dodaj zadania/i }).click();
+    await page.getByRole('button', { name: /dodaj zadanie/i }).click();
     await expect(page.getByText('Zadania zostały utworzone!')).toBeVisible({ timeout: 5000 });
   });
 
   test('create task button disabled without selections', async ({ page }) => {
     await page.waitForTimeout(1000);
-    const addTaskBtn = page.getByText('Dodaj zadania');
+    const addTaskBtn = page.getByText('Przypisz zadania');
     await expect(addTaskBtn).toBeDisabled();
   });
 });

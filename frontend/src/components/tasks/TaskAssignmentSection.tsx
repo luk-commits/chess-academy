@@ -103,7 +103,7 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
       <Box
         sx={{
           width: 260,
-          display: { xs: 'none', lg: 'flex' },
+          display: 'none',
           flexDirection: 'column',
           position: 'sticky',
           top: 88,
@@ -145,7 +145,7 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
           >
             <Box sx={{ flex: 1, textAlign: 'right' }}>
               {taskCreating && <CircularProgress size={16} sx={{ mr: 1 }} />}
-              Dodaj zadania
+              Dodaj zadanie
             </Box>
             <Tooltip title="Opublikuj">
               <SelfStatedSwitch
@@ -213,12 +213,12 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
             disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
             onClick={onCreateTaskFromModal}
           >
-            Dodaj zadania
+            Dodaj zadanie
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Box sx={{ display: { xs: 'block', lg: 'none' }, position: 'fixed', bottom: { xs: 61, sm: 8 }, left: 0, right: 0, px: 2, zIndex: 1100 }}>
+      <Box sx={{ display: 'block', position: 'fixed', bottom: { xs: 61, sm: 8 }, left: 0, right: 0, px: 2, zIndex: 1100 }}>
         <Button
           variant="contained"
           fullWidth
