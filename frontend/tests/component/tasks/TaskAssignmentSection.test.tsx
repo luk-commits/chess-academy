@@ -28,7 +28,7 @@ const defaultProps = {
   assignModalOpen: false,
   onOpenModal: vi.fn(),
   onCloseModal: vi.fn(),
-  sidebarResetKey: 0,
+  groupResetKey: 0,
   onCommitGroup: vi.fn(),
   publishDefaultRef: { current: true } as React.MutableRefObject<boolean>,
   onCreateTaskDesktop: vi.fn(),

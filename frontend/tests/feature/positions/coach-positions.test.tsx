@@ -70,6 +70,10 @@ function renderView() {
   );
 }
 
+function openAssignModal() {
+  return userEvent.click(screen.getByText('Przypisz zadania'));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockFetchCoachPositions.mockResolvedValue(defaultPositionsResponse());
@@ -170,21 +174,43 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     });
   });
 
-  it('renders groups after fetch', async () => {
+  it('renders groups inside assign modal after fetch', async () => {
     renderView();
     await waitFor(() => {
-      expect(screen.getByText('Alice')).toBeInTheDocument();
-      expect(screen.getByText('Group A')).toBeInTheDocument();
+      expect(screen.getByText('Italian')).toBeInTheDocument();
     });
+    const card = screen.getByText('Italian').closest('.MuiCard-root')!;
+    await userEvent.click(card);
+    await waitFor(() => {
+      expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
+    });
+    await openAssignModal();
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Alice')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByText(/klasy/i));
+    expect(within(dialog).getByText('Group A')).toBeInTheDocument();
   });
 
-  it('shows empty group lists on fetch error', async () => {
+  it('shows empty group lists inside assign modal on fetch error', async () => {
     mockFetchCoachGroups.mockRejectedValue(new Error('Group error'));
     renderView();
     await waitFor(() => {
-      expect(screen.getByText('Brak zawodników.')).toBeInTheDocument();
-      expect(screen.getByText('Brak klas.')).toBeInTheDocument();
+      expect(screen.getByText('Italian')).toBeInTheDocument();
     });
+    const card = screen.getByText('Italian').closest('.MuiCard-root')!;
+    await userEvent.click(card);
+    await waitFor(() => {
+      expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
+    });
+    await openAssignModal();
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Brak zawodników.')).toBeInTheDocument();
   });
 
   it('create task happy path clears selections', async () => {
@@ -197,9 +223,14 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
     });
-    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
+    await openAssignModal();
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+    const dialog = screen.getByRole('dialog');
+    const aliceCheckbox = within(dialog).getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
     await userEvent.click(aliceCheckbox);
-    await userEvent.click(screen.getByText('Dodaj zadanie'));
+    await userEvent.click(within(dialog).getByText('Dodaj zadanie'));
     await waitFor(() => {
       expect(mockCreateTask).toHaveBeenCalledWith({
         positionIds: [1],
@@ -223,7 +254,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     const card = screen.getByText('Italian').closest('.MuiCard-root')!;
     await userEvent.click(card);
 
-    await userEvent.click(screen.getByText('Przypisz zadania'));
+    await openAssignModal();
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
@@ -252,24 +283,18 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     });
     const card = screen.getByText('Italian').closest('.MuiCard-root')!;
     await userEvent.click(card);
-    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
+    await openAssignModal();
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+    const dialog = screen.getByRole('dialog');
+    const aliceCheckbox = within(dialog).getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
     await userEvent.click(aliceCheckbox);
-    await userEvent.click(screen.getByText('Dodaj zadanie'));
+    await userEvent.click(within(dialog).getByText('Dodaj zadanie'));
     await waitFor(() => {
       expect(screen.getByText('Backend down')).toBeInTheDocument();
     });
     expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
-  });
-
-  it('create button disabled with 0 positions', async () => {
-    renderView();
-    await waitFor(() => {
-      expect(screen.getByText('Italian')).toBeInTheDocument();
-    });
-    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
-    await userEvent.click(aliceCheckbox);
-    const btn = screen.getByText('Dodaj zadanie').closest('button')!;
-    expect(btn).toBeDisabled();
   });
 
   it('create button disabled with 0 groups', async () => {
@@ -279,7 +304,15 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     });
     const card = screen.getByText('Italian').closest('.MuiCard-root')!;
     await userEvent.click(card);
-    const btn = screen.getByText('Dodaj zadanie').closest('button')!;
+    await waitFor(() => {
+      expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
+    });
+    await openAssignModal();
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+    const dialog = screen.getByRole('dialog');
+    const btn = within(dialog).getByText('Dodaj zadanie').closest('button')!;
     expect(btn).toBeDisabled();
   });
 
@@ -293,7 +326,7 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     const card = screen.getByText('Italian').closest('.MuiCard-root')!;
     await userEvent.click(card);
 
-    await userEvent.click(screen.getByText('Przypisz zadania'));
+    await openAssignModal();
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
@@ -324,101 +357,14 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(screen.getByText(/wybrano:\s*50/i)).toBeInTheDocument();
     });
-    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
-    await userEvent.click(aliceCheckbox);
-    await userEvent.click(screen.getByText('Dodaj zadanie'));
-    await waitFor(() => {
-      expect(mockCreateTask).toHaveBeenCalledWith({
-        positionIds: ids.slice(0, 50),
-        groupIds: [1],
-        publishDefault: true,
-      });
-    });
-  });
-
-  it('create task error shows error snackbar and keeps selections', async () => {
-    mockCreateTask.mockRejectedValue(new Error('Backend down'));
-    renderView();
-    await waitFor(() => {
-      expect(screen.getByText('Italian')).toBeInTheDocument();
-    });
-    const card = screen.getByText('Italian').closest('.MuiCard-root')!;
-    await userEvent.click(card);
-    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
-    await userEvent.click(aliceCheckbox);
-    await userEvent.click(screen.getByText('Dodaj zadanie'));
-    await waitFor(() => {
-      expect(screen.getByText('Backend down')).toBeInTheDocument();
-    });
-    expect(screen.getByText(/wybrano:\s*1/i)).toBeInTheDocument();
-  });
-
-  it('create button disabled with 0 positions', async () => {
-    renderView();
-    await waitFor(() => {
-      expect(screen.getByText('Italian')).toBeInTheDocument();
-    });
-    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
-    await userEvent.click(aliceCheckbox);
-    const btn = screen.getByText('Dodaj zadanie').closest('button')!;
-    expect(btn).toBeDisabled();
-  });
-
-  it('create button disabled with 0 groups', async () => {
-    renderView();
-    await waitFor(() => {
-      expect(screen.getByText('Italian')).toBeInTheDocument();
-    });
-    const card = screen.getByText('Italian').closest('.MuiCard-root')!;
-    await userEvent.click(card);
-    const btn = screen.getByText('Dodaj zadanie').closest('button')!;
-    expect(btn).toBeDisabled();
-  });
-
-  it('shows spinner on task creating', async () => {
-    let resolvePromise!: (v: unknown) => void;
-    mockCreateTask.mockReturnValue(new Promise(resolve => { resolvePromise = resolve; }));
-    renderView();
-    await waitFor(() => {
-      expect(screen.getByText('Italian')).toBeInTheDocument();
-    });
-    const card = screen.getByText('Italian').closest('.MuiCard-root')!;
-    await userEvent.click(card);
-
-    await userEvent.click(screen.getByText('Przypisz zadania'));
+    await openAssignModal();
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
-
     const dialog = screen.getByRole('dialog');
     const aliceCheckbox = within(dialog).getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
     await userEvent.click(aliceCheckbox);
     await userEvent.click(within(dialog).getByText('Dodaj zadanie'));
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-    await act(async () => { resolvePromise(defaultTaskResponse()); });
-  });
-
-  it('select first 50 uses global selectablePositionIds beyond visible page', async () => {
-    const { items, ids } = makePositions(60);
-    mockFetchCoachPositions.mockResolvedValue({
-      ...defaultPositionsResponse(),
-      items: items.slice(0, 12),
-      total: 60,
-      totalPages: 5,
-      selectablePositionIds: ids.slice(0, 50),
-    });
-    renderView();
-    await waitFor(() => {
-      expect(screen.getByText('Opening 1')).toBeInTheDocument();
-    });
-    const btn50 = screen.getByRole('button', { name: '50' });
-    await userEvent.click(btn50);
-    await waitFor(() => {
-      expect(screen.getByText(/wybrano:\s*50/i)).toBeInTheDocument();
-    });
-    const aliceCheckbox = screen.getByText('Alice').closest('.MuiFormControlLabel-root')!.querySelector('input[type="checkbox"]')!;
-    await userEvent.click(aliceCheckbox);
-    await userEvent.click(screen.getByText('Dodaj zadanie'));
     await waitFor(() => {
       expect(mockCreateTask).toHaveBeenCalledWith({
         positionIds: ids.slice(0, 50),
@@ -469,5 +415,4 @@ describe('PositionsView feature', { timeout: 15000 }, () => {
       expect(lastCall.groupIds).toBeUndefined();
     });
   });
-
 });

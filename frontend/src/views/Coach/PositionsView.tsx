@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Box } from '@mui/material';
+import { Alert } from '@mui/material';
 import { positionsService } from '../../services/positionsService';
 import { groupsService } from '../../services/groupsService';
 import { tasksService } from '../../services/tasksService';
@@ -38,7 +38,7 @@ export function PositionsView() {
   // Ten sam wzorzec dla zaznaczonych grup docelowych (gracze/klasy).
   const selectedGroupsRef = useMemo(() => new Set<number>(), []);
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
-  const [sidebarResetKey, setSidebarResetKey] = useState(0);
+  const [groupResetKey, setGroupResetKey] = useState(0);
   const [taskCreating, setTaskCreating] = useState(false);
   const publishDefaultRef = useMemo(() => ({ current: true }), []);
   const [taskSnackbar, setTaskSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
@@ -65,7 +65,7 @@ export function PositionsView() {
   useEffect(() => {
     selectedGroupsRef.clear();
     setSelectedGroupCount(0);
-    setSidebarResetKey((k) => k + 1);
+    setGroupResetKey((k) => k + 1);
   }, [groupsData, selectedGroupsRef]);
 
   const tagsParam = useMemo(() => selectedTags.join(','), [selectedTags]);
@@ -141,7 +141,7 @@ export function PositionsView() {
     setSelectionResetKey(k => k + 1);
     selectedGroupsRef.clear();
     setSelectedGroupCount(0);
-    setSidebarResetKey(k => k + 1);
+    setGroupResetKey(k => k + 1);
   }, [selectedPositionsRef, selectedGroupsRef]);
 
   const handleCreateTask = useCallback(async (opts?: { closeModal?: boolean }) => {
@@ -168,7 +168,6 @@ export function PositionsView() {
 
   const handleOpenAssignModal = useCallback(() => setAssignModalOpen(true), []);
   const handleCloseAssignModal = useCallback(() => setAssignModalOpen(false), []);
-  const handleCreateTaskDesktop = useCallback(() => handleCreateTask(), [handleCreateTask]);
   const handleCreateTaskFromModal = useCallback(() => handleCreateTask({ closeModal: true }), [handleCreateTask]);
 
   const handleSearchCommit = useCallback((query: string) => {
@@ -205,74 +204,69 @@ export function PositionsView() {
 
   return (
     <PageLayout>
-      <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <PositionsToolbar
-            onSearchCommit={handleSearchCommit}
-            onDifficultyCommit={handleDifficultyCommit}
-            onTagsCommit={handleTagsCommit}
-            onlyNew={onlyNew}
-            onToggleOnlyNew={handleToggleOnlyNew}
+      <PositionsToolbar
+        onSearchCommit={handleSearchCommit}
+        onDifficultyCommit={handleDifficultyCommit}
+        onTagsCommit={handleTagsCommit}
+        onlyNew={onlyNew}
+        onToggleOnlyNew={handleToggleOnlyNew}
+      />
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {loading ? (
+        <LoadingState />
+      ) : positions.length === 0 ? (
+        <EmptyState message={emptyMessage} />
+      ) : (
+        <>
+          <PaginationSummary
+            total={total}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            selectedCount={selectedPositionCount}
+            onSelectFirst={handleSelectFirst}
+            onClearSelection={handleClearSelection}
           />
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+          <PositionGrid
+            positions={positions}
+            selectedIds={selectedIds}
+            cardTagsExpanded={cardTagsExpanded}
+            onToggle={handlePositionToggle}
+            onCopy={handleCopyFen}
+            onToggleTags={handleToggleTags}
+            keyPrefix={selectionResetKey}
+          />
 
-          {loading ? (
-            <LoadingState />
-          ) : positions.length === 0 ? (
-            <EmptyState message={emptyMessage} />
-          ) : (
-            <>
-              <PaginationSummary
-                total={total}
-                page={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                selectedCount={selectedPositionCount}
-                onSelectFirst={handleSelectFirst}
-                onClearSelection={handleClearSelection}
-              />
+          <AppSnackbar
+            open={copiedId !== null}
+            message="Skopiowano do schowka"
+            onClose={() => setCopiedId(null)}
+          />
+        </>
+      )}
 
-              <PositionGrid
-                positions={positions}
-                selectedIds={selectedIds}
-                cardTagsExpanded={cardTagsExpanded}
-                onToggle={handlePositionToggle}
-                onCopy={handleCopyFen}
-                onToggleTags={handleToggleTags}
-                keyPrefix={selectionResetKey}
-              />
-
-              <AppSnackbar
-                open={copiedId !== null}
-                message="Skopiowano do schowka"
-                onClose={() => setCopiedId(null)}
-              />
-            </>
-          )}
-        </Box>
-
-        <TaskAssignmentSection
-          individuals={individuals}
-          classes={classes}
-          loadingGroups={loadingGroups}
-          selectedPositionCount={selectedPositionCount}
-          selectedGroupCount={selectedGroupCount}
-          taskCreating={taskCreating}
-          assignModalOpen={assignModalOpen}
-          onOpenModal={handleOpenAssignModal}
-          onCloseModal={handleCloseAssignModal}
-          sidebarResetKey={sidebarResetKey}
-          onCommitGroup={handleGroupCommit}
-          publishDefaultRef={publishDefaultRef}
-          onCreateTaskDesktop={handleCreateTaskDesktop}
-          onCreateTaskFromModal={handleCreateTaskFromModal}
-        />
-      </Box>
+      <TaskAssignmentSection
+        individuals={individuals}
+        classes={classes}
+        loadingGroups={loadingGroups}
+        selectedPositionCount={selectedPositionCount}
+        selectedGroupCount={selectedGroupCount}
+        taskCreating={taskCreating}
+        assignModalOpen={assignModalOpen}
+        onOpenModal={handleOpenAssignModal}
+        onCloseModal={handleCloseAssignModal}
+        groupResetKey={groupResetKey}
+        onCommitGroup={handleGroupCommit}
+        publishDefaultRef={publishDefaultRef}
+        onCreateTaskFromModal={handleCreateTaskFromModal}
+      />
 
       <AppSnackbar
         open={taskSnackbar !== null}

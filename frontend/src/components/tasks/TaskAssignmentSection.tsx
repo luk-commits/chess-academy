@@ -11,11 +11,9 @@ import {
   Paper,
   Tab,
   Tabs,
-  Tooltip,
 } from '@mui/material';
 import { GroupSelectorList, type GroupSelectorItem } from '../groups/GroupSelectorList';
 import SelfStatedSwitch from '../SelfStated/Switch';
-import { SelectionStatusAlert } from './SelectionStatusAlert';
 
 interface MobileTabsProps {
   individuals: GroupSelectorItem[];
@@ -72,15 +70,14 @@ export interface TaskAssignmentSectionProps {
   assignModalOpen: boolean;
   onOpenModal: () => void;
   onCloseModal: () => void;
-  sidebarResetKey: number;
+  groupResetKey: number;
   onCommitGroup: (groupId: number, checked: boolean) => void;
   publishDefaultRef: React.MutableRefObject<boolean>;
-  onCreateTaskDesktop: () => void;
   onCreateTaskFromModal: () => void;
 }
 
 /**
- * Sidebar + mobilny modal do przypisywania zaznaczonych pozycji do grup.
+ * Modal do przypisywania zaznaczonych pozycji do grup.
  */
 export const TaskAssignmentSection = memo(function TaskAssignmentSection({
   individuals,
@@ -92,84 +89,17 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
   assignModalOpen,
   onOpenModal,
   onCloseModal,
-  sidebarResetKey,
+  groupResetKey,
   onCommitGroup,
   publishDefaultRef,
-  onCreateTaskDesktop,
   onCreateTaskFromModal,
 }: TaskAssignmentSectionProps) {
   const handlePublishCommit = useCallback((checked: boolean) => {
     publishDefaultRef.current = checked;
   }, [publishDefaultRef]);
 
-  const stopPropagation = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
-
   return (
     <>
-      <Box
-        sx={{
-          width: 260,
-          display: 'none',
-          flexDirection: 'column',
-          position: 'sticky',
-          top: 88,
-          alignSelf: 'flex-start',
-          maxHeight: 'calc(100vh - 100px)',
-          overflowY: 'auto',
-          flexShrink: 0,
-        }}
-      >
-        <GroupSelectorList
-          title="Zawodnicy"
-          items={individuals}
-          loading={loadingGroups}
-          emptyText="Brak zawodników."
-          resetKey={sidebarResetKey}
-          onCommit={onCommitGroup}
-          maxHeight={200}
-        />
-
-        <Box sx={{ mt: 2 }}>
-          <GroupSelectorList
-            title="Klasy"
-            items={classes}
-            loading={loadingGroups}
-            emptyText="Brak klas."
-            resetKey={sidebarResetKey}
-            onCommit={onCommitGroup}
-            maxHeight={200}
-          />
-        </Box>
-
-        <Box sx={{ mt: 2, mb: 2 }}>
-          <Button
-            variant="contained"
-            fullWidth
-            disabled={selectedPositionCount === 0 || selectedGroupCount === 0 || taskCreating}
-            onClick={onCreateTaskDesktop}
-            sx={{ justifyContent: 'flex-start', gap: 1, px: 2 }}
-          >
-            <Box sx={{ flex: 1, textAlign: 'right' }}>
-              {taskCreating && <CircularProgress size={16} sx={{ mr: 1 }} />}
-              Dodaj zadanie
-            </Box>
-            <Tooltip title="Opublikuj">
-              <SelfStatedSwitch
-                defaultChecked={publishDefaultRef.current}
-                color="secondary"
-                onCommit={handlePublishCommit}
-                onClick={stopPropagation}
-              />
-            </Tooltip>
-          </Button>
-        </Box>
-
-        <SelectionStatusAlert
-          selectedPositionCount={selectedPositionCount}
-          selectedGroupCount={selectedGroupCount}
-        />
-      </Box>
-
       <Dialog
         open={assignModalOpen}
         onClose={onCloseModal}
@@ -182,7 +112,7 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
             individuals={individuals}
             classes={classes}
             onCommitGroup={onCommitGroup}
-            resetKey={sidebarResetKey}
+            resetKey={groupResetKey}
             loading={loadingGroups}
           />
           <FormControlLabel
