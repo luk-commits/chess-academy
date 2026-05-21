@@ -14,6 +14,14 @@ docker compose up --build       # everything: DB + migrations + backend API + fr
 - API (via Nginx proxy): http://localhost:8080
 - Demo accounts: `coach@chess.local` / `player@chess.local` — both password `password123`
 
+## Production
+
+- Live: https://chess-academy-cvuv.onrender.com
+- Hosted on Render. Build uses the **root `Dockerfile`** (multi-stage: Node builds frontend → static assets, then Debian image with PHP-FPM 8.3 + Nginx serves `/var/www/frontend` and proxies `/api/*` to PHP-FPM).
+- Nginx config for prod: `docker/nginx/render.conf` (separate from dev `docker/nginx/default.conf`).
+- `docker-compose.yml` is **dev only** — production does not use it. Changes to dev images (frontend dev container, migrator) do not affect prod; prod-impacting changes go in the root `Dockerfile`, `docker/nginx/render.conf`, or `backend/migrations/`.
+- DB on Render is a managed Postgres; `backend/migrations/*.sql` is run separately (not via the dev `migrator` service).
+
 ## Architecture
 
 ```

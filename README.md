@@ -6,6 +6,8 @@
 
 Monorepo: Phalcon PHP API + React/Vite/MUI frontend + PostgreSQL.
 
+**Live:** https://chess-academy-cvuv.onrender.com
+
 ## Stack
 
 - **Backend**: PHP 8.3, Phalcon 5.x, firebase/php-jwt
@@ -53,20 +55,27 @@ chess/
 │   │   └── services/      # api.ts — HttpOnly cookie auth
 │   └── tests/             # Vitest (unit/component/feature) + Playwright E2E
 ├── docker/
-│   ├── nginx/        # proxy Nginx
-│   └── php/          # Dockerfile + entrypoint
+│   ├── nginx/        # default.conf (dev) + render.conf (prod)
+│   ├── php/          # Dockerfile + entrypoint (dev backend)
+│   └── frontend/     # Dockerfile (dev frontend)
 ├── manage/           # Skrypty pomocnicze (model.sh)
+├── Dockerfile        # Multi-stage build dla produkcji (Render)
 ├── AGENTS.md         # Konwencje developerskie
-└── docker-compose.yml
+└── docker-compose.yml  # Tylko dev
 ```
 
 ## API Endpointy
 
-| Metoda | Ścieżka         | Opis                                 |
-|--------|-----------------|--------------------------------------|
-| POST   | `/api/login`    | Logowanie, ustawia HttpOnly cookie   |
-| POST   | `/api/logout`   | Wygaszenie sesji                     |
-| GET    | `/api/me`       | Aktualny użytkownik                  |
+Pełna lista w `backend/app/Config/router.php`. Najważniejsze:
+
+| Obszar     | Endpointy                                                                 |
+|------------|---------------------------------------------------------------------------|
+| Auth       | `POST /api/login` `POST /api/register` `POST /api/refresh` `GET\|POST /api/logout` `GET /api/me` |
+| Coach      | `GET /api/coach/positions` `GET /api/coach/groups` `GET\|POST /api/coach/tasks` `PATCH /api/coach/tasks/{id}` `GET\|PATCH /api/coach/stages/{id}` |
+| Player     | `GET /api/player/tasks` `POST /api/player/tasks/{id}/{start\|resume\|interrupt\|reset\|archive\|restore}` `POST /api/player/tasks/{taskId}/stages/{stageId}/complete` |
+| Powtórki   | `GET /api/player/stages/due` `POST /api/player/stages/{id}/attempt` `POST /api/player/stages/{id}/repetition` |
+
+Wszystkie endpointy poza `/api/login`, `/api/register` i `/api/refresh` wymagają ważnego cookie `chess_session`.
 
 ## Testy
 
@@ -114,6 +123,10 @@ Kluczowe zmienne (zdefiniowane w `docker-compose.yml`):
 | `JWT_SECRET`    | `change_me_in_production_super_secret_key` |
 | `CORS_ORIGIN`   | `http://localhost:5173`        |
 | `DB_HOST`       | `db`                           |
+
+## Deployment
+
+Produkcja działa na [Render.com](https://render.com) jako pojedynczy kontener z root `Dockerfile` (multi-stage: Node buduje frontend → statyki, potem PHP-FPM 8.3 + Nginx serwują frontend i proxy `/api/*`). Konfiguracja Nginx dla prod: `docker/nginx/render.conf`. DB to managed Postgres - migracje z `backend/migrations/*.sql` uruchamiane są poza `docker-compose`.
 
 ## Kontrybucja
 
