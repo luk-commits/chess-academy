@@ -28,14 +28,8 @@ export function PgnPreview({ baseFen, solutionPgn, onChange }: Props) {
     setMoveIndex((idx) => Math.min(idx, replay.moves.length));
   }, [replay]);
 
-  if (!replay) {
-    return <Alert severity="warning">Nieprawidłowy PGN lub FEN startowy.</Alert>;
-  }
-
-  const total = replay.moves.length;
+  const total = replay?.moves.length ?? 0;
   const safeIndex = Math.min(moveIndex, total);
-  const currentFen = safeIndex === 0 ? replay.startFen : replay.moves[safeIndex - 1].fenAfter;
-  const orientation = boardOrientationFromFen(replay.startFen);
   const editable = onChange !== undefined;
 
   const handlePieceDrop = useCallback(
@@ -60,6 +54,13 @@ export function PgnPreview({ baseFen, solutionPgn, onChange }: Props) {
     },
     [editable, onChange, replay, baseFen, safeIndex],
   );
+
+  if (!replay) {
+    return <Alert severity="warning">Nieprawidłowy PGN lub FEN startowy.</Alert>;
+  }
+
+  const currentFen = safeIndex === 0 ? replay.startFen : replay.moves[safeIndex - 1].fenAfter;
+  const orientation = boardOrientationFromFen(replay.startFen);
 
   const pairs: { num: number; white?: { idx: number; san: string }; black?: { idx: number; san: string } }[] = [];
   const firstColor = replay.moves[0]?.color ?? 'w';
