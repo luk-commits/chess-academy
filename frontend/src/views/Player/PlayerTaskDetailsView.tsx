@@ -6,6 +6,7 @@ import {
   Button,
   Chip,
   FormControlLabel,
+  Snackbar,
   Switch,
   Typography,
 } from '@mui/material';
@@ -35,7 +36,7 @@ import type { StageCompletePayload } from '../../types/position';
 export function PlayerTaskDetailsView() {
   const { taskId, stageId } = useParams<{ taskId: string; stageId?: string }>();
   const navigate = useNavigate();
-  const { tasks, loading, error, reload } = usePlayerTasks();
+  const { tasks, loading, error } = usePlayerTasks();
 
   const [stageIdx, setStageIdx] = useState(0);
   const [runtime, setRuntime] = useState<StageRuntime | null>(null);
@@ -49,6 +50,8 @@ export function PlayerTaskDetailsView() {
   const [animateBoard, setAnimateBoard] = useState(true);
   const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
   const [feedback, setFeedback] = useState<{ kind: 'pass' | 'fail' } | null>(null);
+  const [localInRepetition, setLocalInRepetition] = useState<boolean | null>(null);
+  const [notification, setNotification] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const deltaSeq = useRef(0);
 
   // Stage stats tracking
@@ -117,6 +120,8 @@ export function PlayerTaskDetailsView() {
   useEffect(() => {
     if (!currentStage) return;
     setAnimateBoard(false);
+    setLocalInRepetition(null);
+    setNotification(null);
     const rt = buildStageRuntime(currentStage);
     setRuntime(rt);
     setSelectedSquare(null);
@@ -426,10 +431,27 @@ export function PlayerTaskDetailsView() {
     const newEnabled = !(sp?.inRepetition ?? false);
     const moves = currentStage.position.moves ?? (currentStage.position.firstMove ? [currentStage.position.firstMove] : []);
     const pgn = newEnabled ? uciMovesToPgn(currentStage.position.fen, moves) : undefined;
-    playerTasksService.setStageRepetition(currentStage.id, newEnabled, pgn).then(() => reload()).catch(() => {});
-  }, [currentStage, reload, uciMovesToPgn]);
 
-  const stageProgress = currentStage?.progress;
+    setLocalInRepetition(newEnabled);
+    setNotification({ message: newEnabled ? 'Dodawanie do powtórek...' : 'Usuwanie z powtórek...', severity: 'success' });
+
+    playerTasksService.setStageRepetition(currentStage.id, newEnabled, pgn)
+      .then(() => {
+        setNotification({ message: newEnabled ? 'Dodano do powtórek' : 'Usunięto z powtórek', severity: 'success' });
+      })
+      .catch(() => {
+        setLocalInRepetition(sp?.inRepetition ?? false);
+        setNotification({ message: 'Nie udało się zmienić statusu powtórek', severity: 'error' });
+      });
+  }, [currentStage, uciMovesToPgn]);
+
+  const stageProgress = useMemo(() => {
+    if (!currentStage?.progress) return null;
+    if (localInRepetition !== null) {
+      return { ...currentStage.progress, inRepetition: localInRepetition };
+    }
+    return currentStage.progress;
+  }, [currentStage?.progress, localInRepetition]);
 
   if (loading) return <PageLayout maxWidth="md"><LoadingState /></PageLayout>;
   if (error) {
@@ -649,6 +671,19 @@ export function PlayerTaskDetailsView() {
             )}
           </Box>
         </Box>
+      )}
+
+      {notification && (
+        <Snackbar
+          open={notification !== null}
+          autoHideDuration={3000}
+          onClose={() => setNotification(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert severity={notification.severity} onClose={() => setNotification(null)} variant="filled">
+            {notification.message}
+          </Alert>
+        </Snackbar>
       )}
     </PageLayout>
   );
