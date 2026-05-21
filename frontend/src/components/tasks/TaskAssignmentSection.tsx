@@ -15,7 +15,7 @@ import {
 import { GroupSelectorList, type GroupSelectorItem } from '../groups/GroupSelectorList';
 import SelfStatedSwitch from '../SelfStated/Switch';
 
-interface MobileTabsProps {
+interface GroupTabsProps {
   individuals: GroupSelectorItem[];
   classes: GroupSelectorItem[];
   onCommitGroup: (groupId: number, checked: boolean) => void;
@@ -24,13 +24,13 @@ interface MobileTabsProps {
 }
 
 /**
- * Selektor grup dostępny tylko na mobile, używany w oknie przypisania.
+ * Selektor grup z zakładkami Zawodnicy/Klasy, używany w oknie przypisania.
  */
-function MobileTabs({ individuals, classes, onCommitGroup, resetKey, loading }: MobileTabsProps) {
+function GroupTabs({ individuals, classes, onCommitGroup, resetKey, loading }: GroupTabsProps) {
   const [tab, setTab] = useState(0);
 
   return (
-    <Box sx={{ display: { lg: 'none' }, mb: 2 }}>
+    <Box sx={{ mb: 2 }}>
       <Paper elevation={8} sx={{ borderRadius: 3, overflow: 'hidden' }}>
         <Box sx={{ bgcolor: 'primary.main' }}>
           <Tabs
@@ -108,7 +108,7 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
       >
         <DialogTitle sx={{ fontWeight: 700 }}>Przypisz zadania</DialogTitle>
         <DialogContent sx={{ position: 'relative' }}>
-          <MobileTabs
+          <GroupTabs
             individuals={individuals}
             classes={classes}
             onCommitGroup={onCommitGroup}
