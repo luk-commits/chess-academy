@@ -30,6 +30,7 @@ const defaultProps = {
   onCloseModal: vi.fn(),
   groupResetKey: 0,
   onCommitGroup: vi.fn(),
+  selectedGroupIds: new Set<number>([1]),
   publishDefaultRef: { current: true } as React.MutableRefObject<boolean>,
   onCreateTaskDesktop: vi.fn(),
   onCreateTaskFromModal: vi.fn(),

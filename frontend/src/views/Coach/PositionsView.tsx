@@ -38,6 +38,7 @@ export function PositionsView() {
   // Ten sam wzorzec dla zaznaczonych grup docelowych (gracze/klasy).
   const selectedGroupsRef = useMemo(() => new Set<number>(), []);
   const [selectedGroupCount, setSelectedGroupCount] = useState(0);
+  const selectedGroupIds = useMemo(() => new Set(selectedGroupsRef), [selectedGroupCount, selectedGroupsRef]);
   const [groupResetKey, setGroupResetKey] = useState(0);
   const [taskCreating, setTaskCreating] = useState(false);
   const publishDefaultRef = useMemo(() => ({ current: true }), []);
@@ -264,6 +265,7 @@ export function PositionsView() {
         onCloseModal={handleCloseAssignModal}
         groupResetKey={groupResetKey}
         onCommitGroup={handleGroupCommit}
+        selectedGroupIds={selectedGroupIds}
         publishDefaultRef={publishDefaultRef}
         onCreateTaskFromModal={handleCreateTaskFromModal}
       />

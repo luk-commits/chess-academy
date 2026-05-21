@@ -13,6 +13,7 @@ export interface GroupSelectorListProps {
   emptyText: string;
   resetKey: number;
   onCommit: (groupId: number, checked: boolean) => void;
+  selectedIds?: ReadonlySet<number>;
   maxHeight?: number | string;
   title?: string;
 }
@@ -26,6 +27,7 @@ export const GroupSelectorList = memo(function GroupSelectorList({
   emptyText,
   resetKey,
   onCommit,
+  selectedIds,
   maxHeight = 220,
   title,
 }: GroupSelectorListProps) {
@@ -38,19 +40,25 @@ export const GroupSelectorList = memo(function GroupSelectorList({
       ) : items.length === 0 ? (
         <Typography variant="body2" color="text.secondary">{emptyText}</Typography>
       ) : (
-        items.map(item => (
-          <FormControlLabel
-            key={`${item.id}-${resetKey}`}
-            control={
-              <SelfStatedCheckbox
-                size="small"
-                defaultChecked={false}
-                onCommit={(checked) => onCommit(item.id, checked)}
-              />
-            }
-            label={item.label}
-          />
-        ))
+        items.map(item => {
+          const isControlled = selectedIds !== undefined;
+          const checkedProps = isControlled
+            ? { checked: selectedIds.has(item.id) }
+            : { defaultChecked: false };
+          return (
+            <FormControlLabel
+              key={`${item.id}-${resetKey}`}
+              control={
+                <SelfStatedCheckbox
+                  size="small"
+                  {...checkedProps}
+                  onCommit={(checked) => onCommit(item.id, checked)}
+                />
+              }
+              label={item.label}
+            />
+          );
+        })
       )}
     </Box>
   );

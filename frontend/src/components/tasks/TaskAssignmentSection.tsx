@@ -21,12 +21,13 @@ interface GroupTabsProps {
   onCommitGroup: (groupId: number, checked: boolean) => void;
   resetKey: number;
   loading: boolean;
+  selectedGroupIds: ReadonlySet<number>;
 }
 
 /**
  * Selektor grup z zakładkami Zawodnicy/Klasy, używany w oknie przypisania.
  */
-function GroupTabs({ individuals, classes, onCommitGroup, resetKey, loading }: GroupTabsProps) {
+function GroupTabs({ individuals, classes, onCommitGroup, resetKey, loading, selectedGroupIds }: GroupTabsProps) {
   const [tab, setTab] = useState(0);
 
   return (
@@ -54,6 +55,7 @@ function GroupTabs({ individuals, classes, onCommitGroup, resetKey, loading }: G
           emptyText={tab === 0 ? 'Brak zawodników.' : 'Brak klas.'}
           resetKey={resetKey}
           onCommit={onCommitGroup}
+          selectedIds={selectedGroupIds}
         />
       </Paper>
     </Box>
@@ -72,6 +74,7 @@ export interface TaskAssignmentSectionProps {
   onCloseModal: () => void;
   groupResetKey: number;
   onCommitGroup: (groupId: number, checked: boolean) => void;
+  selectedGroupIds: ReadonlySet<number>;
   publishDefaultRef: React.MutableRefObject<boolean>;
   onCreateTaskFromModal: () => void;
 }
@@ -91,6 +94,7 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
   onCloseModal,
   groupResetKey,
   onCommitGroup,
+  selectedGroupIds,
   publishDefaultRef,
   onCreateTaskFromModal,
 }: TaskAssignmentSectionProps) {
@@ -114,6 +118,7 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
             onCommitGroup={onCommitGroup}
             resetKey={groupResetKey}
             loading={loadingGroups}
+            selectedGroupIds={selectedGroupIds}
           />
           <FormControlLabel
             control={
