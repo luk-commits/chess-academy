@@ -4,38 +4,35 @@ declare(strict_types=1);
 
 namespace ChessAcademy\Controllers;
 
-use ChessAcademy\Models\GroupPlayers;
 use ChessAcademy\Models\Task;
-use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
 use ChessAcademy\Models\User;
 use ChessAcademy\Models\UserStageProgress;
 use ChessAcademy\Models\UserTaskProgress;
 use ChessAcademy\Models\UserTaskStageProgress;
+use ChessAcademy\Services\PlayerAccessService;
+use ChessAcademy\Services\PositionPresenter;
+use ChessAcademy\Services\ProgressPresenter;
 use ChessAcademy\Services\SpacedRepetitionService;
 use DateTimeImmutable;
+use Phalcon\Http\Response;
 use RuntimeException;
 
 class PlayerStagesController extends AbstractController
 {
-    public function attemptAction(): \Phalcon\Http\Response
+    public function attemptAction(): Response
     {
-        $role = strtoupper((string) $this->dispatcher->getParam('authRole'));
-        if ($role !== 'PLAYER') {
-            return $this->error('Forbidden', 403);
-        }
+        if ($err = $this->requireRole('PLAYER')) return $err;
 
-        $playerId = (int) $this->dispatcher->getParam('authUserId');
-        $stageId = (int) $this->dispatcher->getParam('id');
-        if ($stageId <= 0) {
-            return $this->error('Invalid stage id', 400);
-        }
+        $stageId = $this->positiveIntParam('id', 'Invalid stage id');
+        if ($stageId instanceof Response) return $stageId;
 
         $body = $this->jsonInput();
         if (!array_key_exists('passed', $body) || !is_bool($body['passed'])) {
             return $this->error("Field 'passed' must be a boolean", 400);
         }
-        $passed = (bool) $body['passed'];
+
+        $playerId = $this->authUserId();
 
         $stage = TaskStage::findFirst($stageId);
         if ($stage === null || $stage->status !== 'published') {
@@ -47,11 +44,10 @@ class PlayerStagesController extends AbstractController
             return $this->error('Stage not found', 404);
         }
 
-        if (!$this->playerHasAccessToTask($playerId, (int) $task->id)) {
+        if (!(new PlayerAccessService())->playerHasAccessToTask($playerId, (int) $task->id)) {
             return $this->error('Forbidden', 403);
         }
 
-        // Verify stage is marked for repetition by this player
         $stageProgress = UserTaskStageProgress::findFirst([
             'conditions' => 'user_id = :u: AND task_stage_id = :s: AND in_repetition = :rep:',
             'bind' => ['u' => $playerId, 's' => $stageId, 'rep' => true],
@@ -61,39 +57,25 @@ class PlayerStagesController extends AbstractController
         }
 
         try {
-            $progress = (new SpacedRepetitionService())->recordAttempt($playerId, $stageId, $passed);
-        } catch (RuntimeException $e) {
+            $progress = (new SpacedRepetitionService())->recordAttempt($playerId, $stageId, (bool) $body['passed']);
+        } catch (RuntimeException) {
             return $this->error('Failed to record attempt', 500);
         }
 
         return $this->json([
-            'progress' => [
-                'stageId'        => (int) $progress->task_stage_id,
-                'repetitions'    => (int) $progress->repetitions,
-                'intervalDays'   => (int) $progress->interval_days,
-                'lastResult'     => (string) $progress->last_result,
-                'lastReviewedAt' => (string) $progress->last_reviewed_at,
-                'nextReviewAt'   => (string) $progress->next_review_at,
-                'attemptsTotal'  => (int) $progress->attempts_total,
-            ],
+            'progress' => ['stageId' => (int) $progress->task_stage_id] + ProgressPresenter::spacedRepetition($progress),
         ]);
     }
 
-    public function dueAction(): \Phalcon\Http\Response
+    public function dueAction(): Response
     {
-        $role = strtoupper((string) $this->dispatcher->getParam('authRole'));
-        if ($role !== 'PLAYER') {
-            return $this->error('Forbidden', 403);
-        }
+        if ($err = $this->requireRole('PLAYER')) return $err;
 
-        $playerId = (int) $this->dispatcher->getParam('authUserId');
+        $playerId = $this->authUserId();
+        $access = new PlayerAccessService();
 
-        $groupIds = $this->playerGroupIds($playerId);
-        if (empty($groupIds)) {
-            return $this->json(['stages' => []]);
-        }
-
-        $taskIds = $this->taskIdsForGroups($groupIds);
+        $groupIds = $access->playerGroupIds($playerId);
+        $taskIds = $access->taskIdsForGroups($groupIds);
         if (empty($taskIds)) {
             return $this->json(['stages' => []]);
         }
@@ -117,26 +99,22 @@ class PlayerStagesController extends AbstractController
 
         $coachMap = $this->coachNameMap(array_values(array_unique($coachIds)));
 
-        // Filter to tasks where user has marked stages for repetition, and task is not archived
-        $userTaskProgresses = UserTaskProgress::find([
+        $nonArchivedTaskIds = [];
+        foreach (UserTaskProgress::find([
             'conditions' => 'user_id = :userId: AND task_id IN ({taskIds:array}) AND status != :archived:',
             'bind' => ['userId' => $playerId, 'taskIds' => $publishedTaskIds, 'archived' => 'archived'],
-        ]);
-        $nonArchivedTaskIds = [];
-        foreach ($userTaskProgresses as $utp) {
+        ]) as $utp) {
             $nonArchivedTaskIds[] = (int) $utp->task_id;
         }
         if (empty($nonArchivedTaskIds)) {
             return $this->json(['stages' => []]);
         }
 
-        // Find stages with in_repetition = true for this player
-        $repetitionStages = UserTaskStageProgress::find([
+        $repetitionStageIds = [];
+        foreach (UserTaskStageProgress::find([
             'conditions' => 'user_id = :userId: AND in_repetition = :rep: AND task_id IN ({taskIds:array})',
             'bind' => ['userId' => $playerId, 'rep' => true, 'taskIds' => $nonArchivedTaskIds],
-        ]);
-        $repetitionStageIds = [];
-        foreach ($repetitionStages as $rs) {
+        ]) as $rs) {
             $repetitionStageIds[] = (int) $rs->task_stage_id;
         }
         if (empty($repetitionStageIds)) {
@@ -157,17 +135,14 @@ class PlayerStagesController extends AbstractController
             $stageIds[] = (int) $stage->id;
         }
 
-        $progressMap = $this->progressMap($playerId, $stageIds);
+        $progressMap = $this->spacedProgressMap($playerId, $stageIds);
 
         $now = new DateTimeImmutable();
         $entries = [];
         foreach ($stages as $stage) {
             $progress = $progressMap[(int) $stage->id] ?? null;
-            if ($progress !== null) {
-                $nextReview = new DateTimeImmutable((string) $progress->next_review_at);
-                if ($nextReview > $now) {
-                    continue;
-                }
+            if ($progress !== null && new DateTimeImmutable((string) $progress->next_review_at) > $now) {
+                continue;
             }
             $entries[] = ['stage' => $stage, 'progress' => $progress];
         }
@@ -176,12 +151,8 @@ class PlayerStagesController extends AbstractController
             if ($a['progress'] === null && $b['progress'] === null) {
                 return (int) $a['stage']->id <=> (int) $b['stage']->id;
             }
-            if ($a['progress'] === null) {
-                return -1;
-            }
-            if ($b['progress'] === null) {
-                return 1;
-            }
+            if ($a['progress'] === null) return -1;
+            if ($b['progress'] === null) return 1;
             return strcmp((string) $a['progress']->next_review_at, (string) $b['progress']->next_review_at);
         });
 
@@ -189,13 +160,9 @@ class PlayerStagesController extends AbstractController
         foreach ($entries as $entry) {
             $stage = $entry['stage'];
             $position = $stage->position;
-            if ($position === false) {
-                continue;
-            }
+            if ($position === false) continue;
             $task = $taskMap[(int) $stage->task_id] ?? null;
-            if ($task === null) {
-                continue;
-            }
+            if ($task === null) continue;
 
             $result[] = [
                 'id'           => (int) $stage->id,
@@ -207,142 +174,37 @@ class PlayerStagesController extends AbstractController
                     'title'     => $task->title,
                     'coachName' => $coachMap[(int) $task->coach_id] ?? '',
                 ],
-                'position'     => $this->mapPositionData($position),
-                'progress'     => $this->mapProgressData($entry['progress']),
+                'position'     => PositionPresenter::present($position),
+                'progress'     => $entry['progress'] !== null ? ProgressPresenter::spacedRepetition($entry['progress']) : null,
             ];
         }
 
         return $this->json(['stages' => $result]);
     }
 
-    private function playerGroupIds(int $playerId): array
-    {
-        $rows = GroupPlayers::find([
-            'conditions' => 'player_id = :playerId:',
-            'bind'       => ['playerId' => $playerId],
-        ]);
-        $ids = [];
-        foreach ($rows as $row) {
-            $ids[] = (int) $row->group_id;
-        }
-        return array_values(array_unique($ids));
-    }
-
-    private function taskIdsForGroups(array $groupIds): array
-    {
-        $rows = TaskGroup::find([
-            'conditions' => 'group_id IN ({groupIds:array})',
-            'bind'       => ['groupIds' => $groupIds],
-        ]);
-        $ids = [];
-        foreach ($rows as $row) {
-            $ids[] = (int) $row->task_id;
-        }
-        return array_values(array_unique($ids));
-    }
-
     private function coachNameMap(array $coachIds): array
     {
-        if (empty($coachIds)) {
-            return [];
-        }
-        $coaches = User::find([
+        if (empty($coachIds)) return [];
+        $map = [];
+        foreach (User::find([
             'conditions' => 'id IN ({coachIds:array})',
             'bind'       => ['coachIds' => $coachIds],
-        ]);
-        $map = [];
-        foreach ($coaches as $coach) {
+        ]) as $coach) {
             $map[(int) $coach->id] = (string) $coach->full_name;
         }
         return $map;
     }
 
-    private function progressMap(int $playerId, array $stageIds): array
+    private function spacedProgressMap(int $playerId, array $stageIds): array
     {
-        if (empty($stageIds)) {
-            return [];
-        }
-        $rows = UserStageProgress::find([
+        if (empty($stageIds)) return [];
+        $map = [];
+        foreach (UserStageProgress::find([
             'conditions' => 'user_id = :userId: AND task_stage_id IN ({stageIds:array})',
             'bind'       => ['userId' => $playerId, 'stageIds' => $stageIds],
-        ]);
-        $map = [];
-        foreach ($rows as $row) {
+        ]) as $row) {
             $map[(int) $row->task_stage_id] = $row;
         }
         return $map;
-    }
-
-    private function mapPositionData(\ChessAcademy\Models\Position $position): array
-    {
-        $themeTags = [];
-        if (is_string($position->theme_tags) && $position->theme_tags !== '') {
-            $decoded = json_decode($position->theme_tags, true);
-            if (is_array($decoded)) {
-                $themeTags = array_values(array_filter($decoded, static fn ($item): bool => is_string($item)));
-            }
-        }
-
-        $firstMove = null;
-        $moves = [];
-        if (is_string($position->engine_top_lines) && $position->engine_top_lines !== '') {
-            $decoded = json_decode($position->engine_top_lines, true);
-            if (is_array($decoded) && isset($decoded[0]['moves']) && is_array($decoded[0]['moves'])) {
-                $moves = array_values(array_filter($decoded[0]['moves'], static fn ($m): bool => is_string($m)));
-                if (isset($moves[0])) {
-                    $firstMove = $moves[0];
-                }
-            }
-        }
-
-        return [
-            'id'         => (int) $position->id,
-            'fen'        => (string) $position->fen,
-            'firstMove'  => $firstMove,
-            'moves'      => $moves,
-            'opening'    => $position->opening !== null
-                ? (static fn (string $v): string => ($pos = mb_strpos($v, ' ')) !== false ? mb_substr($v, $pos + 1) : $v)($position->opening)
-                : '',
-            'themeTags'  => $themeTags,
-            'difficulty' => $position->difficulty !== null ? (int) $position->difficulty : null,
-        ];
-    }
-
-    private function mapProgressData(?UserStageProgress $progress): ?array
-    {
-        if ($progress === null) {
-            return null;
-        }
-        return [
-            'repetitions'    => (int) $progress->repetitions,
-            'intervalDays'   => (int) $progress->interval_days,
-            'lastResult'     => $progress->last_result !== null ? (string) $progress->last_result : null,
-            'lastReviewedAt' => $progress->last_reviewed_at !== null ? (string) $progress->last_reviewed_at : null,
-            'nextReviewAt'   => (string) $progress->next_review_at,
-            'attemptsTotal'  => (int) $progress->attempts_total,
-        ];
-    }
-
-    private function playerHasAccessToTask(int $playerId, int $taskId): bool
-    {
-        $taskGroups = TaskGroup::find([
-            'conditions' => 'task_id = :taskId:',
-            'bind' => ['taskId' => $taskId],
-        ]);
-
-        $groupIds = [];
-        foreach ($taskGroups as $tg) {
-            $groupIds[] = (int) $tg->group_id;
-        }
-        if (empty($groupIds)) {
-            return false;
-        }
-
-        $membership = GroupPlayers::findFirst([
-            'conditions' => 'player_id = :playerId: AND group_id IN ({groupIds:array})',
-            'bind' => ['playerId' => $playerId, 'groupIds' => $groupIds],
-        ]);
-
-        return $membership !== null;
     }
 }

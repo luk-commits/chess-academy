@@ -5,51 +5,41 @@ declare(strict_types=1);
 namespace ChessAcademy\Controllers;
 
 use ChessAcademy\Models\Group;
+use Phalcon\Http\Response;
 
 class GroupsController extends AbstractController
 {
-    public function indexAction(): \Phalcon\Http\Response
+    public function indexAction(): Response
     {
-        $role = strtoupper((string) $this->dispatcher->getParam('authRole'));
-        if ($role !== 'COACH') {
-            return $this->error('Forbidden', 403);
-        }
+        if ($err = $this->requireRole('COACH')) return $err;
 
-        $coachId = (int) $this->dispatcher->getParam('authUserId');
+        $coachId = $this->authUserId();
 
         $individuals = [];
-        $individualGroups = Group::find([
+        foreach (Group::find([
             'conditions' => 'coach_id = :coachId: AND is_individual = true',
             'bind' => ['coachId' => $coachId],
-        ]);
-
-        foreach ($individualGroups as $group) {
-            $players = $group->getPlayers();
-            foreach ($players as $player) {
+        ]) as $group) {
+            foreach ($group->getPlayers() as $player) {
                 $individuals[] = [
-                    'groupId' => (int) $group->id,
-                    'playerId' => (int) $player->id,
+                    'groupId'    => (int) $group->id,
+                    'playerId'   => (int) $player->id,
                     'playerName' => (string) $player->full_name,
                 ];
             }
         }
 
-        $classList = [];
-        $classGroups = Group::find([
+        $classes = [];
+        foreach (Group::find([
             'conditions' => 'coach_id = :coachId: AND is_individual = false',
             'bind' => ['coachId' => $coachId],
-        ]);
-
-        foreach ($classGroups as $group) {
-            $classList[] = [
+        ]) as $group) {
+            $classes[] = [
                 'groupId' => (int) $group->id,
-                'name' => (string) $group->name,
+                'name'    => (string) $group->name,
             ];
         }
 
-        return $this->json([
-            'individuals' => $individuals,
-            'classes' => $classList,
-        ]);
+        return $this->json(['individuals' => $individuals, 'classes' => $classes]);
     }
 }

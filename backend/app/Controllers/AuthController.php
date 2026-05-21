@@ -7,10 +7,11 @@ namespace ChessAcademy\Controllers;
 use ChessAcademy\Models\RefreshToken;
 use ChessAcademy\Models\User;
 use ChessAcademy\Services\JwtService;
+use Phalcon\Http\Response;
 
 class AuthController extends AbstractController
 {
-    public function loginAction(): \Phalcon\Http\Response
+    public function loginAction(): Response
     {
         $payload = $this->jsonInput();
         $email = trim((string) ($payload['email'] ?? ''));
@@ -29,20 +30,12 @@ class AuthController extends AbstractController
             return $this->error('Invalid credentials', 401);
         }
 
-        /** @var JwtService $jwt */
-        $jwt = $this->di->getShared('jwtService');
-        $accessToken = $jwt->issue((int) $user->id, $user->role);
-        $refreshToken = $jwt->issueRefreshToken((int) $user->id);
+        $this->issueAndSetTokens($user);
 
-        $this->setSessionCookie($accessToken, $jwt->ttl());
-        $this->setRefreshCookie($refreshToken, $jwt->refreshTtl());
-
-        return $this->json([
-            'user' => $user->toPublicArray(),
-        ]);
+        return $this->json(['user' => $user->toPublicArray()]);
     }
 
-    public function registerAction(): \Phalcon\Http\Response
+    public function registerAction(): Response
     {
         $payload = $this->jsonInput();
 
@@ -75,12 +68,7 @@ class AuthController extends AbstractController
         $user->role = $role;
 
         if ($user->save() === false) {
-            $messages = $user->getMessages();
-            $errorMsg = '';
-            foreach ($messages as $msg) {
-                $errorMsg .= (string) $msg . ' ';
-            }
-            return $this->error(trim($errorMsg), 422);
+            return $this->error($this->modelErrors($user), 422);
         }
 
         return $this->json(['ok' => true], 201);
@@ -88,20 +76,15 @@ class AuthController extends AbstractController
 
     /**
      * Refresh token rotation: revoke the old token and issue a new pair.
-     * Rotation limits the window of exposure if a refresh token is stolen:
-     * the old token becomes invalid immediately, and only the new one can be used.
      */
-    public function refreshAction(): \Phalcon\Http\Response
+    public function refreshAction(): Response
     {
-        $refreshCookieName = (string) $this->config->jwt->refreshCookieName;
-        $plain = (string) ($_COOKIE[$refreshCookieName] ?? '');
-
+        $plain = (string) ($_COOKIE[(string) $this->config->jwt->refreshCookieName] ?? '');
         if ($plain === '') {
             return $this->error('Missing refresh token', 401);
         }
 
-        /** @var JwtService $jwt */
-        $jwt = $this->di->getShared('jwtService');
+        $jwt = $this->jwt();
         $record = $jwt->findRefreshToken($plain);
 
         if (!$record instanceof RefreshToken || !$record->isUsable()) {
@@ -114,78 +97,69 @@ class AuthController extends AbstractController
         }
 
         $record->revoke();
-        $newRefresh = $jwt->issueRefreshToken((int) $user->id);
-        $newAccess = $jwt->issue((int) $user->id, $user->role);
-
-        $this->setSessionCookie($newAccess, $jwt->ttl());
-        $this->setRefreshCookie($newRefresh, $jwt->refreshTtl());
+        $this->issueAndSetTokens($user);
 
         return $this->json(['user' => $user->toPublicArray()]);
     }
 
-    public function logoutAction(): \Phalcon\Http\Response
+    public function logoutAction(): Response
     {
-        $refreshCookieName = (string) $this->config->jwt->refreshCookieName;
-        $plain = (string) ($_COOKIE[$refreshCookieName] ?? '');
+        $plain = (string) ($_COOKIE[(string) $this->config->jwt->refreshCookieName] ?? '');
 
         if ($plain !== '') {
-            /** @var JwtService $jwt */
-            $jwt = $this->di->getShared('jwtService');
-            $record = $jwt->findRefreshToken($plain);
+            $record = $this->jwt()->findRefreshToken($plain);
             if ($record instanceof RefreshToken && $record->revoked_at === null) {
                 $record->revoke();
             }
         }
 
-        $this->setSessionCookie('', -3600);
-        $this->setRefreshCookie('', -3600);
+        $this->writeCookie((string) $this->config->jwt->cookieName, '', -3600);
+        $this->writeCookie((string) $this->config->jwt->refreshCookieName, '', -3600);
 
         return $this->json(['ok' => true]);
     }
 
-    public function meAction(): \Phalcon\Http\Response
+    public function meAction(): Response
     {
-        $userId = (int) $this->dispatcher->getParam('authUserId');
-        $user = User::findFirst($userId);
-
+        $user = User::findFirst($this->authUserId());
         if (!$user instanceof User) {
             return $this->error('User not found', 404);
         }
-
         return $this->json(['user' => $user->toPublicArray()]);
     }
 
-    public function preflightAction(): \Phalcon\Http\Response
+    public function preflightAction(): Response
     {
         return $this->response->setStatusCode(204);
     }
 
-    private function setSessionCookie(string $value, int $ttl): void
+    private function jwt(): JwtService
     {
-        $this->writeCookie((string) $this->config->jwt->cookieName, $value, $ttl);
+        return $this->di->getShared('jwtService');
     }
 
-    private function setRefreshCookie(string $value, int $ttl): void
+    private function issueAndSetTokens(User $user): void
     {
-        $this->writeCookie((string) $this->config->jwt->refreshCookieName, $value, $ttl);
+        $jwt = $this->jwt();
+        $access = $jwt->issue((int) $user->id, $user->role);
+        $refresh = $jwt->issueRefreshToken((int) $user->id);
+
+        $this->writeCookie((string) $this->config->jwt->cookieName, $access, $jwt->ttl());
+        $this->writeCookie((string) $this->config->jwt->refreshCookieName, $refresh, $jwt->refreshTtl());
     }
 
     /**
-     * Set an HttpOnly cookie for token storage.
-     * Using HttpOnly + SameSite prevents XSS and CSRF attacks:
-     * - HttpOnly: JavaScript cannot read the token
-     * - SameSite=Lax: prevents CSRF while allowing same-origin navigation
-     * - Secure: only sent over HTTPS in production
+     * HttpOnly + SameSite=Lax cookie for token storage (XSS/CSRF mitigation).
      */
     private function writeCookie(string $name, string $value, int $ttl): void
     {
         $isProd = ($this->config->app->env ?? 'development') === 'production';
 
         setcookie($name, $value, [
-            'expires' => time() + $ttl,
-            'path' => '/',
-            'domain' => '',
-            'secure' => $isProd,
+            'expires'  => time() + $ttl,
+            'path'     => '/',
+            'domain'   => '',
+            'secure'   => $isProd,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
