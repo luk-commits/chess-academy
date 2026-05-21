@@ -8,32 +8,23 @@ use ChessAcademy\Models\Group;
 use ChessAcademy\Models\Task;
 use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
-use PHPUnit\Framework\TestCase;
+use ChessAcademy\Tests\Support\HttpTestCase;
 
-final class CoachStageEditTest extends TestCase
+final class CoachStageEditTest extends HttpTestCase
 {
-    private const COACH_EMAIL = 'coach@chess.local';
-    private const COACH_PASSWORD = 'password123';
-    private const COACH_ID = 3;
-    private const PLAYER_EMAIL = 'player@chess.local';
-    private const PLAYER_PASSWORD = 'password123';
-
-    private string $baseUrl;
-    private string $cookieJar;
     private int $taskId;
     private int $stageId;
     private int $groupId;
 
     protected function setUp(): void
     {
-        $this->baseUrl = rtrim(getenv('API_BASE_URL') ?: 'http://web', '/');
-        $this->cookieJar = tempnam(sys_get_temp_dir(), 'cj_');
+        parent::setUp();
 
         $group = new Group();
         $group->name = 'Coach edit test group ' . bin2hex(random_bytes(3));
         $group->coach_id = self::COACH_ID;
         $group->is_individual = true;
-        $this->assertTrue($group->save(), $this->errors($group));
+        $this->assertSavedOk($group);
         $this->groupId = (int) $group->id;
 
         $task = new Task();
@@ -41,41 +32,33 @@ final class CoachStageEditTest extends TestCase
         $task->coach_id = self::COACH_ID;
         $task->group_id = $this->groupId;
         $task->status = 'draft';
-        $this->assertTrue($task->save(), $this->errors($task));
+        $this->assertSavedOk($task);
         $this->taskId = (int) $task->id;
 
         $tg = new TaskGroup();
         $tg->task_id = $this->taskId;
         $tg->group_id = $this->groupId;
-        $this->assertTrue($tg->save(), $this->errors($tg));
+        $this->assertSavedOk($tg);
 
         $stage = new TaskStage();
         $stage->task_id = $this->taskId;
         $stage->title = 'Stage 1';
         $stage->sort_order = 0;
         $stage->status = 'draft';
-        $this->assertTrue($stage->save(), $this->errors($stage));
+        $this->assertSavedOk($stage);
         $this->stageId = (int) $stage->id;
     }
 
     protected function tearDown(): void
     {
-        $task = Task::findFirst($this->taskId);
-        if ($task !== null) {
-            $task->delete();
-        }
-        $group = Group::findFirst($this->groupId);
-        if ($group !== null) {
-            $group->delete();
-        }
-        if (is_file($this->cookieJar)) {
-            unlink($this->cookieJar);
-        }
+        Task::findFirst($this->taskId)?->delete();
+        Group::findFirst($this->groupId)?->delete();
+        parent::tearDown();
     }
 
     public function testCoachCanSaveSolutionPgn(): void
     {
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
 
         $response = $this->request('PATCH', "/api/coach/stages/{$this->stageId}", [
             'solutionPgn' => '1. e4 e5 2. Nf3 Nc6',
@@ -94,7 +77,7 @@ final class CoachStageEditTest extends TestCase
         $stage->solution_pgn = '1. e4';
         $stage->save();
 
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
         $response = $this->request('PATCH', "/api/coach/stages/{$this->stageId}", [
             'solutionPgn' => '',
         ]);
@@ -105,7 +88,7 @@ final class CoachStageEditTest extends TestCase
 
     public function testCannotPublishStageWithoutPgn(): void
     {
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
         $response = $this->request('PATCH', "/api/coach/stages/{$this->stageId}", [
             'status' => 'published',
         ]);
@@ -115,10 +98,10 @@ final class CoachStageEditTest extends TestCase
 
     public function testCanPublishStageWithPgn(): void
     {
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
         $response = $this->request('PATCH', "/api/coach/stages/{$this->stageId}", [
             'solutionPgn' => '1. e4 e5',
-            'status' => 'published',
+            'status'      => 'published',
         ]);
 
         $this->assertSame(200, $response['status']);
@@ -127,7 +110,7 @@ final class CoachStageEditTest extends TestCase
 
     public function testPlayerCannotEditStage(): void
     {
-        $this->loginAs(self::PLAYER_EMAIL, self::PLAYER_PASSWORD);
+        $this->loginAsPlayer();
         $response = $this->request('PATCH', "/api/coach/stages/{$this->stageId}", [
             'solutionPgn' => 'hack',
         ]);
@@ -153,7 +136,7 @@ final class CoachStageEditTest extends TestCase
         $otherStage->task_id = (int) $otherTask->id;
         $this->assertTrue($otherStage->save());
 
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
         $response = $this->request('PATCH', "/api/coach/stages/{$otherStage->id}", [
             'solutionPgn' => '1. e4',
         ]);
@@ -165,7 +148,7 @@ final class CoachStageEditTest extends TestCase
 
     public function testCoachListsTheirOwnTasks(): void
     {
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
         $response = $this->request('GET', '/api/coach/tasks');
 
         $this->assertSame(200, $response['status']);
@@ -187,61 +170,12 @@ final class CoachStageEditTest extends TestCase
 
     public function testCoachCanPublishOwnTask(): void
     {
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
         $response = $this->request('PATCH', "/api/coach/tasks/{$this->taskId}", [
             'status' => 'published',
         ]);
 
         $this->assertSame(200, $response['status']);
         $this->assertSame('published', $response['body']['task']['status']);
-    }
-
-    private function loginAs(string $email, string $password): void
-    {
-        if (is_file($this->cookieJar)) {
-            file_put_contents($this->cookieJar, '');
-        }
-        $login = $this->request('POST', '/api/login', ['email' => $email, 'password' => $password]);
-        $this->assertSame(200, $login['status'], 'login failed: ' . json_encode($login['body']));
-    }
-
-    private function request(string $method, string $path, ?array $data = null): array
-    {
-        $ch = curl_init($this->baseUrl . $path);
-        $jsonBody = $data !== null ? json_encode($data, JSON_THROW_ON_ERROR) : null;
-
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => true,
-            CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            CURLOPT_TIMEOUT => 5,
-            CURLOPT_CONNECTTIMEOUT => 3,
-            CURLOPT_COOKIEJAR => $this->cookieJar,
-            CURLOPT_COOKIEFILE => $this->cookieJar,
-        ]);
-
-        if ($jsonBody !== null) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
-        }
-
-        $raw = curl_exec($ch);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $body = $raw !== false ? substr((string) $raw, $headerSize) : '';
-        curl_close($ch);
-
-        return [
-            'status' => $statusCode,
-            'body' => json_decode($body, true) ?? [],
-        ];
-    }
-
-    private function errors(\Phalcon\Mvc\ModelInterface $m): string
-    {
-        return implode('; ', array_map(static fn ($msg) => (string) $msg->getMessage(), $m->getMessages()));
     }
 }

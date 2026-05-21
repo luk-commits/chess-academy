@@ -11,39 +11,29 @@ use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
 use ChessAcademy\Models\UserStageProgress;
 use ChessAcademy\Models\UserTaskStageProgress;
-use PHPUnit\Framework\TestCase;
+use ChessAcademy\Tests\Support\HttpTestCase;
 
-final class PlayerStageAttemptTest extends TestCase
+final class PlayerStageAttemptTest extends HttpTestCase
 {
-    private const COACH_EMAIL = 'coach@chess.local';
-    private const COACH_PASSWORD = 'password123';
-    private const COACH_ID = 3;
-    private const PLAYER_EMAIL = 'player@chess.local';
-    private const PLAYER_PASSWORD = 'password123';
-    private const PLAYER_ID = 4;
-
-    private string $baseUrl;
-    private string $cookieJar;
     private int $taskId;
     private int $stageId;
     private int $groupId;
 
     protected function setUp(): void
     {
-        $this->baseUrl = rtrim(getenv('API_BASE_URL') ?: 'http://web', '/');
-        $this->cookieJar = tempnam(sys_get_temp_dir(), 'cj_');
+        parent::setUp();
 
         $group = new Group();
         $group->name = 'SR test group ' . bin2hex(random_bytes(3));
         $group->coach_id = self::COACH_ID;
         $group->is_individual = true;
-        $this->assertTrue($group->save(), $this->modelErrors($group));
+        $this->assertSavedOk($group);
         $this->groupId = (int) $group->id;
 
         $member = new GroupPlayers();
         $member->group_id = $this->groupId;
         $member->player_id = self::PLAYER_ID;
-        $this->assertTrue($member->save(), $this->modelErrors($member));
+        $this->assertSavedOk($member);
 
         $task = new Task();
         $task->title = 'SR endpoint task';
@@ -51,49 +41,40 @@ final class PlayerStageAttemptTest extends TestCase
         $task->coach_id = self::COACH_ID;
         $task->group_id = $this->groupId;
         $task->status = 'published';
-        $this->assertTrue($task->save(), $this->modelErrors($task));
+        $this->assertSavedOk($task);
         $this->taskId = (int) $task->id;
 
         $tg = new TaskGroup();
         $tg->task_id = $this->taskId;
         $tg->group_id = $this->groupId;
-        $this->assertTrue($tg->save(), $this->modelErrors($tg));
+        $this->assertSavedOk($tg);
 
         $stage = new TaskStage();
         $stage->task_id = $this->taskId;
         $stage->title = 'SR endpoint stage';
         $stage->sort_order = 0;
         $stage->status = 'published';
-        $this->assertTrue($stage->save(), $this->modelErrors($stage));
+        $this->assertSavedOk($stage);
         $this->stageId = (int) $stage->id;
 
-        // Mark stage for repetition so attempt is allowed
         $stageProgress = new UserTaskStageProgress();
         $stageProgress->user_id = self::PLAYER_ID;
         $stageProgress->task_id = $this->taskId;
         $stageProgress->task_stage_id = $this->stageId;
         $stageProgress->in_repetition = true;
-        $this->assertTrue($stageProgress->save(), $this->modelErrors($stageProgress));
+        $this->assertSavedOk($stageProgress);
     }
 
     protected function tearDown(): void
     {
-        $task = Task::findFirst($this->taskId);
-        if ($task !== null) {
-            $task->delete();
-        }
-        $group = Group::findFirst($this->groupId);
-        if ($group !== null) {
-            $group->delete();
-        }
-        if (is_file($this->cookieJar)) {
-            unlink($this->cookieJar);
-        }
+        Task::findFirst($this->taskId)?->delete();
+        Group::findFirst($this->groupId)?->delete();
+        parent::tearDown();
     }
 
     public function testPlayerCanSubmitPassAndProgressIsPersisted(): void
     {
-        $this->loginAs(self::PLAYER_EMAIL, self::PLAYER_PASSWORD);
+        $this->loginAsPlayer();
 
         $response = $this->request('POST', "/api/player/stages/{$this->stageId}/attempt", ['passed' => true]);
 
@@ -116,7 +97,7 @@ final class PlayerStageAttemptTest extends TestCase
 
     public function testCoachIsForbiddenFromSubmittingAttempt(): void
     {
-        $this->loginAs(self::COACH_EMAIL, self::COACH_PASSWORD);
+        $this->loginAsCoach();
 
         $response = $this->request('POST', "/api/player/stages/{$this->stageId}/attempt", ['passed' => true]);
 
@@ -127,9 +108,9 @@ final class PlayerStageAttemptTest extends TestCase
     {
         $stage = TaskStage::findFirst($this->stageId);
         $stage->status = 'draft';
-        $this->assertTrue($stage->save(), $this->modelErrors($stage));
+        $this->assertSavedOk($stage);
 
-        $this->loginAs(self::PLAYER_EMAIL, self::PLAYER_PASSWORD);
+        $this->loginAsPlayer();
         $response = $this->request('POST', "/api/player/stages/{$this->stageId}/attempt", ['passed' => true]);
 
         $this->assertSame(404, $response['status']);
@@ -137,7 +118,7 @@ final class PlayerStageAttemptTest extends TestCase
 
     public function testMissingPassedFieldReturns400(): void
     {
-        $this->loginAs(self::PLAYER_EMAIL, self::PLAYER_PASSWORD);
+        $this->loginAsPlayer();
 
         $response = $this->request('POST', "/api/player/stages/{$this->stageId}/attempt", ['something' => 'else']);
 
@@ -148,56 +129,5 @@ final class PlayerStageAttemptTest extends TestCase
     {
         $response = $this->request('POST', "/api/player/stages/{$this->stageId}/attempt", ['passed' => true]);
         $this->assertSame(401, $response['status']);
-    }
-
-    private function loginAs(string $email, string $password): void
-    {
-        if (is_file($this->cookieJar)) {
-            file_put_contents($this->cookieJar, '');
-        }
-
-        $login = $this->request('POST', '/api/login', ['email' => $email, 'password' => $password]);
-        $this->assertSame(200, $login['status'], 'login failed: ' . json_encode($login['body']));
-    }
-
-    private function request(string $method, string $path, ?array $data = null): array
-    {
-        $ch = curl_init($this->baseUrl . $path);
-        $jsonBody = $data !== null ? json_encode($data, JSON_THROW_ON_ERROR) : null;
-
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => true,
-            CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            CURLOPT_TIMEOUT => 5,
-            CURLOPT_CONNECTTIMEOUT => 3,
-            CURLOPT_COOKIEJAR => $this->cookieJar,
-            CURLOPT_COOKIEFILE => $this->cookieJar,
-        ]);
-
-        if ($jsonBody !== null) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
-        }
-
-        $raw = curl_exec($ch);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $body = $raw !== false ? substr((string) $raw, $headerSize) : '';
-
-        curl_close($ch);
-
-        return [
-            'status' => $statusCode,
-            'body' => json_decode($body, true) ?? [],
-        ];
-    }
-
-    private function modelErrors(\Phalcon\Mvc\ModelInterface $m): string
-    {
-        return implode('; ', array_map(static fn ($msg) => (string) $msg->getMessage(), $m->getMessages()));
     }
 }
