@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, Button, Typography } from '@mui/material';
-import ArrowBack from '@mui/icons-material/ArrowBack';
-import CheckCircle from '@mui/icons-material/CheckCircle';
-import Cancel from '@mui/icons-material/Cancel';
+import { Alert, Box, Button } from '@mui/material';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
+import { BackButton } from '../../components/feedback/BackButton';
+import { FeedbackOverlay } from '../../components/feedback/FeedbackOverlay';
 import { GlassHeader } from '../../components/zen/GlassHeader';
 import { StageProgressBar } from '../../components/zen/StageProgressBar';
 import { SrStageBoard } from '../../components/srlearn/SrStageBoard';
 import { useDueStages } from '../../hooks/useDueStages';
 import { playerStagesService } from '../../services/playerStagesService';
-import { ZEN_PENALTY, ZEN_REWARD } from '../../components/zen/theme';
 
 type Feedback = { kind: 'pass' | 'fail' } | null;
 
@@ -49,7 +47,7 @@ export function PlayerLearnView() {
     return (
       <PageLayout maxWidth="md">
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/home')}>Wróć</Button>
+        <BackButton onClick={() => navigate('/home')} />
       </PageLayout>
     );
   }
@@ -59,7 +57,7 @@ export function PlayerLearnView() {
       <PageLayout maxWidth="md">
         <EmptyState message="Brak powtórek na dziś. Wróć później." />
         <Box sx={{ textAlign: 'center', mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
-          <Button startIcon={<ArrowBack />} onClick={() => navigate('/home')}>Wróć</Button>
+          <BackButton onClick={() => navigate('/home')} />
           <Button variant="outlined" onClick={reload}>Odśwież</Button>
         </Box>
       </PageLayout>
@@ -71,7 +69,7 @@ export function PlayerLearnView() {
       <PageLayout maxWidth="md">
         <EmptyState message={`Skończone! ${totalDue} ${totalDue === 1 ? 'powtórka' : 'powtórek'} za tobą.`} />
         <Box sx={{ textAlign: 'center', mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
-          <Button startIcon={<ArrowBack />} onClick={() => navigate('/home')}>Wróć</Button>
+          <BackButton onClick={() => navigate('/home')} />
           <Button variant="outlined" onClick={reload}>Sprawdź ponownie</Button>
         </Box>
       </PageLayout>
@@ -83,9 +81,7 @@ export function PlayerLearnView() {
   return (
     <PageLayout maxWidth="md">
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/home')}>
-          Przerwij
-        </Button>
+        <BackButton label="Przerwij" onClick={() => navigate('/home')} />
       </Box>
 
       <StageProgressBar total={totalDue} currentIndex={currentIndex} />
@@ -111,32 +107,7 @@ export function PlayerLearnView() {
           onComplete={handleComplete}
         />
 
-        {feedback && (
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(15, 23, 42, 0.55)',
-              borderRadius: 3,
-              color: 'common.white',
-              zIndex: 2,
-              gap: 1,
-            }}
-          >
-            {feedback.kind === 'pass' ? (
-              <CheckCircle sx={{ fontSize: 80, color: ZEN_REWARD }} />
-            ) : (
-              <Cancel sx={{ fontSize: 80, color: ZEN_PENALTY }} />
-            )}
-            <Typography variant="h6">
-              {feedback.kind === 'pass' ? 'Świetnie!' : 'Następnym razem.'}
-            </Typography>
-          </Box>
-        )}
+        {feedback && <FeedbackOverlay kind={feedback.kind} />}
       </Box>
     </PageLayout>
   );

@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, Button, Card, CardActionArea, Chip, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardActionArea, Chip, Typography } from '@mui/material';
 import RestoreIcon from '@mui/icons-material/Restore';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
+import { AppSnackbar } from '../../components/feedback/AppSnackbar';
 import { usePlayerTasks } from '../../hooks/usePlayerTasks';
 import { playerTasksService } from '../../services/playerTasksService';
 
@@ -66,11 +67,11 @@ export function PlayerTasksArchiveView() {
         </Box>
       )}
 
-      <Snackbar
+      <AppSnackbar
         open={!!snackbarMsg}
         autoHideDuration={3000}
         onClose={() => setSnackbarMsg(null)}
-        message={snackbarMsg}
+        message={snackbarMsg ?? ''}
       />
     </PageLayout>
   );

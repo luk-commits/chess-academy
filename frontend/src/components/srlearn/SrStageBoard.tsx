@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box } from '@mui/material';
 import { Chess } from 'chess.js';
-import type { Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import type { PieceHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { PromotionPopover } from '../chess/PromotionPopover';
-import { ZEN_SELECTED_SQUARE, shake } from '../zen/theme';
-import { fenTurn, isUciCheckmate, pieceColor, uciToMove } from '../../utils/chessPosition';
+import { shake } from '../zen/theme';
+import { fenTurn, isUciCheckmate, uciToMove } from '../../utils/chessPosition';
 import { buildPgnRuntime, type PgnRuntime } from '../../utils/pgnRuntime';
+import { useChessInteraction } from '../../hooks/useChessInteraction';
+import { useStageIntroAnimation } from '../../hooks/useStageIntroAnimation';
 import type { DueStage } from '../../types/playerStages';
 
 interface Props {
@@ -18,30 +18,21 @@ interface Props {
 export function SrStageBoard({ stage, onComplete }: Props) {
   const [runtime, setRuntime] = useState<PgnRuntime | null>(null);
   const [shakeKey, setShakeKey] = useState(0);
-  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
-  const [animateBoard, setAnimateBoard] = useState(true);
-  const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
   const finishedRef = useRef(false);
+
+  const revealIntro = useCallback(() => {
+    setRuntime((prev) => (prev ? { ...prev, currentFen: prev.introFen!, introFen: null } : prev));
+  }, []);
+
+  const buildKey = useMemo(() => `${stage.id}|${stage.position.fen}|${stage.solutionPgn}`, [stage.id, stage.position.fen, stage.solutionPgn]);
 
   useEffect(() => {
     finishedRef.current = false;
-    setAnimateBoard(false);
     const rt = buildPgnRuntime(stage.position.fen, stage.solutionPgn);
     setRuntime(rt);
-    setSelectedSquare(null);
-    setPendingPromotion(null);
-    if (rt?.introFen) {
-      const tid = window.setTimeout(() => {
-        setAnimateBoard(true);
-        requestAnimationFrame(() => {
-          setRuntime((prev) => (prev ? { ...prev, currentFen: prev.introFen!, introFen: null } : prev));
-        });
-      }, 250);
-      return () => clearTimeout(tid);
-    }
-    const enableTid = window.setTimeout(() => setAnimateBoard(true), 100);
-    return () => clearTimeout(enableTid);
-  }, [stage.id, stage.position.fen, stage.solutionPgn]);
+  }, [buildKey, stage.position.fen, stage.solutionPgn]);
+
+  const animateBoard = useStageIntroAnimation(buildKey, !!runtime?.introFen, revealIntro);
 
   const finish = useCallback((passed: boolean, delayMs: number) => {
     if (finishedRef.current) return;
@@ -118,106 +109,14 @@ export function SrStageBoard({ stage, onComplete }: Props) {
     return true;
   }, [runtime, playEngineReply, finish]);
 
-  const legalTargets = useMemo((): Set<string> => {
-    if (!selectedSquare || !runtime) return new Set();
-    const chess = new Chess(runtime.currentFen);
-    return new Set(chess.moves({ square: selectedSquare as Square, verbose: true }).map((m) => m.to));
-  }, [selectedSquare, runtime]);
-
-  const handleSquareClick = useCallback(({ piece, square }: SquareHandlerArgs) => {
-    if (!runtime || finishedRef.current || runtime.introFen) return;
-    if (runtime.expected.length <= runtime.expectedIndex) return;
-    const turn = fenTurn(runtime.currentFen);
-
-    if (selectedSquare) {
-      if (square === selectedSquare) {
-        setSelectedSquare(null);
-        return;
-      }
-      if (piece && pieceColor(piece.pieceType) === turn) {
-        setSelectedSquare(square);
-        return;
-      }
-      if (!legalTargets.has(square)) return;
-
-      const chess = new Chess(runtime.currentFen);
-      const chessPiece = chess.get(selectedSquare as Square);
-      if (chessPiece && chessPiece.type === 'p') {
-        const rank = square[1];
-        if ((rank === '8' && chessPiece.color === 'w') || (rank === '1' && chessPiece.color === 'b')) {
-          setPendingPromotion({ from: selectedSquare, to: square });
-          setSelectedSquare(null);
-          return;
-        }
-      }
-
-      tryMove(selectedSquare, square);
-      setSelectedSquare(null);
-      return;
-    }
-
-    if (piece && pieceColor(piece.pieceType) === turn) {
-      setSelectedSquare(square);
-    }
-  }, [runtime, selectedSquare, legalTargets, tryMove]);
-
-  const canDragPiece = useCallback(({ piece }: PieceHandlerArgs): boolean => {
-    if (!runtime || runtime.introFen) return false;
-    if (runtime.expected.length <= runtime.expectedIndex) return false;
-    return pieceColor(piece.pieceType) === fenTurn(runtime.currentFen);
-  }, [runtime]);
-
-  const handlePieceDrop = useCallback(({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }): boolean => {
-    if (!targetSquare || !runtime || runtime.introFen) return false;
-
-    // Drop on the same square = click to select (handles micro-movements that
-    // trigger DnD before the click event fires).
-    if (sourceSquare === targetSquare) {
-      const turn = fenTurn(runtime.currentFen);
-      const chess = new Chess(runtime.currentFen);
-      const dragPiece = chess.get(sourceSquare as Square);
-      if (dragPiece && dragPiece.color === turn) {
-        setSelectedSquare(sourceSquare);
-        return true;
-      }
-      return false;
-    }
-
-    const chess = new Chess(runtime.currentFen);
-    const dragPiece = chess.get(sourceSquare as Square);
-    if (!dragPiece || dragPiece.color !== fenTurn(runtime.currentFen)) return false;
-    const legal = chess.moves({ square: sourceSquare as Square, verbose: true }).some((m) => m.to === targetSquare);
-    if (!legal) return false;
-
-    const piece = chess.get(sourceSquare as Square);
-    if (piece && piece.type === 'p') {
-      const rank = targetSquare[1];
-      const turn = fenTurn(runtime.currentFen);
-      if ((rank === '8' && turn === 'w') || (rank === '1' && turn === 'b')) {
-        setPendingPromotion({ from: sourceSquare, to: targetSquare });
-        setSelectedSquare(null);
-        return true;
-      }
-    }
-
-    setSelectedSquare(null);
-    return tryMove(sourceSquare, targetSquare);
-  }, [runtime, tryMove]);
-
-  const squareStyles = useMemo((): Record<string, React.CSSProperties> => {
-    const styles: Record<string, React.CSSProperties> = {};
-    if (!selectedSquare || !runtime) return styles;
-    styles[selectedSquare] = { backgroundColor: ZEN_SELECTED_SQUARE };
-    const chess = new Chess(runtime.currentFen);
-    const moves = chess.moves({ square: selectedSquare as Square, verbose: true });
-    for (const m of moves) {
-      const isCapture = !!m.captured;
-      styles[m.to] = isCapture
-        ? { backgroundColor: 'rgba(33,150,243,0.22)', borderRadius: '50%', outline: '3px solid rgba(33,150,243,0.5)', outlineOffset: '-3px' }
-        : { background: 'radial-gradient(circle, rgba(33,150,243,0.4) 28%, transparent 29%)', borderRadius: '50%' };
-    }
-    return styles;
-  }, [selectedSquare, runtime]);
+  const {
+    pendingPromotion,
+    setPendingPromotion,
+    handleSquareClick,
+    canDragPiece,
+    handlePieceDrop,
+    squareStyles,
+  } = useChessInteraction({ runtime, disabled: finishedRef.current, tryMove });
 
   if (!runtime) {
     return <Alert severity="warning">Niepoprawne rozwiązanie etapu (FEN lub PGN).</Alert>;

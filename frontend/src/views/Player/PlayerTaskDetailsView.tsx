@@ -6,29 +6,28 @@ import {
   Button,
   Chip,
   FormControlLabel,
-  Snackbar,
   Switch,
   Typography,
 } from '@mui/material';
-import ArrowBack from '@mui/icons-material/ArrowBack';
 import PlusOneIcon from '@mui/icons-material/PlusOne';
-import CheckCircle from '@mui/icons-material/CheckCircle';
-import Cancel from '@mui/icons-material/Cancel';
 import { Chess } from 'chess.js';
-import type { Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import type { PieceHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
+import { BackButton } from '../../components/feedback/BackButton';
+import { AppSnackbar } from '../../components/feedback/AppSnackbar';
+import { FeedbackOverlay } from '../../components/feedback/FeedbackOverlay';
 import { GlassHeader } from '../../components/zen/GlassHeader';
 import { StageProgressBar } from '../../components/zen/StageProgressBar';
 import { type ScoreDelta } from '../../components/zen/ScoreBadge';
 import { CompletionCard } from '../../components/zen/CompletionCard';
-import { ZEN_PENALTY, ZEN_REWARD, ZEN_SELECTED_SQUARE, shake } from '../../components/zen/theme';
+import { shake } from '../../components/zen/theme';
 import { PromotionPopover } from '../../components/chess/PromotionPopover';
-import { fenTurn, isUciCheckmate, pieceColor, uciToMove } from '../../utils/chessPosition';
+import { fenTurn, isUciCheckmate, uciToMove } from '../../utils/chessPosition';
 import { buildStageRuntime, type StageRuntime } from '../../utils/stageRuntime';
+import { useChessInteraction } from '../../hooks/useChessInteraction';
+import { useStageIntroAnimation } from '../../hooks/useStageIntroAnimation';
 import { usePlayerTasks } from '../../hooks/usePlayerTasks';
 import { playerTasksService } from '../../services/playerTasksService';
 import type { StageCompletePayload } from '../../types/position';
@@ -46,9 +45,6 @@ export function PlayerTaskDetailsView() {
   const [shakeKey, setShakeKey] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
-  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
-  const [animateBoard, setAnimateBoard] = useState(true);
-  const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
   const [feedback, setFeedback] = useState<{ kind: 'pass' | 'fail' } | null>(null);
   const [localInRepetition, setLocalInRepetition] = useState<boolean | null>(null);
   const [notification, setNotification] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
@@ -82,8 +78,6 @@ export function PlayerTaskDetailsView() {
     setDeltas([]);
     setShakeKey(0);
     setCompleted(false);
-    setSelectedSquare(null);
-    setPendingPromotion(null);
   }, [taskId]);
 
   // Auto start/resume task progress on mount
@@ -119,13 +113,9 @@ export function PlayerTaskDetailsView() {
 
   useEffect(() => {
     if (!currentStage) return;
-    setAnimateBoard(false);
     setLocalInRepetition(null);
     setNotification(null);
-    const rt = buildStageRuntime(currentStage);
-    setRuntime(rt);
-    setSelectedSquare(null);
-    setPendingPromotion(null);
+    setRuntime(buildStageRuntime(currentStage));
 
     // Reset stage stats
     const now = performance.now();
@@ -137,19 +127,13 @@ export function PlayerTaskDetailsView() {
     attemptsTotalRef.current = 0;
     firstErrorAtPlyRef.current = null;
     moveCountRef.current = 0;
-
-    if (rt?.introFen) {
-      const tid = window.setTimeout(() => {
-        setAnimateBoard(true);
-        requestAnimationFrame(() => {
-          setRuntime(prev => prev ? { ...prev, currentFen: prev.introFen!, introFen: null } : prev);
-        });
-      }, 250);
-      return () => clearTimeout(tid);
-    }
-    const enableTid = window.setTimeout(() => setAnimateBoard(true), 100);
-    return () => clearTimeout(enableTid);
   }, [currentStage]);
+
+  const revealIntro = useCallback(() => {
+    setRuntime((prev) => prev ? { ...prev, currentFen: prev.introFen!, introFen: null } : prev);
+  }, []);
+
+  const animateBoard = useStageIntroAnimation(currentStage?.id, !!runtime?.introFen, revealIntro);
 
   useEffect(() => {
     if (!completed || !autoAdvance) return;
@@ -171,13 +155,12 @@ export function PlayerTaskDetailsView() {
 
   const sendCompleteStats = useCallback(async () => {
     if (!task || !currentStage) return;
-    const moveTimes = moveTimesMsRef.current;
     const payload: StageCompletePayload = {
       thinkingTimeMs: Math.round(performance.now() - stageStartRef.current),
       attemptsTotal: attemptsTotalRef.current,
       errorsTotal: errorsTotalRef.current,
       wrongMoves: wrongMovesRef.current,
-      moveTimesMs: moveTimes,
+      moveTimesMs: moveTimesMsRef.current,
       firstErrorAtPly: firstErrorAtPlyRef.current,
     };
     try {
@@ -294,112 +277,14 @@ export function PlayerTaskDetailsView() {
     return true;
   }, [runtime, completed, pushDelta, playEngineReply, completeWithFeedback]);
 
-  const legalTargets = useMemo((): Set<string> => {
-    if (!selectedSquare || !runtime) return new Set();
-    const chess = new Chess(runtime.currentFen);
-    return new Set(
-      chess.moves({ square: selectedSquare as Square, verbose: true })
-        .map(m => m.to)
-    );
-  }, [selectedSquare, runtime]);
-
-  const handleSquareClick = useCallback(({ piece, square }: SquareHandlerArgs) => {
-    if (!runtime || completed || runtime.introFen) return;
-    const isPlayerTurn = runtime.expected.length > runtime.expectedIndex;
-    if (!isPlayerTurn) return;
-
-    const turn = fenTurn(runtime.currentFen);
-
-    if (selectedSquare) {
-      if (square === selectedSquare) {
-        setSelectedSquare(null);
-        return;
-      }
-      if (piece && pieceColor(piece.pieceType) === turn) {
-        setSelectedSquare(square);
-        return;
-      }
-      if (!legalTargets.has(square)) return;
-
-      const chess = new Chess(runtime.currentFen);
-      const chessPiece = chess.get(selectedSquare as Square);
-      if (chessPiece && chessPiece.type === 'p') {
-        const rank = square[1];
-        if ((rank === '8' && chessPiece.color === 'w') || (rank === '1' && chessPiece.color === 'b')) {
-          setPendingPromotion({ from: selectedSquare, to: square });
-          setSelectedSquare(null);
-          return;
-        }
-      }
-
-      tryMove(selectedSquare, square);
-      setSelectedSquare(null);
-      return;
-    }
-
-    if (piece && pieceColor(piece.pieceType) === turn) {
-      setSelectedSquare(square);
-    }
-  }, [runtime, completed, selectedSquare, legalTargets, tryMove]);
-
-  const canDragPiece = useCallback(({ piece }: PieceHandlerArgs): boolean => {
-    if (!runtime || runtime.introFen) return false;
-    if (runtime.expected.length <= runtime.expectedIndex) return false;
-    return pieceColor(piece.pieceType) === fenTurn(runtime.currentFen);
-  }, [runtime]);
-
-  const handlePieceDrop = useCallback(({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }): boolean => {
-    if (!targetSquare || !runtime || runtime.introFen) return false;
-
-    // Drop on the same square = click to select (handles micro-movements that
-    // trigger DnD before the click event fires).
-    if (sourceSquare === targetSquare) {
-      const turn = fenTurn(runtime.currentFen);
-      const chess = new Chess(runtime.currentFen);
-      const dragPiece = chess.get(sourceSquare as Square);
-      if (dragPiece && dragPiece.color === turn) {
-        setSelectedSquare(sourceSquare);
-        return true;
-      }
-      return false;
-    }
-
-    const chess = new Chess(runtime.currentFen);
-    const dragPiece = chess.get(sourceSquare as Square);
-    if (!dragPiece || dragPiece.color !== fenTurn(runtime.currentFen)) return false;
-    const legal = chess.moves({ square: sourceSquare as Square, verbose: true })
-      .some(m => m.to === targetSquare);
-    if (!legal) return false;
-
-    const piece = chess.get(sourceSquare as Square);
-    if (piece && piece.type === 'p') {
-      const rank = targetSquare[1];
-      const turn = fenTurn(runtime.currentFen);
-      if ((rank === '8' && turn === 'w') || (rank === '1' && turn === 'b')) {
-        setPendingPromotion({ from: sourceSquare, to: targetSquare });
-        setSelectedSquare(null);
-        return true;
-      }
-    }
-
-    setSelectedSquare(null);
-    return tryMove(sourceSquare, targetSquare);
-  }, [runtime, tryMove]);
-
-  const squareStyles = useMemo((): Record<string, React.CSSProperties> => {
-    const styles: Record<string, React.CSSProperties> = {};
-    if (!selectedSquare || !runtime) return styles;
-    styles[selectedSquare] = { backgroundColor: ZEN_SELECTED_SQUARE };
-    const chess = new Chess(runtime.currentFen);
-    const moves = chess.moves({ square: selectedSquare as Square, verbose: true });
-    for (const m of moves) {
-      const isCapture = !!m.captured;
-      styles[m.to] = isCapture
-        ? { backgroundColor: 'rgba(33,150,243,0.22)', borderRadius: '50%', outline: '3px solid rgba(33,150,243,0.5)', outlineOffset: '-3px' }
-        : { background: 'radial-gradient(circle, rgba(33,150,243,0.4) 28%, transparent 29%)', borderRadius: '50%' };
-    }
-    return styles;
-  }, [selectedSquare, runtime]);
+  const {
+    pendingPromotion,
+    setPendingPromotion,
+    handleSquareClick,
+    canDragPiece,
+    handlePieceDrop,
+    squareStyles,
+  } = useChessInteraction({ runtime, disabled: completed, tryMove });
 
   const handleContinue = useCallback(() => {
     if (nextTaskId !== null) navigate(`/home/player/tasks/${nextTaskId}`);
@@ -458,7 +343,7 @@ export function PlayerTaskDetailsView() {
     return (
       <PageLayout maxWidth="md">
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/home/player/tasks')}>Wróć do listy</Button>
+        <BackButton label="Wróć do listy" onClick={() => navigate('/home/player/tasks')} />
       </PageLayout>
     );
   }
@@ -467,7 +352,7 @@ export function PlayerTaskDetailsView() {
       <PageLayout maxWidth="md">
         <EmptyState message="Nie znaleziono zadania." />
         <Box sx={{ textAlign: 'center', mt: 2 }}>
-          <Button startIcon={<ArrowBack />} onClick={() => navigate('/home/player/tasks')}>Wróć do listy</Button>
+          <BackButton label="Wróć do listy" onClick={() => navigate('/home/player/tasks')} />
         </Box>
       </PageLayout>
     );
@@ -476,9 +361,7 @@ export function PlayerTaskDetailsView() {
   return (
     <PageLayout maxWidth="md">
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
-        <Button startIcon={<ArrowBack />} onClick={handleInterrupt}>
-          Przerwij
-        </Button>
+        <BackButton label="Przerwij" onClick={handleInterrupt} />
 
         {currentStage && (
           <Button
@@ -580,32 +463,7 @@ export function PlayerTaskDetailsView() {
           <Alert severity="warning">Niepoprawna pozycja startowa tego etapu.</Alert>
         )}
 
-        {feedback && (
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(15, 23, 42, 0.55)',
-              borderRadius: 3,
-              color: 'common.white',
-              zIndex: 2,
-              gap: 1,
-            }}
-          >
-            {feedback.kind === 'pass' ? (
-              <CheckCircle sx={{ fontSize: 80, color: ZEN_REWARD }} />
-            ) : (
-              <Cancel sx={{ fontSize: 80, color: ZEN_PENALTY }} />
-            )}
-            <Typography variant="h6">
-              {feedback.kind === 'pass' ? 'Świetnie!' : 'Następnym razem.'}
-            </Typography>
-          </Box>
-        )}
+        {feedback && <FeedbackOverlay kind={feedback.kind} />}
       </Box>
 
       {/* Stage statistics panel */}
@@ -673,18 +531,13 @@ export function PlayerTaskDetailsView() {
         </Box>
       )}
 
-      {notification && (
-        <Snackbar
-          open={notification !== null}
-          autoHideDuration={3000}
-          onClose={() => setNotification(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert severity={notification.severity} onClose={() => setNotification(null)} variant="filled">
-            {notification.message}
-          </Alert>
-        </Snackbar>
-      )}
+      <AppSnackbar
+        open={notification !== null}
+        message={notification?.message ?? ''}
+        severity={notification?.severity ?? 'success'}
+        autoHideDuration={3000}
+        onClose={() => setNotification(null)}
+      />
     </PageLayout>
   );
 }

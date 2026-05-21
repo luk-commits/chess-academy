@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Alert, Box, Button, Snackbar } from '@mui/material';
+import { Alert, Box, Button } from '@mui/material';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import type { PlayerTask } from '../../types/position';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { EmptyState } from '../../components/feedback/EmptyState';
+import { AppSnackbar } from '../../components/feedback/AppSnackbar';
 import { CoachTasksSection } from '../../components/tasks/CoachTasksSection';
 import { usePlayerTasks } from '../../hooks/usePlayerTasks';
 import { playerTasksService } from '../../services/playerTasksService';
@@ -100,11 +101,11 @@ export function PlayerTasksView() {
         </Box>
       )}
 
-      <Snackbar
+      <AppSnackbar
         open={!!snackbarMsg}
         autoHideDuration={3000}
         onClose={() => setSnackbarMsg(null)}
-        message={snackbarMsg}
+        message={snackbarMsg ?? ''}
       />
     </PageLayout>
   );

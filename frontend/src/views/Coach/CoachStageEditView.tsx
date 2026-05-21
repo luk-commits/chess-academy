@@ -8,10 +8,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import ArrowBack from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { LoadingState } from '../../components/feedback/LoadingState';
+import { BackButton } from '../../components/feedback/BackButton';
 import { PgnPreview } from '../../components/chess/PgnPreview';
 import { tasksService } from '../../services/tasksService';
 import type { CoachStageDetail, StageStatus } from '../../types/coachTasks';
@@ -90,9 +90,7 @@ export function CoachStageEditView() {
     return (
       <PageLayout maxWidth="md">
         <Alert severity="error" sx={{ mb: 2 }}>{loadError ?? 'Etap nie znaleziony.'}</Alert>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/home/coach/tasks')}>
-          Wróć do listy
-        </Button>
+        <BackButton label="Wróć do listy" onClick={() => navigate('/home/coach/tasks')} />
       </PageLayout>
     );
   }
@@ -100,9 +98,7 @@ export function CoachStageEditView() {
   return (
     <PageLayout maxWidth="md">
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/home/coach/tasks')}>
-          Wróć do listy
-        </Button>
+        <BackButton label="Wróć do listy" onClick={() => navigate('/home/coach/tasks')} />
       </Box>
 
       <Typography variant="h5" sx={{ mb: 1 }}>Edycja etapu</Typography>
