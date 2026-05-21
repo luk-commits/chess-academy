@@ -82,6 +82,7 @@ docker compose exec backend php vendor/bin/phpunit
 
 - **Backend** test suites defined in `backend/phpunit.xml`: Unit, Integration, Feature, E2E.
   - Integration/E2E tests hit the real DB (PostgreSQL `db` host); must run inside the `chess_backend` container or on a network that can resolve `db`.
+  - E2E tests extend `ChessAcademy\Tests\Support\HttpTestCase` (`tests/Support/HttpTestCase.php`), which provides the curl client, cookie jar, `loginAsCoach()` / `loginAsPlayer()` helpers and shared fixture credentials (`COACH_ID = 3`, `PLAYER_ID = 4`). New E2E tests should extend it rather than copy the HTTP boilerplate.
 - **Frontend** tests use Vitest + jsdom (`frontend/vitest.config.ts`). Globals enabled, setup file is `tests/setup.ts`.
   - Podział: `tests/unit/`, `tests/component/`, `tests/feature/`, `tests/E2E/`.
   - Vitest `include` pattern: `tests/**/*.test.{ts,tsx}` (unit/component/feature).
@@ -135,6 +136,17 @@ Each DB table has two model files. The inheritance chain is:
 | `*.php` (e.g. `Group.php`) | **Hand-written** — extends `*Model`, contains relationships, business logic, validation. **Permanent.** Put all custom code here. |
 
 Relationships (belongsTo, hasMany, hasManyToMany) must go in the consumer class (`Group.php`, `User.php`, `Task.php`), never in `*Model.php`. The `model.sh` script strips auto-generated relationships from `*Model.php` to prevent duplicates.
+
+## Backend services convention
+
+`app/Services/` holds two kinds of stateless classes — keep them separate:
+
+| Suffix | Purpose | DB? | Examples |
+|---|---|---|---|
+| `*Presenter` | Map a model (or set of fields) into the JSON shape returned by controllers. Pure functions, easy to unit-test. | No | `PositionPresenter`, `ProgressPresenter` |
+| `*Service` | Domain logic that reads/writes the DB or external systems. | Yes | `JwtService`, `SpacedRepetitionService`, `PlayerAccessService`, `LlmService` |
+
+Controllers should stay thin: validate input, delegate to a service for logic, hand the result to a presenter for the response. Helpers shared across controllers (role checks, id-param parsing, model-error formatting) live in `AbstractController`.
 
 ## Migration helper
 

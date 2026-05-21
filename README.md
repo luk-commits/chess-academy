@@ -44,9 +44,10 @@ chess/
 │   ├── app/
 │   │   ├── Controllers/   # ChessAcademy\Controllers
 │   │   ├── Models/        # AbstractModel → *Model → *
+│   │   ├── Services/      # *Presenter (model → JSON), *Service (logika z DB)
 │   │   └── Config/        # Router, services
 │   ├── migrations/        # SQL inicjalizowane przy starcie
-│   └── tests/             # PHPUnit (Unit/Integration/Feature/E2E)
+│   └── tests/             # PHPUnit (Unit/Integration/Feature/E2E) + Support/
 ├── frontend/         # React + Vite + MUI
 │   ├── src/
 │   │   ├── components/
