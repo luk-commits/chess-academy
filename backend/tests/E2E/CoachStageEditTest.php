@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ChessAcademy\Tests\E2E;
 
 use ChessAcademy\Models\Group;
+use ChessAcademy\Models\Position;
 use ChessAcademy\Models\Task;
 use ChessAcademy\Models\TaskGroup;
 use ChessAcademy\Models\TaskStage;
@@ -127,10 +128,17 @@ final class CoachStageEditTest extends HttpTestCase
         $otherStage->status = 'draft';
         $this->assertTrue($otherStage->save());
 
+        $otherGroup = new Group();
+        $otherGroup->name = 'Other coach group ' . bin2hex(random_bytes(3));
+        $otherGroup->coach_id = 1;
+        $otherGroup->is_individual = true;
+        $this->assertSavedOk($otherGroup);
+
         $otherTask = new Task();
         $otherTask->title = 'Other coach task';
         $otherTask->coach_id = 1;
         $otherTask->status = 'draft';
+        $otherTask->group_id = (int) $otherGroup->id;
         $this->assertTrue($otherTask->save());
 
         $otherStage->task_id = (int) $otherTask->id;
@@ -177,5 +185,101 @@ final class CoachStageEditTest extends HttpTestCase
 
         $this->assertSame(200, $response['status']);
         $this->assertSame('published', $response['body']['task']['status']);
+    }
+
+    public function testCoachCanCreateTaskWithBoundaryLengths(): void
+    {
+        $position = Position::findFirst();
+        $this->assertNotNull($position, 'Test requires at least one position in DB');
+
+        $this->loginAsCoach();
+        $response = $this->request('POST', '/api/coach/tasks', [
+            'positionIds'  => [(int) $position->id],
+            'groupIds'     => [$this->groupId],
+            'title'        => str_repeat('T', 200),
+            'description'  => str_repeat('D', 10000),
+            'openingName'  => str_repeat('O', 200),
+            'publishDefault' => false,
+        ]);
+
+        $this->assertSame(201, $response['status']);
+        $this->assertSame(200, mb_strlen((string) $response['body']['task']['title']));
+        $this->assertSame(10000, mb_strlen((string) $response['body']['task']['description']));
+    }
+
+    public function testCreateTaskRejectsNonArrayPositionIds(): void
+    {
+        $this->loginAsCoach();
+        $response = $this->request('POST', '/api/coach/tasks', [
+            'positionIds' => 1,
+            'groupIds' => [$this->groupId],
+        ]);
+
+        $this->assertSame(422, $response['status']);
+        $this->assertSame('positionIds musi być tablicą', $response['body']['error']);
+    }
+
+    public function testCreateTaskRejectsTooManyPositionIds(): void
+    {
+        $position = Position::findFirst();
+        $this->assertNotNull($position, 'Test requires at least one position in DB');
+
+        $this->loginAsCoach();
+        $response = $this->request('POST', '/api/coach/tasks', [
+            'positionIds' => array_fill(0, 201, (int) $position->id),
+            'groupIds' => [$this->groupId],
+        ]);
+
+        $this->assertSame(422, $response['status']);
+        $this->assertSame('Maksymalna liczba pozycji to 200', $response['body']['error']);
+    }
+
+    public function testCreateTaskRejectsInvalidGroupIdValue(): void
+    {
+        $position = Position::findFirst();
+        $this->assertNotNull($position, 'Test requires at least one position in DB');
+
+        $this->loginAsCoach();
+        $response = $this->request('POST', '/api/coach/tasks', [
+            'positionIds' => [(int) $position->id],
+            'groupIds' => [0],
+        ]);
+
+        $this->assertSame(422, $response['status']);
+        $this->assertSame('groupIds zawiera nieprawidłową wartość', $response['body']['error']);
+    }
+
+    public function testTaskUpdateRejectsTooLongTitleAndDescription(): void
+    {
+        $this->loginAsCoach();
+
+        $titleResponse = $this->request('PATCH', "/api/coach/tasks/{$this->taskId}", [
+            'title' => str_repeat('T', 201),
+        ]);
+        $this->assertSame(422, $titleResponse['status']);
+        $this->assertSame('Tytuł zadania jest za długi', $titleResponse['body']['error']);
+
+        $descriptionResponse = $this->request('PATCH', "/api/coach/tasks/{$this->taskId}", [
+            'description' => str_repeat('D', 10001),
+        ]);
+        $this->assertSame(422, $descriptionResponse['status']);
+        $this->assertSame('Opis zadania jest za długi', $descriptionResponse['body']['error']);
+    }
+
+    public function testStageUpdateRejectsTooLongTitleAndPgn(): void
+    {
+        $this->loginAsCoach();
+
+        $titleResponse = $this->request('PATCH', "/api/coach/stages/{$this->stageId}", [
+            'title' => str_repeat('T', 201),
+        ]);
+        $this->assertSame(422, $titleResponse['status']);
+        $this->assertSame('Tytuł etapu jest za długi', $titleResponse['body']['error']);
+
+        $pgnResponse = $this->request('PATCH', "/api/coach/stages/{$this->stageId}", [
+            'solutionPgn' => str_repeat('p', 65537),
+        ]);
+        $this->assertSame(422, $pgnResponse['status']);
+        $this->assertSame('Rozwiązanie PGN jest za długie', $pgnResponse['body']['error']);
     }
 }

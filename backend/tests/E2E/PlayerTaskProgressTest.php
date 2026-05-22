@@ -160,6 +160,35 @@ final class PlayerTaskProgressTest extends HttpTestCase
         $this->assertSame(2300, $second['body']['taskProgress']['totalTimeMs']);
     }
 
+    public function testCompleteStageClampsOutOfRangeMetrics(): void
+    {
+        $this->loginAsPlayer();
+        $this->request('POST', "/api/player/tasks/{$this->taskId}/start");
+
+        $moveTimes = array_fill(0, 10000, 1);
+        $moveTimes[] = 99999999;
+
+        $response = $this->request('POST', "/api/player/tasks/{$this->taskId}/stages/{$this->stageId1}/complete", [
+            'attemptsTotal'   => 20000,
+            'errorsTotal'     => -5,
+            'thinkingTimeMs'  => 999999999,
+            'moveTimesMs'     => $moveTimes,
+            'firstErrorAtPly' => 20001,
+        ]);
+
+        $this->assertSame(200, $response['status']);
+        $this->assertSame(10000, $response['body']['stageProgress']['attemptsTotal']);
+        $this->assertSame(0, $response['body']['stageProgress']['errorsTotal']);
+        $this->assertSame(86400000, $response['body']['stageProgress']['thinkingTimeMs']);
+        $this->assertSame(1, $response['body']['stageProgress']['avgMoveTimeMs']);
+        $this->assertSame(1, $response['body']['stageProgress']['longestMoveTimeMs']);
+        $this->assertSame(10000, $response['body']['stageProgress']['firstErrorAtPly']);
+
+        $this->assertSame(10000, $response['body']['taskProgress']['attemptsTotal']);
+        $this->assertSame(0, $response['body']['taskProgress']['errorsTotal']);
+        $this->assertSame(86400000, $response['body']['taskProgress']['totalTimeMs']);
+    }
+
     public function testArchiveRequiresCompleted(): void
     {
         $this->loginAsPlayer();
@@ -233,6 +262,25 @@ final class PlayerTaskProgressTest extends HttpTestCase
         $this->loginAsPlayer();
         $response = $this->request('POST', "/api/player/stages/{$this->stageId1}/repetition", ['enabled' => 'yes']);
         $this->assertSame(400, $response['status']);
+    }
+
+    public function testRepetitionIgnoresSolutionPgnFromPlayerPayload(): void
+    {
+        $stage = TaskStage::findFirst($this->stageId1);
+        $this->assertNotNull($stage);
+        $stage->solution_pgn = null;
+        $this->assertSavedOk($stage);
+
+        $this->loginAsPlayer();
+        $response = $this->request('POST', "/api/player/stages/{$this->stageId1}/repetition", [
+            'enabled' => true,
+            'solutionPgn' => '1. d4 d5 2. c4',
+        ]);
+
+        $this->assertSame(200, $response['status']);
+        $savedStage = TaskStage::findFirst($this->stageId1);
+        $this->assertNotNull($savedStage);
+        $this->assertNull($savedStage->solution_pgn);
     }
 
     public function testCoachIsForbiddenFromStartingTask(): void
