@@ -28,6 +28,7 @@ final class SpacedRepetitionServiceTest extends TestCase
         $task->description = 'integration fixture';
         $task->coach_id = self::COACH_ID;
         $task->status = 'published';
+        $task->group_id = 1;
         $this->assertTrue($task->save(), implode('; ', array_map(fn($m) => (string)$m->getMessage(), $task->getMessages())));
         $this->taskId = (int) $task->id;
 
