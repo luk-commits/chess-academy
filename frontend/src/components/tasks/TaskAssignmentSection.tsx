@@ -159,16 +159,18 @@ export const TaskAssignmentSection = memo(function TaskAssignmentSection({
         </DialogActions>
       </Dialog>
 
-      <Box sx={{ display: 'block', position: 'fixed', bottom: { xs: 61, sm: 8 }, left: 0, right: 0, px: 2, zIndex: 1100 }}>
-        <Button
-          variant="contained"
-          fullWidth
-          disabled={selectedPositionCount === 0 || taskCreating}
-          onClick={onOpenModal}
-          sx={{ borderRadius: 3, py: 1.5 }}
-        >
-          Przypisz zadania
-        </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'center', position: 'fixed', bottom: { xs: 61, sm: 8 }, left: 0, right: 0, px: { xs: 0.25, sm: 2 }, zIndex: 1100 }}>
+        <Box sx={{ width: '100%', maxWidth: 'lg' }}>
+          <Button
+            variant="contained"
+            fullWidth
+            disabled={selectedPositionCount === 0 || taskCreating}
+            onClick={onOpenModal}
+            sx={{ borderRadius: 3, py: 1.5 }}
+          >
+            Przypisz zadania
+          </Button>
+        </Box>
       </Box>
     </>
   );
