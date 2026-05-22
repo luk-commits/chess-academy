@@ -81,6 +81,10 @@ class PositionsController extends AbstractController
         }
 
         $tags = array_values(array_filter(array_map('trim', explode(',', (string) $this->request->getQuery('tags', null, '')))));
+        if (count($tags) > 20) {
+            $tags = array_slice($tags, 0, 20);
+        }
+        $tags = array_map(static fn (string $tag): string => mb_substr($tag, 0, 50), $tags);
         if (!empty($tags)) {
             $clauses = [];
             foreach ($tags as $i => $tag) {

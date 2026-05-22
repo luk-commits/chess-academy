@@ -16,6 +16,13 @@ use RuntimeException;
 
 class PlayerTaskProgressController extends AbstractController
 {
+    private const MAX_ATTEMPTS_PER_STAGE = 10000;
+    private const MAX_ERRORS_PER_STAGE = 10000;
+    private const MAX_TIME_MS = 24 * 60 * 60 * 1000;
+    private const MAX_MOVE_TIMES_COUNT = 10000;
+    private const MAX_PLY = 10000;
+    private const MAX_TIME_MS_LIFETIME = 1000 * 60 * 60 * 24 * 365;
+
     public function startAction(): Response
     {
         return $this->runTaskAction(function (int $playerId, int $taskId): Response {
@@ -142,22 +149,39 @@ class PlayerTaskProgressController extends AbstractController
         }
 
         $body = $this->jsonInput();
+        $attemptsTotal = $this->intInRange($body['attemptsTotal'] ?? 0, 0, self::MAX_ATTEMPTS_PER_STAGE);
+        $errorsTotal = $this->intInRange($body['errorsTotal'] ?? 0, 0, self::MAX_ERRORS_PER_STAGE);
+        $thinkingTimeMs = $this->intInRange($body['thinkingTimeMs'] ?? 0, 0, self::MAX_TIME_MS);
+
+        $normalizedMoveTimes = [];
+        $moveTimes = $body['moveTimesMs'] ?? [];
+        if (is_array($moveTimes)) {
+            $slicedMoveTimes = array_slice($moveTimes, 0, self::MAX_MOVE_TIMES_COUNT);
+            $numericMoveTimes = array_filter($slicedMoveTimes, 'is_numeric');
+            $normalizedMoveTimes = array_map(
+                fn (mixed $value): int => $this->intInRange($value, 0, self::MAX_TIME_MS),
+                array_values($numericMoveTimes)
+            );
+        }
+
+        $firstErrorAtPly = null;
+        if (array_key_exists('firstErrorAtPly', $body) && $body['firstErrorAtPly'] !== null) {
+            $firstErrorAtPly = $this->intInRange($body['firstErrorAtPly'], 0, self::MAX_PLY);
+        }
 
         $sp = $this->getOrCreateStageProgress($playerId, $taskId, $stageId);
         $sp->status = 'completed';
-        $sp->attempts_total = (int) ($body['attemptsTotal'] ?? 0);
-        $sp->errors_total = (int) ($body['errorsTotal'] ?? 0);
+        $sp->attempts_total = $attemptsTotal;
+        $sp->errors_total = $errorsTotal;
         $sp->wrong_moves = json_encode($body['wrongMoves'] ?? [], JSON_UNESCAPED_UNICODE);
-        $sp->thinking_time_ms = (int) ($body['thinkingTimeMs'] ?? 0);
+        $sp->thinking_time_ms = $thinkingTimeMs;
         $sp->completed_at = (new DateTimeImmutable())->format('c');
 
-        $moveTimes = $body['moveTimesMs'] ?? [];
-        if (is_array($moveTimes) && count($moveTimes) > 0) {
-            $sp->avg_move_time_ms = (int) round(array_sum($moveTimes) / count($moveTimes));
-            $sp->longest_move_time_ms = (int) max($moveTimes);
+        if (count($normalizedMoveTimes) > 0) {
+            $sp->avg_move_time_ms = (int) round(array_sum($normalizedMoveTimes) / count($normalizedMoveTimes));
+            $sp->longest_move_time_ms = (int) max($normalizedMoveTimes);
         }
-        $sp->first_error_at_ply = isset($body['firstErrorAtPly']) && $body['firstErrorAtPly'] !== null
-            ? (int) $body['firstErrorAtPly'] : null;
+        $sp->first_error_at_ply = $firstErrorAtPly;
 
         if ($sp->save() === false) return $this->error('Failed to save stage progress', 500);
 
@@ -171,9 +195,13 @@ class PlayerTaskProgressController extends AbstractController
         if ($nextStageId === null) {
             $tp->completed_at = $now->format('c');
         }
-        $tp->total_time_ms = (int) $tp->total_time_ms + (int) ($body['thinkingTimeMs'] ?? 0);
-        $tp->attempts_total = (int) $tp->attempts_total + (int) ($body['attemptsTotal'] ?? 0);
-        $tp->errors_total = (int) $tp->errors_total + (int) ($body['errorsTotal'] ?? 0);
+        $taskTotalTimeMs = max(0, (int) $tp->total_time_ms) + $thinkingTimeMs;
+        $taskAttemptsTotal = max(0, (int) $tp->attempts_total) + $attemptsTotal;
+        $taskErrorsTotal = max(0, (int) $tp->errors_total) + $errorsTotal;
+
+        $tp->total_time_ms = min($taskTotalTimeMs, self::MAX_TIME_MS_LIFETIME, PHP_INT_MAX);
+        $tp->attempts_total = min($taskAttemptsTotal, PHP_INT_MAX);
+        $tp->errors_total = min($taskErrorsTotal, PHP_INT_MAX);
 
         if ($tp->save() === false) return $this->error('Failed to save task progress', 500);
 
@@ -206,14 +234,6 @@ class PlayerTaskProgressController extends AbstractController
             (new PlayerAccessService())->assertPlayerHasAccess($playerId, (int) $stage->task_id);
         } catch (RuntimeException) {
             return $this->error('Forbidden', 403);
-        }
-
-        $solutionPgn = $body['solutionPgn'] ?? null;
-        if ($enabled && is_string($solutionPgn) && $solutionPgn !== ''
-            && ($stage->solution_pgn === null || $stage->solution_pgn === '')
-        ) {
-            $stage->solution_pgn = $solutionPgn;
-            $stage->save();
         }
 
         $sp = $this->getOrCreateStageProgress($playerId, (int) $stage->task_id, $stageId);

@@ -62,6 +62,23 @@ abstract class AbstractController extends Controller
         return $value;
     }
 
+    protected function intInRange(mixed $value, int $min, int $max, int $default = 0): int
+    {
+        if (!is_numeric($value)) {
+            return $default;
+        }
+
+        $int = (int) $value;
+        if ($int < $min) {
+            return $min;
+        }
+        if ($int > $max) {
+            return $max;
+        }
+
+        return $int;
+    }
+
     protected function modelErrors(Model $model, string $fallback = 'Validation failed'): string
     {
         $messages = $model->getMessages();

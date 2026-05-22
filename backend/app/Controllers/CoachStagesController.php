@@ -12,6 +12,8 @@ use Phalcon\Http\Response;
 class CoachStagesController extends AbstractController
 {
     private const ALLOWED_STAGE_STATUSES = ['draft', 'in_progress', 'published'];
+    private const MAX_TITLE_LENGTH = 200;
+    private const MAX_SOLUTION_PGN_LENGTH = 65536;
 
     public function showAction(): Response
     {
@@ -43,11 +45,17 @@ class CoachStagesController extends AbstractController
         if (array_key_exists('title', $payload)) {
             $title = trim((string) $payload['title']);
             if ($title === '') return $this->error('Tytuł etapu nie może być pusty', 422);
+            if (mb_strlen($title) > self::MAX_TITLE_LENGTH) {
+                return $this->error('Tytuł etapu jest za długi', 422);
+            }
             $stage->title = $title;
         }
 
         if (array_key_exists('solutionPgn', $payload)) {
             $trimmed = is_string($payload['solutionPgn']) ? trim($payload['solutionPgn']) : '';
+            if (mb_strlen($trimmed) > self::MAX_SOLUTION_PGN_LENGTH) {
+                return $this->error('Rozwiązanie PGN jest za długie', 422);
+            }
             $stage->solution_pgn = $trimmed === '' ? null : $trimmed;
         }
 

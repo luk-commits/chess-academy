@@ -15,6 +15,11 @@ use Phalcon\Http\Response;
 class TasksController extends AbstractController
 {
     private const TASK_STATUSES = ['draft', 'published', 'archived'];
+    private const MAX_TITLE_LENGTH = 200;
+    private const MAX_DESCRIPTION_LENGTH = 10000;
+    private const MAX_OPENING_NAME_LENGTH = 200;
+    private const MAX_POSITION_IDS = 200;
+    private const MAX_GROUP_IDS = 100;
 
     public function createAction(): Response
     {
@@ -23,12 +28,47 @@ class TasksController extends AbstractController
         $coachId = $this->authUserId();
         $payload = $this->jsonInput();
 
+        if (!is_array($payload['positionIds'] ?? null)) {
+            return $this->error('positionIds musi być tablicą', 422);
+        }
+        if (!is_array($payload['groupIds'] ?? null)) {
+            return $this->error('groupIds musi być tablicą', 422);
+        }
+
         $positionIds = $payload['positionIds'] ?? [];
         $groupIds = $payload['groupIds'] ?? [];
         $title = trim((string) ($payload['title'] ?? ''));
         $description = trim((string) ($payload['description'] ?? ''));
         $openingName = trim((string) ($payload['openingName'] ?? ''));
         $status = ((bool) ($payload['publishDefault'] ?? false)) ? 'published' : 'draft';
+
+        if (mb_strlen($title) > self::MAX_TITLE_LENGTH) {
+            return $this->error('Tytuł zadania jest za długi', 422);
+        }
+        if (mb_strlen($description) > self::MAX_DESCRIPTION_LENGTH) {
+            return $this->error('Opis zadania jest za długi', 422);
+        }
+        if (mb_strlen($openingName) > self::MAX_OPENING_NAME_LENGTH) {
+            return $this->error('Nazwa debiutu jest za długa', 422);
+        }
+
+        if (count($positionIds) > self::MAX_POSITION_IDS) {
+            return $this->error('Maksymalna liczba pozycji to 200', 422);
+        }
+        if (count($groupIds) > self::MAX_GROUP_IDS) {
+            return $this->error('Maksymalna liczba grup to 100', 422);
+        }
+
+        foreach ($positionIds as $positionId) {
+            if (!is_numeric($positionId) || (int) $positionId <= 0) {
+                return $this->error('positionIds zawiera nieprawidłową wartość', 422);
+            }
+        }
+        foreach ($groupIds as $groupId) {
+            if (!is_numeric($groupId) || (int) $groupId <= 0) {
+                return $this->error('groupIds zawiera nieprawidłową wartość', 422);
+            }
+        }
 
         if (empty($positionIds)) return $this->error('Wybierz przynajmniej jedna pozycje', 422);
         if (empty($groupIds))    return $this->error('Wybierz przynajmniej jedna grupe', 422);
@@ -124,10 +164,17 @@ class TasksController extends AbstractController
         if (array_key_exists('title', $payload)) {
             $task->title = trim((string) $payload['title']);
             if ($task->title === '') return $this->error('Tytuł nie może być pusty', 422);
+            if (mb_strlen($task->title) > self::MAX_TITLE_LENGTH) {
+                return $this->error('Tytuł zadania jest za długi', 422);
+            }
         }
 
         if (array_key_exists('description', $payload)) {
-            $task->description = (string) $payload['description'];
+            $description = (string) $payload['description'];
+            if (mb_strlen($description) > self::MAX_DESCRIPTION_LENGTH) {
+                return $this->error('Opis zadania jest za długi', 422);
+            }
+            $task->description = $description;
         }
 
         if (array_key_exists('status', $payload)) {
