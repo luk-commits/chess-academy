@@ -42,7 +42,7 @@ function TaskCard({ task, groupId, onTogglePublish, busyTaskId }: {
   const classes = task.assignees.filter((a) => a.type === 'class');
   const individuals = task.assignees.filter((a) => a.type === 'individual');
 
-  const completedCount = groupId !== undefined ? (task.completedStageCounts[String(groupId)] ?? 0) : undefined;
+  const completedCount = groupId !== undefined ? task.completedStageCounts[String(groupId)] : undefined;
   const stageCount = task.stages.length;
   const stageLabelText = completedCount !== undefined
     ? `${completedCount}/${stageCount} etapów`

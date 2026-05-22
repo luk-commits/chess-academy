@@ -131,21 +131,25 @@ class TasksController extends AbstractController
             $groupIdsByTask[$tid][] = (int) $tg->group_id;
         }
 
-        $completedRows = $this->db->fetchAll(
-            "SELECT tg.task_id, tg.group_id, COUNT(DISTINCT utsp.task_stage_id) AS completed_stages
+        $progressRows = $this->db->fetchAll(
+            "SELECT tg.task_id, tg.group_id,
+                    COUNT(DISTINCT utsp.task_stage_id) FILTER (WHERE utsp.status = 'completed') AS completed_stages,
+                    COUNT(DISTINCT utsp.task_stage_id) AS total_progressed
              FROM task_groups tg
              JOIN group_players gp ON gp.group_id = tg.group_id
-             JOIN user_task_stage_progress utsp ON utsp.user_id = gp.player_id AND utsp.task_id = tg.task_id AND utsp.status = 'completed'
+             LEFT JOIN user_task_stage_progress utsp ON utsp.user_id = gp.player_id AND utsp.task_id = tg.task_id
              WHERE tg.task_id IN (" . implode(',', array_fill(0, count($taskIds), '?')) . ")
              GROUP BY tg.task_id, tg.group_id",
             \Phalcon\Db\Enum::FETCH_ASSOC,
             $taskIds,
         );
         $completedByTask = [];
-        foreach ($completedRows as $row) {
+        foreach ($progressRows as $row) {
             $tid = (int) $row['task_id'];
             $gid = (int) $row['group_id'];
-            $completedByTask[$tid][$gid] = (int) $row['completed_stages'];
+            if ((int) $row['total_progressed'] > 0) {
+                $completedByTask[$tid][$gid] = (int) $row['completed_stages'];
+            }
         }
 
         $result = [];
