@@ -132,9 +132,8 @@ class TasksController extends AbstractController
         }
 
         $completedRows = $this->db->fetchAll(
-            "SELECT tg.task_id, tg.group_id, COUNT(utsp.task_stage_id) AS completed_stages
+            "SELECT tg.task_id, tg.group_id, COUNT(DISTINCT utsp.task_stage_id) AS completed_stages
              FROM task_groups tg
-             JOIN groups g ON g.id = tg.group_id AND g.is_individual = TRUE
              JOIN group_players gp ON gp.group_id = tg.group_id
              JOIN user_task_stage_progress utsp ON utsp.user_id = gp.player_id AND utsp.task_id = tg.task_id AND utsp.status = 'completed'
              WHERE tg.task_id IN (" . implode(',', array_fill(0, count($taskIds), '?')) . ")
