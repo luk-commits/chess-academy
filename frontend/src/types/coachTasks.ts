@@ -17,6 +17,7 @@ export interface CoachTask {
   status: TaskStatus;
   stages: CoachStageSummary[];
   groupIds: number[];
+  completedStageCounts: Record<string, number>;
 }
 
 export interface GroupAssignee {

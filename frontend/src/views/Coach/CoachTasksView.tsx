@@ -31,8 +31,9 @@ const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
   archived: 'Zarchiwizowane',
 };
 
-function TaskCard({ task, onTogglePublish, busyTaskId }: {
+function TaskCard({ task, groupId, onTogglePublish, busyTaskId }: {
   task: EnrichedCoachTask;
+  groupId?: number;
   onTogglePublish: (taskId: number, current: TaskStatus) => void;
   busyTaskId: number | null;
 }) {
@@ -40,6 +41,15 @@ function TaskCard({ task, onTogglePublish, busyTaskId }: {
 
   const classes = task.assignees.filter((a) => a.type === 'class');
   const individuals = task.assignees.filter((a) => a.type === 'individual');
+
+  const completedCount = groupId !== undefined ? task.completedStageCounts[String(groupId)] : undefined;
+  const stageCount = task.stages.length;
+  const stageLabelText = completedCount !== undefined
+    ? `${completedCount}/${stageCount} etapów`
+    : stageLabel(stageCount);
+  const stageChipColor = completedCount === undefined ? 'primary'
+    : completedCount === stageCount ? 'success'
+    : completedCount > 0 ? 'warning' : 'default';
 
   return (
     <Card
@@ -100,9 +110,9 @@ function TaskCard({ task, onTogglePublish, busyTaskId }: {
 
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
           <Chip
-            label={stageLabel(task.stages.length)}
+            label={stageLabelText}
             size="small"
-            color="primary"
+            color={stageChipColor}
             variant="outlined"
             sx={{ height: 24, fontSize: '0.75rem' }}
           />
@@ -194,7 +204,7 @@ export function CoachTasksView() {
             <Grid container spacing={2}>
               {g.tasks.map((task) => (
                 <Grid key={task.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <TaskCard task={task} onTogglePublish={togglePublish} busyTaskId={busyTaskId} />
+                  <TaskCard task={task} groupId={g.groupId} onTogglePublish={togglePublish} busyTaskId={busyTaskId} />
                 </Grid>
               ))}
             </Grid>

@@ -131,16 +131,35 @@ class TasksController extends AbstractController
             $groupIdsByTask[$tid][] = (int) $tg->group_id;
         }
 
+        $completedRows = $this->db->fetchAll(
+            "SELECT tg.task_id, tg.group_id, COUNT(utsp.task_stage_id) AS completed_stages
+             FROM task_groups tg
+             JOIN groups g ON g.id = tg.group_id AND g.is_individual = TRUE
+             JOIN group_players gp ON gp.group_id = tg.group_id
+             JOIN user_task_stage_progress utsp ON utsp.user_id = gp.player_id AND utsp.task_id = tg.task_id AND utsp.status = 'completed'
+             WHERE tg.task_id IN (" . implode(',', array_fill(0, count($taskIds), '?')) . ")
+             GROUP BY tg.task_id, tg.group_id",
+            \Phalcon\Db\Enum::FETCH_ASSOC,
+            $taskIds,
+        );
+        $completedByTask = [];
+        foreach ($completedRows as $row) {
+            $tid = (int) $row['task_id'];
+            $gid = (int) $row['group_id'];
+            $completedByTask[$tid][$gid] = (int) $row['completed_stages'];
+        }
+
         $result = [];
         foreach ($tasks as $task) {
             $tid = (int) $task->id;
             $result[] = [
-                'id'          => $tid,
-                'title'       => (string) $task->title,
-                'description' => (string) $task->description,
-                'status'      => (string) $task->status,
-                'stages'      => $stagesByTask[$tid] ?? [],
-                'groupIds'    => $groupIdsByTask[$tid] ?? [],
+                'id'                   => $tid,
+                'title'                => (string) $task->title,
+                'description'          => (string) $task->description,
+                'status'               => (string) $task->status,
+                'stages'               => $stagesByTask[$tid] ?? [],
+                'groupIds'             => $groupIdsByTask[$tid] ?? [],
+                'completedStageCounts' => $completedByTask[$tid] ?? new \stdClass(),
             ];
         }
 
