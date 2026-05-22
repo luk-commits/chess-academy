@@ -86,11 +86,13 @@ export function CoachStageEditView() {
 
   if (loading) return <PageLayout maxWidth="md"><LoadingState /></PageLayout>;
 
+  const backPath = stage?.taskId ? `/home/coach/tasks/${stage.taskId}` : '/home/coach/tasks';
+
   if (loadError || !stage) {
     return (
       <PageLayout maxWidth="md">
         <Alert severity="error" sx={{ mb: 2 }}>{loadError ?? 'Etap nie znaleziony.'}</Alert>
-        <BackButton label="Wróć do listy" onClick={() => navigate('/home/coach/tasks')} />
+        <BackButton label="Wróć do listy" onClick={() => navigate(backPath)} />
       </PageLayout>
     );
   }
@@ -98,7 +100,7 @@ export function CoachStageEditView() {
   return (
     <PageLayout maxWidth="md">
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <BackButton label="Wróć do listy" onClick={() => navigate('/home/coach/tasks')} />
+        <BackButton label="Wróć do listy" onClick={() => navigate(backPath)} />
       </Box>
 
       <Typography variant="h5" sx={{ mb: 1 }}>Edycja etapu</Typography>
