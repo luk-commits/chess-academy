@@ -19,6 +19,16 @@ export interface CoachTask {
   groupIds: number[];
 }
 
+export interface GroupAssignee {
+  groupId: number;
+  label: string;
+  type: 'class' | 'individual';
+}
+
+export interface EnrichedCoachTask extends CoachTask {
+  assignees: GroupAssignee[];
+}
+
 export interface CoachTasksResponse {
   tasks: CoachTask[];
 }
